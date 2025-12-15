@@ -23,13 +23,13 @@ OPENROUTER_BASE_URL = "https://openrouter.ai/api/v1"
 
 # Vision models available on OpenRouter free tier
 VISION_MODELS = {
-    "nemotron": "nvidia/llama-3.1-nemotron-70b-instruct:free",
+    "nemotron-vl": "nvidia/nemotron-nano-12b-v2-vl:free",  # Vision-Language specialist
     "gemini": "google/gemini-2.0-flash-exp:free",
-    "nova": "amazon/nova-lite-v1:free",
+    "nova": "amazon/nova-2-lite-v1:free",
 }
 
-# Default model - Gemini 2.0 Flash has good vision capabilities
-DEFAULT_MODEL = "gemini"
+# Default model - Nemotron VL is document-specialized
+DEFAULT_MODEL = "nemotron-vl"
 
 EXTRACTION_PROMPT = """You are analyzing a page from a scientific research paper about Earth Observation, Remote Sensing, or AI/ML for geospatial applications.
 
