@@ -2,6 +2,8 @@
 
 Extract, catalog, and make searchable a collection of geospatial AI and Earth Observation research papers, enabling intelligent retrieval including figures and diagrams.
 
+**[See PROGRESS.md for latest updates and next steps](PROGRESS.md)**
+
 ## Goal
 
 Build a knowledge base from 5000+ research PDFs that allows:
