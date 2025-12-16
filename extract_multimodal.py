@@ -155,7 +155,7 @@ def extract_images_from_page(
     page_num: int,
     output_dir: Path,
     pdf_name: str,
-    min_size: int = 50,
+    min_size: int = 200,
 ) -> list[dict]:
     """
     Extract embedded images from a PDF page and save them.
@@ -165,7 +165,8 @@ def extract_images_from_page(
         page_num: 0-indexed page number
         output_dir: Directory to save images
         pdf_name: Base name of PDF for naming images
-        min_size: Minimum dimension (width or height) to include image
+        min_size: Minimum dimension (width AND height) to include image.
+                  Default 200px filters out small fragments and icons.
 
     Returns:
         List of dicts with image metadata
@@ -188,7 +189,8 @@ def extract_images_from_page(
             height = base_image["height"]
             colorspace = base_image.get("colorspace", "unknown")
 
-            # Skip tiny images (likely icons, bullets, etc.)
+            # Skip small images (fragments, icons, example thumbnails)
+            # Require BOTH dimensions to be >= min_size
             if width < min_size or height < min_size:
                 continue
 

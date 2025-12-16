@@ -33,6 +33,23 @@ def get_model_display_name(model_id: str, fallback: str | None = None) -> str:
     return fallback if fallback else model_id
 
 
+def extract_traditional_page(doc: fitz.Document, page_num: int) -> dict:
+    """Extract traditional data from a single page (text, image count, etc.)."""
+    page = doc[page_num]
+    text = page.get_text("text")
+    blocks = page.get_text("dict", flags=11)  # TEXT_PRESERVE_WHITESPACE = 11
+    images = page.get_images(full=True)
+    links = page.get_links()
+
+    return {
+        "text": text,
+        "text_length": len(text),
+        "block_count": len(blocks.get("blocks", [])),
+        "image_count": len(images),
+        "link_count": len(links),
+    }
+
+
 def generate_page_image(
     doc: fitz.Document, page_num: int, output_dir: Path, dpi: int = 150
 ) -> str:
@@ -155,9 +172,19 @@ def main():
     # For model comparison, we create multiple page entries: page_num_model
     comparison_pages = {}
 
+    # Cache traditional extraction per page (same for all models)
+    traditional_cache = {}
+
     for page_num in sorted(all_extractions.keys()):
         # Generate page image
         image_filename = generate_page_image(doc, page_num - 1, images_dir, args.dpi)
+
+        # Extract traditional data once per page
+        if page_num not in traditional_cache:
+            print(
+                f"  Extracting traditional data for page {page_num}...", file=sys.stderr
+            )
+            traditional_cache[page_num] = extract_traditional_page(doc, page_num - 1)
 
         for extraction in all_extractions[page_num]:
             model_display = extraction.get("model_display", "Unknown")
@@ -167,7 +194,7 @@ def main():
             comparison_pages[page_key] = {
                 "page_number": page_num,
                 "image": image_filename,
-                "traditional": None,
+                "traditional": traditional_cache[page_num],
                 "multimodal": extraction,
             }
 
