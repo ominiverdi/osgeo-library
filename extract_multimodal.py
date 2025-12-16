@@ -21,15 +21,32 @@ import requests
 # OpenRouter API configuration
 OPENROUTER_BASE_URL = "https://openrouter.ai/api/v1"
 
-# Vision models available on OpenRouter free tier
+# Vision models available on OpenRouter free tier (text+image->text)
 VISION_MODELS = {
-    "nemotron-vl": "nvidia/nemotron-nano-12b-v2-vl:free",  # Vision-Language specialist
-    "gemini": "google/gemini-2.0-flash-exp:free",
-    "nova": "amazon/nova-2-lite-v1:free",
+    # Google models
+    "gemini": "google/gemini-2.0-flash-exp:free",  # 1M context, best quality but rate limited
+    "gemma-27b": "google/gemma-3-27b-it:free",  # 131K context
+    "gemma-12b": "google/gemma-3-12b-it:free",  # 32K context
+    "gemma-4b": "google/gemma-3-4b-it:free",  # 32K context, fastest
+    # Other providers
+    "mistral": "mistralai/mistral-small-3.1-24b-instruct:free",  # 128K context, solid
+    "nemotron": "nvidia/nemotron-nano-12b-v2-vl:free",  # 128K context, document specialist
+    "nova": "amazon/nova-2-lite-v1:free",  # 1M context
 }
 
-# Default model - Nemotron VL is document-specialized
-DEFAULT_MODEL = "nemotron-vl"
+# Short names for display
+MODEL_DISPLAY_NAMES = {
+    "google/gemini-2.0-flash-exp:free": "Gemini 2.0 Flash",
+    "google/gemma-3-27b-it:free": "Gemma 3 27B",
+    "google/gemma-3-12b-it:free": "Gemma 3 12B",
+    "google/gemma-3-4b-it:free": "Gemma 3 4B",
+    "mistralai/mistral-small-3.1-24b-instruct:free": "Mistral Small 3.1",
+    "nvidia/nemotron-nano-12b-v2-vl:free": "Nemotron VL",
+    "amazon/nova-2-lite-v1:free": "Amazon Nova 2",
+}
+
+# Default model
+DEFAULT_MODEL = "mistral"
 
 EXTRACTION_PROMPT = """You are analyzing a page from a scientific research paper about Earth Observation, Remote Sensing, or AI/ML for geospatial applications.
 
@@ -308,8 +325,13 @@ def extract_page_multimodal(
     # Call vision model
     result = call_vision_model(api_key, image_base64, model)
 
+    # Get display name for model
+    model_display = MODEL_DISPLAY_NAMES.get(model, model)
+
     page_result = {
         "page_number": page_num + 1,
+        "model": model,
+        "model_display": model_display,
         "extraction_result": result,
         "image_size_bytes": len(image_base64) * 3 // 4,  # Approximate decoded size
     }

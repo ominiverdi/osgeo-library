@@ -63,26 +63,33 @@ def load_multimodal_extraction(json_path: Path, page_num: int) -> dict | None:
     for page in data.get("pages", []):
         if page.get("page_number") == page_num:
             result = page.get("extraction_result", {})
-            if result.get("error"):
-                return {
-                    "error": True,
-                    "message": result.get("message", "Unknown error"),
-                }
 
-            extracted = result.get("data", {})
-            if extracted is None:
-                extracted = {}
+            # Start with model info
+            extracted = {
+                "model": page.get("model", data.get("model", "unknown")),
+                "model_display": page.get("model_display", "Unknown Model"),
+            }
+
+            if result.get("error"):
+                extracted["error"] = True
+                extracted["message"] = result.get("message", "Unknown error")
+                return extracted
+
+            # Merge in the extracted data
+            if result.get("data"):
+                extracted.update(result.get("data"))
 
             # Include extracted images info if present
             if page.get("extracted_images"):
                 extracted["extracted_images"] = page["extracted_images"]
 
-            if extracted:
+            if len(extracted) > 2:  # More than just model info
                 return extracted
 
-            # If no structured data, return raw
+            # If no structured data, return raw with model info
             if result.get("raw"):
-                return {"text_content": result.get("raw")}
+                extracted["text_content"] = result.get("raw")
+                return extracted
 
     return None
 

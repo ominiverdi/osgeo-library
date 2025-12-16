@@ -195,6 +195,26 @@
         }
         .metric-item .metric-name { font-weight: bold; }
         .metric-item .metric-value { color: #27ae60; }
+        .model-badge {
+            display: inline-block;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-weight: bold;
+            font-size: 14px;
+            margin-bottom: 15px;
+            box-shadow: 0 2px 8px rgba(102, 126, 234, 0.4);
+        }
+        .model-badge.error {
+            background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
+            box-shadow: 0 2px 8px rgba(231, 76, 60, 0.4);
+        }
+        .model-badge.gemini { background: linear-gradient(135deg, #4285f4 0%, #34a853 100%); }
+        .model-badge.gemma { background: linear-gradient(135deg, #4285f4 0%, #ea4335 100%); }
+        .model-badge.mistral { background: linear-gradient(135deg, #ff6b35 0%, #f7931e 100%); }
+        .model-badge.nemotron { background: linear-gradient(135deg, #76b900 0%, #1a1a1a 100%); }
+        .model-badge.nova { background: linear-gradient(135deg, #ff9900 0%, #146eb4 100%); }
         .stats {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
@@ -245,6 +265,9 @@
         <select id="page-select">
             <option value="">-- Select Page --</option>
         </select>
+        <select id="model-filter">
+            <option value="">-- All Models --</option>
+        </select>
         <button onclick="prevPage()">Previous</button>
         <button onclick="nextPage()">Next</button>
     </div>
@@ -268,7 +291,7 @@
         
         <!-- Multimodal Extraction -->
         <div class="panel">
-            <div class="panel-header multimodal">Multimodal (Gemini)</div>
+            <div class="panel-header multimodal" id="multimodal-header">Multimodal Extraction</div>
             <div class="panel-content" id="multimodal-panel">
                 <div class="no-data">Select a PDF and page to view</div>
             </div>
@@ -279,6 +302,7 @@
         let comparisonData = null;
         let currentPdf = null;
         let currentPage = 1;
+        let currentModelFilter = '';
         
         async function loadData() {
             try {
@@ -306,9 +330,53 @@
             select.addEventListener('change', (e) => {
                 currentPdf = e.target.value;
                 currentPage = 1;
+                currentModelFilter = '';
+                document.getElementById('model-filter').value = '';
+                populateModelFilter();
                 populatePageSelect();
                 renderComparison();
             });
+        }
+        
+        function populateModelFilter() {
+            const select = document.getElementById('model-filter');
+            select.innerHTML = '<option value="">-- All Models --</option>';
+            
+            if (!currentPdf || !comparisonData.pdfs[currentPdf]) return;
+            
+            const pages = comparisonData.pdfs[currentPdf].pages;
+            const models = new Set();
+            
+            for (const pageNum in pages) {
+                const modelDisplay = pages[pageNum].multimodal?.model_display;
+                if (modelDisplay) {
+                    models.add(modelDisplay);
+                }
+            }
+            
+            for (const model of Array.from(models).sort()) {
+                const option = document.createElement('option');
+                option.value = model;
+                option.textContent = model;
+                select.appendChild(option);
+            }
+            
+            select.addEventListener('change', (e) => {
+                currentModelFilter = e.target.value;
+                populatePageSelect();
+                renderComparison();
+            });
+        }
+        
+        function getFilteredPages(pages) {
+            const pageNums = Object.keys(pages).map(Number).sort((a, b) => a - b);
+            if (!currentModelFilter) {
+                return pageNums.map(String);
+            }
+            return pageNums.filter(num => {
+                const modelDisplay = pages[num].multimodal?.model_display;
+                return modelDisplay === currentModelFilter;
+            }).map(String);
         }
         
         function populatePageSelect() {
@@ -318,10 +386,14 @@
             if (!currentPdf || !comparisonData.pdfs[currentPdf]) return;
             
             const pages = comparisonData.pdfs[currentPdf].pages;
-            for (const pageNum in pages) {
+            const filteredPages = getFilteredPages(pages);
+            
+            for (const pageNum of filteredPages) {
+                const pageData = pages[pageNum];
+                const modelName = pageData.multimodal?.model_display || '';
                 const option = document.createElement('option');
                 option.value = pageNum;
-                option.textContent = `Page ${pageNum}`;
+                option.textContent = modelName ? `Page ${pageNum} (${modelName})` : `Page ${pageNum}`;
                 select.appendChild(option);
             }
             
@@ -331,8 +403,8 @@
             });
             
             // Select first page
-            if (Object.keys(pages).length > 0) {
-                currentPage = parseInt(Object.keys(pages)[0]);
+            if (filteredPages.length > 0) {
+                currentPage = parseInt(filteredPages[0]);
                 select.value = currentPage;
             }
         }
@@ -419,19 +491,42 @@
             document.getElementById('traditional-panel').innerHTML = html;
         }
         
+        function getModelBadgeClass(modelDisplay) {
+            if (!modelDisplay) return '';
+            const lower = modelDisplay.toLowerCase();
+            if (lower.includes('gemini')) return 'gemini';
+            if (lower.includes('gemma')) return 'gemma';
+            if (lower.includes('mistral')) return 'mistral';
+            if (lower.includes('nemotron')) return 'nemotron';
+            if (lower.includes('nova')) return 'nova';
+            return '';
+        }
+        
         function renderMultimodal(data) {
             if (!data) {
                 document.getElementById('multimodal-panel').innerHTML = '<div class="no-data">No multimodal extraction data</div>';
+                document.getElementById('multimodal-header').textContent = 'Multimodal Extraction';
                 return;
             }
             
+            // Update header with model name
+            const modelDisplay = data.model_display || 'Unknown Model';
+            document.getElementById('multimodal-header').textContent = `Multimodal (${modelDisplay})`;
+            
             if (data.error) {
-                document.getElementById('multimodal-panel').innerHTML = 
-                    `<div class="no-data">Error: ${escapeHtml(data.message || 'Unknown error')}</div>`;
+                const badgeClass = getModelBadgeClass(modelDisplay);
+                document.getElementById('multimodal-panel').innerHTML = `
+                    <div class="model-badge error ${badgeClass}">${escapeHtml(modelDisplay)} - ERROR</div>
+                    <div class="no-data">Error: ${escapeHtml(data.message || 'Unknown error')}</div>
+                `;
                 return;
             }
             
             let html = '';
+            
+            // Model badge - prominent at top
+            const badgeClass = getModelBadgeClass(modelDisplay);
+            html += `<div class="model-badge ${badgeClass}">${escapeHtml(modelDisplay)}</div>`;
             
             // Page type
             if (data.page_type) {
