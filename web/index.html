@@ -139,6 +139,62 @@
             border-radius: 3px;
             font-size: 11px;
         }
+        .type-tag {
+            background: #16a085;
+            color: white;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-size: 10px;
+            margin-right: 5px;
+        }
+        .extracted-images {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            gap: 10px;
+            margin-top: 10px;
+        }
+        .extracted-image-item {
+            background: #f0f0f0;
+            padding: 8px;
+            border-radius: 4px;
+            text-align: center;
+        }
+        .extracted-image-item img {
+            max-width: 100%;
+            max-height: 150px;
+            border: 1px solid #ddd;
+        }
+        .extracted-image-item .img-info {
+            font-size: 10px;
+            color: #666;
+            margin-top: 5px;
+        }
+        .visual-element {
+            background: #e8f4fd;
+            padding: 10px;
+            border-radius: 4px;
+            margin-bottom: 10px;
+            border-left: 3px solid #3498db;
+        }
+        .visual-element.architecture_diagram { border-left-color: #9b59b6; }
+        .visual-element.graph_chart { border-left-color: #e74c3c; }
+        .visual-element.table { border-left-color: #f39c12; }
+        .visual-element.results_figure { border-left-color: #27ae60; }
+        .visual-element.map, .visual-element.satellite_image { border-left-color: #1abc9c; }
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+            gap: 5px;
+            margin-top: 5px;
+        }
+        .metric-item {
+            background: #f8f9fa;
+            padding: 5px;
+            border-radius: 3px;
+            font-size: 11px;
+        }
+        .metric-item .metric-name { font-weight: bold; }
+        .metric-item .metric-value { color: #27ae60; }
         .stats {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
@@ -377,6 +433,11 @@
             
             let html = '';
             
+            // Page type
+            if (data.page_type) {
+                html += `<div class="section"><strong>Page Type:</strong> ${escapeHtml(data.page_type)}</div>`;
+            }
+            
             // Key concepts
             if (data.key_concepts && data.key_concepts.length > 0) {
                 html += `
@@ -384,6 +445,48 @@
                         <div class="section-title">Key Concepts</div>
                         <div class="key-concepts">
                             ${data.key_concepts.map(c => `<span class="concept-tag">${escapeHtml(c)}</span>`).join('')}
+                        </div>
+                    </div>
+                `;
+            }
+            
+            // Methods mentioned
+            if (data.methods_mentioned && data.methods_mentioned.length > 0) {
+                html += `
+                    <div class="section">
+                        <div class="section-title">Methods/Models</div>
+                        <div class="key-concepts">
+                            ${data.methods_mentioned.map(m => `<span class="concept-tag" style="background:#8e44ad">${escapeHtml(m)}</span>`).join('')}
+                        </div>
+                    </div>
+                `;
+            }
+            
+            // Datasets mentioned
+            if (data.datasets_mentioned && data.datasets_mentioned.length > 0) {
+                html += `
+                    <div class="section">
+                        <div class="section-title">Datasets</div>
+                        <div class="key-concepts">
+                            ${data.datasets_mentioned.map(d => `<span class="concept-tag" style="background:#16a085">${escapeHtml(d)}</span>`).join('')}
+                        </div>
+                    </div>
+                `;
+            }
+            
+            // Metrics reported
+            if (data.metrics_reported && data.metrics_reported.length > 0) {
+                html += `
+                    <div class="section">
+                        <div class="section-title">Metrics Reported</div>
+                        <div class="metrics-grid">
+                            ${data.metrics_reported.map(m => `
+                                <div class="metric-item">
+                                    <span class="metric-name">${escapeHtml(m.metric || '')}:</span>
+                                    <span class="metric-value">${escapeHtml(m.value || '')}</span>
+                                    ${m.context ? `<br><small>${escapeHtml(m.context)}</small>` : ''}
+                                </div>
+                            `).join('')}
                         </div>
                     </div>
                 `;
@@ -401,7 +504,34 @@
                 `;
             }
             
-            // Figures
+            // Visual Elements (new format)
+            if (data.visual_elements && data.visual_elements.length > 0) {
+                html += `
+                    <div class="section">
+                        <div class="section-title">Visual Elements (${data.visual_elements.length})</div>
+                        ${data.visual_elements.map(v => `
+                            <div class="visual-element ${v.type || ''}">
+                                <span class="type-tag">${escapeHtml(v.type || 'unknown')}</span>
+                                ${v.number ? `<strong>${escapeHtml(v.number)}</strong>` : ''}
+                                ${v.caption ? `<div class="caption">${escapeHtml(v.caption)}</div>` : ''}
+                                <div class="description">${escapeHtml(v.description || 'No description')}</div>
+                                ${v.components && v.components.length > 0 ? `
+                                    <div style="margin-top:5px;font-size:11px">
+                                        <strong>Components:</strong> ${v.components.map(c => escapeHtml(c)).join(', ')}
+                                    </div>
+                                ` : ''}
+                                ${v.data_summary ? `
+                                    <div style="margin-top:5px;font-size:11px">
+                                        <strong>Data:</strong> ${escapeHtml(v.data_summary)}
+                                    </div>
+                                ` : ''}
+                            </div>
+                        `).join('')}
+                    </div>
+                `;
+            }
+            
+            // Legacy figures format (backward compatibility)
             if (data.figures && data.figures.length > 0) {
                 html += `
                     <div class="section">
@@ -416,8 +546,24 @@
                 `;
             }
             
-            // Tables
-            if (data.tables && data.tables.length > 0) {
+            // Structured tables
+            if (data.tables_structured && data.tables_structured.length > 0) {
+                html += `
+                    <div class="section">
+                        <div class="section-title">Tables (${data.tables_structured.length})</div>
+                        ${data.tables_structured.map(t => `
+                            <div class="figure-item">
+                                <div class="caption">${escapeHtml(t.number || 'Table')}: ${escapeHtml(t.caption || '')}</div>
+                                ${t.headers ? `<div style="font-size:11px;margin-top:5px"><strong>Headers:</strong> ${t.headers.map(h => escapeHtml(h)).join(' | ')}</div>` : ''}
+                                ${t.key_findings ? `<div style="font-size:11px;margin-top:5px"><strong>Key findings:</strong> ${escapeHtml(t.key_findings)}</div>` : ''}
+                            </div>
+                        `).join('')}
+                    </div>
+                `;
+            }
+            
+            // Legacy tables format (backward compatibility)
+            if (data.tables && data.tables.length > 0 && !data.tables_structured) {
                 html += `
                     <div class="section">
                         <div class="section-title">Tables (${data.tables.length})</div>
@@ -426,6 +572,43 @@
                                 <div class="caption">Table ${t.number}: ${escapeHtml(t.caption || '')}</div>
                             </div>
                         `).join('')}
+                    </div>
+                `;
+            }
+            
+            // Equations
+            if (data.equations && data.equations.length > 0) {
+                html += `
+                    <div class="section">
+                        <div class="section-title">Equations (${data.equations.length})</div>
+                        ${data.equations.map(e => `
+                            <div class="figure-item">
+                                ${e.latex ? `<code style="background:#f0f0f0;padding:2px 5px">${escapeHtml(e.latex)}</code>` : ''}
+                                <div class="description">${escapeHtml(e.description || '')}</div>
+                            </div>
+                        `).join('')}
+                    </div>
+                `;
+            }
+            
+            // Extracted images from PDF
+            if (data.extracted_images && data.extracted_images.length > 0) {
+                html += `
+                    <div class="section">
+                        <div class="section-title">Extracted Images (${data.extracted_images.length})</div>
+                        <div class="extracted-images">
+                            ${data.extracted_images.map(img => `
+                                <div class="extracted-image-item">
+                                    <img src="data/images/${img.filename}" alt="${escapeHtml(img.filename)}" 
+                                         onerror="this.style.display='none'; this.nextElementSibling.style.display='block'">
+                                    <div style="display:none;color:#999;font-size:10px">Image not found</div>
+                                    <div class="img-info">
+                                        ${img.width}x${img.height} ${img.format}<br>
+                                        ${(img.size_bytes / 1024).toFixed(1)} KB
+                                    </div>
+                                </div>
+                            `).join('')}
+                        </div>
                     </div>
                 `;
             }

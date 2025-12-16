@@ -60,16 +60,70 @@ osgeo-library/
 
 ---
 
+## 2025-12-16: Image Extraction and Enhanced Visual Element Classification
+
+### What we did
+
+1. **Added image extraction from PDFs**
+   - `extract_multimodal.py` now extracts embedded images from each page
+   - Images saved to `images/` subdirectory with naming: `{pdf}_p{page}_img{n}.{ext}`
+   - Skips tiny images (<50px) like icons and bullets
+   - Records image metadata: size, format, position on page
+
+2. **Enhanced visual element classification**
+   - Prompt now asks Gemini to categorize each visual element:
+     - `architecture_diagram` - Model architectures, system diagrams
+     - `flowchart` - Process flows
+     - `graph_chart` - Bar, line, scatter charts with axes/data
+     - `results_figure` - Comparison visualizations
+     - `map` / `satellite_image` - Geographic content
+     - `table` - Structured data
+     - `equation` - Mathematical content
+   - Extracts structured table data (headers, rows, key findings)
+   - Extracts reported metrics with context
+   - Lists methods/models and datasets mentioned
+
+3. **Updated web viewer**
+   - Displays extracted images in a grid
+   - Shows visual element types with color-coded tags
+   - Displays structured table data
+   - Shows reported metrics (e.g., "mAP: 0.85 on COCO")
+   - Backward compatible with old extraction format
+
+### New command options
+
+```bash
+# Extract with image extraction (default)
+.venv/bin/python extract_multimodal.py /path/to/paper.pdf --pages 2,3,4 --model gemini
+
+# Skip image extraction
+.venv/bin/python extract_multimodal.py /path/to/paper.pdf --pages 2,3,4 --no-images
+
+# Specify output directory for images
+.venv/bin/python extract_multimodal.py /path/to/paper.pdf --output-dir ./output
+```
+
+### Recommended test pages for SAM3 paper
+
+Based on typical paper structure, try these pages for variety:
+- Page 2-3: Architecture diagram (Figure 2 usually)
+- Page 5-7: Method details, possibly equations
+- Page 8-10: Results tables and comparison charts
+- Page 12-14: Ablation studies, more tables/graphs
+
+---
+
 ## Next Steps
 
 ### Immediate
-- [ ] Colleagues evaluate extraction quality using comparison website
+- [x] Colleagues evaluate extraction quality using comparison website
 - [ ] Extract more pages when API rate limits reset
+- [ ] Test on diverse pages (architecture, tables, results)
 - [ ] Test second PDF sample (2403.04385.pdf)
 
 ### Short term
 - [ ] Design `osgeo_research_kb` database schema
-- [ ] Extract individual figures (not just page images)
+- [x] Extract individual figures (not just page images)
 - [ ] Add vector embeddings for semantic search
 
 ### Long term

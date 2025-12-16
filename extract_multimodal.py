@@ -37,34 +37,69 @@ Please extract and describe ALL content on this page in detail:
 
 1. **Text Content**: Extract all readable text, preserving structure (headings, paragraphs, lists).
 
-2. **Figures and Diagrams**: For each figure:
-   - Figure number and caption
-   - Detailed description of what the figure shows
-   - If it's an architecture diagram: describe the components and data flow
-   - If it's a results visualization: describe what is being compared and key findings
-   - If it's a map or satellite image: describe the geographic content and features shown
+2. **Visual Elements**: Identify and categorize ALL visual elements. For EACH visual element, specify:
+   - **type**: One of: "architecture_diagram", "flowchart", "graph_chart", "results_figure", "map", "satellite_image", "photo", "table", "equation", "other"
+   - **number**: Figure/Table number if labeled (e.g., "Figure 1", "Table 2")
+   - **caption**: The caption text if present
+   - **description**: Detailed description of what it shows
+   
+   For specific types, include additional details:
+   - **architecture_diagram**: List components, connections, data flow direction
+   - **graph_chart**: Chart type (bar, line, scatter, etc.), axes labels, data series, key trends
+   - **results_figure**: What is being compared, metrics shown, best/worst performers
+   - **table**: Headers, row labels, key values, what the data represents
+   - **map/satellite_image**: Geographic region, features visible, scale if shown
 
-3. **Tables**: Extract table data in a structured format, including:
-   - Column headers
-   - Row data
-   - Any notable patterns or key values
+3. **Tables**: For each table, extract structured data:
+   - headers (column names)
+   - rows (as arrays)
+   - summary of what the table shows
 
-4. **Equations**: Describe any mathematical equations and their meaning in context.
+4. **Equations**: For mathematical content:
+   - LaTeX representation if possible
+   - Plain text description of what it computes
+   - Variable definitions
 
-5. **Key Information**: Note any:
-   - Method names or model architectures
-   - Dataset names
-   - Benchmark results or metrics
-   - Citations to other works
+5. **Key Information**:
+   - Method/model names and architectures
+   - Dataset names and sizes
+   - Benchmark results (metrics, scores)
+   - Notable citations
 
-Output in JSON format with these fields:
+Output in JSON format:
 {
-  "page_type": "title|content|results|references|appendix",
-  "text_content": "full extracted text",
-  "figures": [{"number": "1", "caption": "...", "description": "detailed description"}],
-  "tables": [{"number": "1", "caption": "...", "headers": [...], "data": [...]}],
-  "equations": [{"id": "1", "latex": "...", "description": "..."}],
+  "page_type": "title|abstract|methodology|results|discussion|references|appendix",
+  "text_content": "full extracted text preserving structure",
+  "visual_elements": [
+    {
+      "type": "architecture_diagram|flowchart|graph_chart|results_figure|map|satellite_image|photo|table|equation|other",
+      "number": "Figure 1",
+      "caption": "caption text",
+      "description": "detailed description",
+      "components": ["for diagrams: list of components"],
+      "data_summary": "for charts/tables: summary of data shown"
+    }
+  ],
+  "tables_structured": [
+    {
+      "number": "Table 1",
+      "caption": "caption",
+      "headers": ["col1", "col2"],
+      "rows": [["val1", "val2"]],
+      "key_findings": "summary of important values"
+    }
+  ],
+  "equations": [
+    {
+      "number": "1",
+      "latex": "LaTeX if possible",
+      "description": "what it computes"
+    }
+  ],
   "key_concepts": ["concept1", "concept2"],
+  "methods_mentioned": ["method names"],
+  "datasets_mentioned": ["dataset names"],
+  "metrics_reported": [{"metric": "mAP", "value": "0.85", "context": "on COCO"}],
   "citations_mentioned": ["Author et al., 2023"]
 }
 """
@@ -96,6 +131,94 @@ def pdf_page_to_base64(doc: fitz.Document, page_num: int, dpi: int = 150) -> str
     pix = page.get_pixmap(matrix=mat)
     img_bytes = pix.tobytes("png")
     return base64.b64encode(img_bytes).decode("utf-8")
+
+
+def extract_images_from_page(
+    doc: fitz.Document,
+    page_num: int,
+    output_dir: Path,
+    pdf_name: str,
+    min_size: int = 50,
+) -> list[dict]:
+    """
+    Extract embedded images from a PDF page and save them.
+
+    Args:
+        doc: PyMuPDF document
+        page_num: 0-indexed page number
+        output_dir: Directory to save images
+        pdf_name: Base name of PDF for naming images
+        min_size: Minimum dimension (width or height) to include image
+
+    Returns:
+        List of dicts with image metadata
+    """
+    page = doc[page_num]
+    images_info = []
+
+    # Get all images on the page
+    image_list = page.get_images(full=True)
+
+    for img_idx, img_info in enumerate(image_list):
+        xref = img_info[0]  # Image xref
+
+        try:
+            # Extract image
+            base_image = doc.extract_image(xref)
+            image_bytes = base_image["image"]
+            image_ext = base_image["ext"]
+            width = base_image["width"]
+            height = base_image["height"]
+            colorspace = base_image.get("colorspace", "unknown")
+
+            # Skip tiny images (likely icons, bullets, etc.)
+            if width < min_size or height < min_size:
+                continue
+
+            # Generate filename
+            img_filename = (
+                f"{pdf_name}_p{page_num + 1:03d}_img{img_idx + 1:02d}.{image_ext}"
+            )
+            img_path = output_dir / img_filename
+
+            # Save image
+            with open(img_path, "wb") as f:
+                f.write(image_bytes)
+
+            # Get image position on page (bounding box)
+            bbox = None
+            for img_rect in page.get_image_rects(xref):
+                bbox = {
+                    "x0": round(img_rect.x0, 2),
+                    "y0": round(img_rect.y0, 2),
+                    "x1": round(img_rect.x1, 2),
+                    "y1": round(img_rect.y1, 2),
+                }
+                break  # Take first rect
+
+            images_info.append(
+                {
+                    "filename": img_filename,
+                    "path": str(img_path),
+                    "width": width,
+                    "height": height,
+                    "format": image_ext,
+                    "colorspace": colorspace,
+                    "size_bytes": len(image_bytes),
+                    "bbox": bbox,
+                    "xref": xref,
+                }
+            )
+
+        except Exception as e:
+            # Some images may fail to extract (e.g., inline images, special formats)
+            print(
+                f"  Warning: Could not extract image {img_idx} from page {page_num + 1}: {e}",
+                file=sys.stderr,
+            )
+            continue
+
+    return images_info
 
 
 def call_vision_model(
@@ -173,6 +296,9 @@ def extract_page_multimodal(
     api_key: str,
     model: str,
     dpi: int = 150,
+    output_dir: Path | None = None,
+    pdf_name: str = "pdf",
+    extract_images: bool = True,
 ) -> dict:
     """Extract content from a single page using multimodal vision model."""
 
@@ -182,11 +308,23 @@ def extract_page_multimodal(
     # Call vision model
     result = call_vision_model(api_key, image_base64, model)
 
-    return {
+    page_result = {
         "page_number": page_num + 1,
         "extraction_result": result,
         "image_size_bytes": len(image_base64) * 3 // 4,  # Approximate decoded size
     }
+
+    # Extract embedded images if requested and output_dir provided
+    if extract_images and output_dir is not None:
+        images_info = extract_images_from_page(doc, page_num, output_dir, pdf_name)
+        page_result["extracted_images"] = images_info
+        if images_info:
+            print(
+                f"  Extracted {len(images_info)} images from page {page_num + 1}",
+                file=sys.stderr,
+            )
+
+    return page_result
 
 
 def extract_pdf_multimodal(
@@ -196,10 +334,20 @@ def extract_pdf_multimodal(
     pages: list[int] | None = None,
     dpi: int = 150,
     delay: float = 3.0,
+    output_dir: Path | None = None,
+    extract_images: bool = True,
 ) -> dict:
     """Extract content from PDF using multimodal vision model."""
 
     doc = fitz.open(pdf_path)
+
+    # Create output directory for images if needed
+    pdf_name = pdf_path.stem  # Filename without extension
+    if extract_images and output_dir is not None:
+        images_dir = output_dir / "images"
+        images_dir.mkdir(parents=True, exist_ok=True)
+    else:
+        images_dir = None
 
     result = {
         "source_file": str(pdf_path),
@@ -214,6 +362,7 @@ def extract_pdf_multimodal(
         "pages": [],
         "api_calls": 0,
         "errors": [],
+        "images_extracted": 0,
     }
 
     # Determine which pages to extract
@@ -227,9 +376,22 @@ def extract_pdf_multimodal(
     for i, page_num in enumerate(pages_to_extract):
         print(f"Processing page {page_num + 1}/{len(doc)}...", file=sys.stderr)
 
-        page_result = extract_page_multimodal(doc, page_num, api_key, model, dpi)
+        page_result = extract_page_multimodal(
+            doc,
+            page_num,
+            api_key,
+            model,
+            dpi,
+            output_dir=images_dir,
+            pdf_name=pdf_name,
+            extract_images=extract_images,
+        )
         result["pages"].append(page_result)
         result["api_calls"] += 1
+
+        # Count extracted images
+        if "extracted_images" in page_result:
+            result["images_extracted"] += len(page_result["extracted_images"])
 
         if "error" in page_result.get("extraction_result", {}):
             result["errors"].append(
@@ -290,6 +452,17 @@ def main():
         default=None,
         help="Output JSON file (default: stdout)",
     )
+    parser.add_argument(
+        "--output-dir",
+        type=Path,
+        default=None,
+        help="Directory to save extracted images (default: same as --output or current dir)",
+    )
+    parser.add_argument(
+        "--no-images",
+        action="store_true",
+        help="Skip extracting embedded images from pages",
+    )
 
     args = parser.parse_args()
 
@@ -308,8 +481,20 @@ def main():
     # Get model ID
     model = VISION_MODELS[args.model]
 
+    # Determine output directory for images
+    output_dir = args.output_dir
+    if output_dir is None and args.output:
+        output_dir = args.output.parent
+    if output_dir is None:
+        output_dir = Path.cwd()
+
+    extract_images = not args.no_images
+
     print(f"Extracting with model: {model}", file=sys.stderr)
     print(f"Pages: {pages or 'all'}", file=sys.stderr)
+    print(f"Extract images: {extract_images}", file=sys.stderr)
+    if extract_images:
+        print(f"Images output dir: {output_dir / 'images'}", file=sys.stderr)
 
     result = extract_pdf_multimodal(
         args.pdf_path,
@@ -318,6 +503,8 @@ def main():
         pages=pages,
         dpi=args.dpi,
         delay=args.delay,
+        output_dir=output_dir,
+        extract_images=extract_images,
     )
 
     # Output JSON
@@ -333,6 +520,7 @@ def main():
     print(f"\nSummary:", file=sys.stderr)
     print(f"  Pages processed: {len(result['pages'])}", file=sys.stderr)
     print(f"  API calls: {result['api_calls']}", file=sys.stderr)
+    print(f"  Images extracted: {result['images_extracted']}", file=sys.stderr)
     print(f"  Errors: {len(result['errors'])}", file=sys.stderr)
 
 

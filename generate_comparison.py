@@ -70,6 +70,13 @@ def load_multimodal_extraction(json_path: Path, page_num: int) -> dict | None:
                 }
 
             extracted = result.get("data", {})
+            if extracted is None:
+                extracted = {}
+
+            # Include extracted images info if present
+            if page.get("extracted_images"):
+                extracted["extracted_images"] = page["extracted_images"]
+
             if extracted:
                 return extracted
 
