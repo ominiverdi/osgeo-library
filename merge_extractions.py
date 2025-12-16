@@ -251,8 +251,8 @@ def main():
             traditional_cache[page_num] = extract_traditional_page(
                 doc,
                 page_num - 1,
-                output_dir=images_dir,
-                pdf_name=pdf_name,
+                output_dir=extracted_images_dir,
+                pdf_name=pdf_stem,
             )
 
         for extraction in all_extractions[page_num]:
