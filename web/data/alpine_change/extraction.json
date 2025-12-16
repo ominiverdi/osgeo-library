@@ -1,0 +1,218 @@
+{
+  "document": "2511.00073v1",
+  "source_file": "2511.00073v1.pdf",
+  "extraction_date": "2025-12-16T18:30:05.288086",
+  "model": "qwen3-vl-32b",
+  "pages": [
+    {
+      "page_number": 6,
+      "image": "page_06.png",
+      "annotated_image": "page_06_annotated.png",
+      "width": 1275,
+      "height": 1650,
+      "text": "particularly for detecting complex land-use changes and vegetation phenological patterns [22]. By\nleveraging our multi-temporal HabitAlp dataset with documented changes between 2003, 2013, and\n2020, we are able to evaluate and compare these different architectural paradigms in a real-world\noperational context, aligning with the growing call in the community to move beyond pure accuracy\nmetrics towards more holistic, impact-driven assessments of model reliability for specific applications\nlike conservation management [35].\nIn conclusion, there is a considerable body of research out there evolving fast with many GFM\nstudies demonstrating strong capability on land-cover and semantic segmentation tasks. However, as\nof October 2025, there are very limited peer-reviewed studies that focus on fine ecological habitat\ntypes used in conservation practice and the use of GFMs end-to-end is still sparse. We therefore\nbelieve our study to show the currently achievable level of accuracy for multiple fine ecological classes\nand to point the direction of improvements needed for a more operational implementation.\n3\nMethodology\n3.1\nStudy site and Datasets\nThe study area, shown in Fig. 1, encompasses the Gesäuse National Park in Styria, Austria,\nincluding the national park itself, the Natura 2000 protected area Ennstaler Alpen/Gesäuse and\nthe Johnsbachtal catchment, located south of the protected site. This area is also a site in the\nEuropean Long-Term Ecosystem Research (eLTER) network [36]. The region features extensive\nforests, dynamic waterways, alpine meadows, and rocky landscapes [37]. Forest management is\ngenerally limited to necessary safety logging around infrastructure and some assisted transformation\nto a more natural tree species composition by removing formerly planted spruces. Approximately\n70% of the forest within the national park is protected biotope forest, where natural processes,\nsuch as bark beetle infestations, are allowed to proceed without human intervention [38]. These\nmanagement regulations enable the occurrence of rare ecological dynamics not commonly found in\nother areas of Austria.\nFigure 1: Map of the study area\n6\n",
+      "text_length": 2162,
+      "elements": [
+        {
+          "type": "figure",
+          "bbox_1000": [
+            202,
+            576,
+            805,
+            835
+          ],
+          "bbox_pixels": [
+            257,
+            950,
+            1026,
+            1377
+          ],
+          "label": "Figure 1",
+          "description": "Map of the study area showing the Gesäuse National Park in Styria, Austria, with overlays indicating the HabitAlp Dataset 2013 (blue), Cross-Temporal Dataset 2020 (orange), and the study area (red). The map includes a small inset of Austria with a red dot marking the location of the study area, a north arrow, and a scale bar (0–4 km).",
+          "crop_path": "elements/p06_figure_1_Figure_1.png"
+        }
+      ],
+      "extraction_time_seconds": 49.28,
+      "total_page_time_seconds": 49.47
+    },
+    {
+      "page_number": 9,
+      "image": "page_09.png",
+      "annotated_image": "page_09_annotated.png",
+      "width": 1275,
+      "height": 1650,
+      "text": "Figure 2: Flow chart of the experimental framework\n9\n",
+      "text_length": 53,
+      "elements": [
+        {
+          "type": "figure",
+          "bbox_1000": [
+            109,
+            97,
+            890,
+            852
+          ],
+          "bbox_pixels": [
+            138,
+            160,
+            1134,
+            1405
+          ],
+          "label": "Figure 2",
+          "description": "Flow chart of the experimental framework showing the process from input data processing and labels processing to model training, change map generation, and model evaluation. It includes two approaches: Post-Classification CD and Direct CD (RGB only), with various models like Prithvi-EO-2.0, Clay 1.0, U-Net, and ChangeViT. The diagram also includes training and test sets, saved model states, and evaluation metrics such as IOU, OA, and F1 Score.",
+          "crop_path": "elements/p09_figure_1_Figure_2.png"
+        }
+      ],
+      "extraction_time_seconds": 51.63,
+      "total_page_time_seconds": 51.76
+    },
+    {
+      "page_number": 13,
+      "image": "page_13.png",
+      "annotated_image": "page_13_annotated.png",
+      "width": 1275,
+      "height": 1650,
+      "text": "Figure 3: Binary change detection performance comparison across test scenarios\nFigure 4: Multi-class change detection performance comparison across test scenarios\n4.1.1\nIn-Domain Performance (2003-2013)\nFor binary change detection, both the baseline and foundation model approaches in the post-\nclassification CD achieved 67% overall accuracy, with Clay 1.0 showing slightly better macro IoU\n(0.35) compared to U-Net (0.34); see Table 5. The direct change detection U-Net approach also\nachieved 67% accuracy and a significantly better IoU score (0.53). ChangeViT showed lower accuracy\n(50%) and 0.44 IoU.\nFor multi-class change detection, the post-classification paradigm demonstrated clear accuracy\nadvantages with Clay 1.0 achieving the highest performance with 51% overall accuracy and 0.19\nmacro IoU, outperforming both the U-Net baseline (41% accuracy, 0.14 IoU) and Prithvi (46%\naccuracy, 0.15 IoU). The U-Net direct change detection achieved only 28% overall accuracy, while\nIoU is the same as for Clay. All results are given in Table 5 and visual examples comparing Clay’s\npost classification map with U-Net’s direct change detection result are shown in Fig. 5.\n13\n",
+      "text_length": 1173,
+      "elements": [
+        {
+          "type": "figure",
+          "bbox_1000": [
+            228,
+            87,
+            751,
+            339
+          ],
+          "bbox_pixels": [
+            290,
+            143,
+            957,
+            559
+          ],
+          "label": "Figure 3",
+          "description": "Binary change detection performance comparison across test scenarios, showing two radar charts: In-Domain Test Scenario (2003-2013) and Cross-Temporal Test Scenario (2013-2020). Each chart plots three metrics: Macro IoU, Overall Accuracy, and Macro F1-Score, with different methods represented by colored lines and markers (U-Net, Clay 1.0, Prithvi, U-Net Change, ChangeViT).",
+          "crop_path": "elements/p13_figure_1_Figure_3.png"
+        },
+        {
+          "type": "figure",
+          "bbox_1000": [
+            228,
+            397,
+            751,
+            648
+          ],
+          "bbox_pixels": [
+            290,
+            655,
+            957,
+            1069
+          ],
+          "label": "Figure 4",
+          "description": "Multi-class change detection performance comparison across test scenarios, showing two radar charts: In-Domain Test Scenario (2003-2013) and Cross-Temporal Test Scenario (2013-2020). Each chart plots the same three metrics as Figure 3, with methods represented by colored lines and markers (U-Net, Clay 1.0, Prithvi, U-Net Change).",
+          "crop_path": "elements/p13_figure_2_Figure_4.png"
+        }
+      ],
+      "extraction_time_seconds": 82.29,
+      "total_page_time_seconds": 82.44
+    },
+    {
+      "page_number": 14,
+      "image": "page_14.png",
+      "annotated_image": "page_14_annotated.png",
+      "width": 1275,
+      "height": 1650,
+      "text": "Table 5: Overall Performance metrics for in-domain test scenario 2003-2013\nBinary\nMulti-Class\nApproach\nMethod\nOverall\nMacro\nMacro\nOverall\nMacro\nMacro\nAccuracy (%)\nIoU\nF1-Score Accuracy (%)\nIoU\nF1-Score\nPost-\nclassification\nU-Net\n0.67\n0.34\n0.47\n0.41\n0.14\n0.22\nClay 1.0\n0.67\n0.35\n0.49\n0.51\n0.19\n0.28\nPrithvi\n0.65\n0.30\n0.44\n0.46\n0.15\n0.24\nDirect\nChange\nU-Net Change\n0.67\n0.53\n0.65\n0.28\n0.19\n0.26\nChangeVIT\n0.50\n0.44\n0.50\n-\n-\n-\nFigure 5: Visual comparison of change mapping between best performers (In-domain test dataset\n2003-2013)\n4.1.2\nCross-Temporal Performance (2013-2020)\nFor binary change detection, both Clay 1.0 and Prithvi achieved 56% accuracy on the 2020 dataset,\nthough Clay demonstrated higher macro IoU (0.34 vs 0.31) and F1-Score (0.51 vs 0.47). U-Net\ndirect change detection achieved 52% binary accuracy, comparable to ChangeViT’s 50%. Clay’s 11\npercentage-point drop from in-domain performance to cross-temporal performance (see Tables 5\nand 6) was comparable to Prithvi’s 9-point drop, while U-Net post-classification showed the largest\ndegradation at 18 points (from 67% to 49%). U-Net direct change showed a slight improvement from\n48% to 52%, while ChangeViT maintained 50% binary accuracy across both test sets. All results are\nshown in Table 6.\nFor multi-class change detection on the 2020 dataset, all models experienced severe performance\ndegradation compared to the binary CD results. Prithvi achieved the highest multi-class overall\naccuracy at 37%, followed by Clay 1.0 at 33% and U-Net at 23%. However, Clay maintained the\nhighest macro IoU at 0.14 compared to Prithvi’s 0.12 and U-Net post-classification’s 0.05. U-Net\ndirect change detection produced multi-class results on the 2020 dataset (20% accuracy, 0.1 IoU),\nshowing slightly lower performance compared to the 2003-2013 results (28% accuracy, 0.19 IoU).\n14\n",
+      "text_length": 1842,
+      "elements": [
+        {
+          "type": "figure",
+          "bbox_1000": [
+            165,
+            290,
+            828,
+            554
+          ],
+          "bbox_pixels": [
+            210,
+            478,
+            1055,
+            914
+          ],
+          "label": "Figure 5",
+          "description": "Visual comparison of change mapping between best performers for the in-domain test dataset 2003-2013, showing RGB images from 2003 and 2013, ground truth, and predictions from post-classification (Clay v1.0) and direct change (U-Net) methods, with a legend for different forest change classes.",
+          "crop_path": "elements/p14_figure_1_Figure_5.png"
+        },
+        {
+          "type": "table",
+          "bbox_1000": [
+            158,
+            104,
+            841,
+            264
+          ],
+          "bbox_pixels": [
+            201,
+            171,
+            1072,
+            435
+          ],
+          "label": "Table 5",
+          "description": "Overall Performance metrics for in-domain test scenario 2003-2013, comparing binary and multi-class results for different approaches (Post-classification and Direct Change) and methods (U-Net, Clay 1.0, Prithvi, ChangeVIT) across Overall Accuracy, Macro IoU, and Macro F1-Score.",
+          "crop_path": "elements/p14_table_2_Table_5.png"
+        }
+      ],
+      "extraction_time_seconds": 73.34,
+      "total_page_time_seconds": 73.54
+    },
+    {
+      "page_number": 15,
+      "image": "page_15.png",
+      "annotated_image": "page_15_annotated.png",
+      "width": 1275,
+      "height": 1650,
+      "text": "Visual example maps comparing the best post-classification and direct change detection approaches\nare shown in Fig. 6.\nTable 6: Overall Performance metrics for cross-temporal test set 2013-2020\nBinary\nMulti-Class\nApproach\nMethod\nOverall\nMacro\nMacro\nOverall\nMacro\nMacro\nAccuracy (%)\nIoU\nF1-Score Accuracy (%)\nIoU\nF1-Score\nPost-\nclassification\nU-Net\n0.49\n0.21\n0.34\n0.23\n0.05\n0.1\nClay 1.0\n0.56\n0.34\n0.51\n0.33\n0.14\n0.22\nPrithvi\n0.56\n0.31\n0.47\n0.37\n0.12\n0.21\nDirect\nChange\nU-Net Change\n0.52\n0.38\n0.51\n0.20\n0.1\n0.15\nChangeVIT\n0.50\n0.36\n0.47\n-\n-\n-\nFigure 6: Visual comparison of change mapping between best performers (Cross-temporal test\ndataset 2013-2020)\n4.1.3\nChange Transition Class Performance (2003-2013)\nNext, we evaluate the performance for the individual change transition classes for the two best\nperforming models. As shown in Table 7, the post-classification approach (Clay v1.0) achieves higher\nIoU scores across most transition classes than the direct change detection method. It seems that\nperformance is correlated with the frequency/occurrence area of each transition class. The highest\nscore is unsurprisingly achieved within the “No Change” class, comprising 90.9 percent coverage of\nthe total area. Only “Mature forest with canopy cover loss” and “Clearcut” surpass an IoU of 0.2,\nwhile all other rare transitions yield much lower scores. The U-Net-based change detection approach\nyields higher scores than Clay for four classes, including “No Change”.\n15\n",
+      "text_length": 1470,
+      "elements": [
+        {
+          "type": "figure",
+          "bbox_1000": [
+            165,
+            344,
+            825,
+            608
+          ],
+          "bbox_pixels": [
+            210,
+            567,
+            1051,
+            1003
+          ],
+          "label": "Figure 6",
+          "description": "Visual comparison of change mapping between best performers (Cross-temporal test dataset 2013-2020), showing RGB images from 2013 and 2020, ground truth, post-classification results (Clay v1.0), and direct change detection results (U-Net). Includes a legend for different land cover/change classes.",
+          "crop_path": "elements/p15_figure_1_Figure_6.png"
+        },
+        {
+          "type": "table",
+          "bbox_1000": [
+            157,
+            158,
+            840,
+            317
+          ],
+          "bbox_pixels": [
+            200,
+            260,
+            1071,
+            523
+          ],
+          "label": "Table 6",
+          "description": "Overall Performance metrics for cross-temporal test set 2013-2020, comparing post-classification and direct change detection approaches using metrics such as Overall Accuracy (%), Macro IoU, and Macro F1-Score for both Binary and Multi-Class classification. Methods include U-Net, Clay 1.0, Prithvi, U-Net Change, and ChangeVIT.",
+          "crop_path": "elements/p15_table_2_Table_6.png"
+        }
+      ],
+      "extraction_time_seconds": 75.21,
+      "total_page_time_seconds": 75.39
+    }
+  ],
+  "timing": {}
+}
