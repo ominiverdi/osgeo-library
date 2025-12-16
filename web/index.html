@@ -336,14 +336,15 @@
             const select = document.getElementById('pdf-select');
             select.innerHTML = '<option value="">-- Select PDF --</option>';
             
-            for (const pdfName in comparisonData.pdfs) {
+            const pdfNames = Object.keys(comparisonData.pdfs);
+            for (const pdfName of pdfNames) {
                 const option = document.createElement('option');
                 option.value = pdfName;
                 option.textContent = pdfName;
                 select.appendChild(option);
             }
             
-            select.addEventListener('change', (e) => {
+            select.onchange = (e) => {
                 currentPdf = e.target.value;
                 currentPageKey = null;
                 currentModelFilter = '';
@@ -351,7 +352,16 @@
                 populateModelFilter();
                 populatePageSelect();
                 renderComparison();
-            });
+            };
+            
+            // Auto-select first PDF if only one
+            if (pdfNames.length === 1) {
+                currentPdf = pdfNames[0];
+                select.value = currentPdf;
+                populateModelFilter();
+                populatePageSelect();
+                renderComparison();
+            }
         }
         
         function populateModelFilter() {
@@ -377,12 +387,12 @@
                 select.appendChild(option);
             }
             
-            select.addEventListener('change', (e) => {
+            select.onchange = (e) => {
                 currentModelFilter = e.target.value;
                 currentPageKey = null;  // Reset page selection
                 populatePageSelect();
                 renderComparison();
-            });
+            };
         }
         
         function getFilteredPages(pages) {
@@ -415,10 +425,10 @@
                 select.appendChild(option);
             }
             
-            select.addEventListener('change', (e) => {
+            select.onchange = (e) => {
                 currentPageKey = e.target.value;
                 renderComparison();
-            });
+            };
             
             // Select first page
             if (filteredKeys.length > 0) {
