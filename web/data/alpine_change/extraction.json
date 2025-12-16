@@ -1,8 +1,8 @@
 {
   "document": "2511.00073v1",
   "source_file": "2511.00073v1.pdf",
-  "extraction_date": "2025-12-16T18:30:05.288086",
-  "model": "qwen3-vl-32b",
+  "extraction_date": "2025-12-16T21:42:18.357247",
+  "model": "qwen3-vl-235b",
   "pages": [
     {
       "page_number": 6,
@@ -36,6 +36,86 @@
       "total_page_time_seconds": 49.47
     },
     {
+      "page_number": 7,
+      "image": "page_07.png",
+      "annotated_image": "page_07_annotated.png",
+      "width": 1275,
+      "height": 1650,
+      "text": "Table 1: Temporal data availability for study site\nData Type\nResolution\n2003/04\n2010/11\n2013\n2019\n2020\n2022/24\nRGB\n20 cm\n✓\n-\n✓\n✓\n-\n✓\nCIR\n20 cm\n-\n-\n✓\n✓\n-\n✓\nLiDARa\n1 m\n-\n✓\n-\n-\n✓b\n-\na Includes DEM, DSM, nDSM, slope, aspect and terrain roughness\nb Partial coverage\n3.1.1\nRemote Sensing Data\nA diverse set of remote sensing data forms the database for this study:\n• Aerial Imagery: High-resolution (20cm) RGB and CIR aerial orthophotos are available for\nthe years 2003/04 (except CIR), 2013, 2019, and 2022, sourced from GIS Steiermark [39].\n• Height data: Airborne LiDAR datasets from 2010/11 and 2020 (partial coverage) are used.\nMore specifically, we use the derived products Digital Terrain Model (DTM), Digital Surface\nModel (DSM), and normalized DSM (nDSM; equivalent to height above ground) at 1 m ground\nresolution, sourced from GIS Steiermark. Furthermore, we derived terrain parameters from\nthe LiDAR data, including slope, aspect, and terrain roughness [40].\nAll geospatial data use the Universal Transverse Mercator (UTM) Coordinate System, zone 33N\n(EPSG:32633). The temporal availability of these datasets is summarized in Table 1.\n3.1.2\nReference Data\nThe ground truth labels are derived from the HabitAlp dataset, covering the Gesäuse National\nPark and the Natura 2000 area, totaling approximately 154 km². The mapped attributes include\necological habitat types, natural processes, tree species composition, deadwood occurrence, and other\necological indicators. This dataset is comprised of 30,241 polygons mapped by aerial photo stereo\ninterpretation for the years 1954, 2003, and 2013 by Hoffert and Anfang (2006) [41] and Hauenstein\nand Indra-Camathias (2018) [42].\nThe original habitat classification scheme comprising 115 classes was reclassified into 23 classes to\noptimize class balance and emphasize forest structural diversity for subsequent analysis, see Table 2.\nBetween 2003 and 2013, 4,480 polygons—covering 15.3 km²—exhibited detected changes. Change\ntransitions between the 23 classes were further aggregated into 8 generalized transition categories\nfor multi-class CD, see Table 3. Since CIR and elevation data are not available for 2003, four areas\nwithin the national park were additionally mapped for 2020 following the 23-class scheme to support\nthe training & evaluation of the direct CD approach.\n7\n",
+      "text_length": 2332,
+      "elements": [
+        {
+          "type": "table",
+          "bbox_1000": [
+            188,
+            96,
+            810,
+            200
+          ],
+          "bbox_pixels": [
+            239,
+            158,
+            1032,
+            330
+          ],
+          "label": "Table 1",
+          "description": "Table showing temporal data availability for study site, listing data types (RGB, CIR, LiDAR), their resolutions, and availability across years (2003/04, 2010/11, 2013, 2019, 2020, 2022/24) with checkmarks indicating presence and dashes indicating absence. Footnotes explain that LiDAR includes DEM, DSM, nDSM, slope, aspect, and terrain roughness, and that 2020 coverage is partial.",
+          "crop_path": "elements/p07_table_1_Table_1.png"
+        }
+      ],
+      "extraction_time_seconds": 68.57,
+      "total_page_time_seconds": 68.68
+    },
+    {
+      "page_number": 8,
+      "image": "page_08.png",
+      "annotated_image": "page_08_annotated.png",
+      "width": 1275,
+      "height": 1650,
+      "text": "Table 2: New target classes and dataset statistics\nClass Name (CC = canopy cover in %)\nArea (ha)\nTotal area share (%)\nRock\n2632.8\n17.1\nMountain dwarf forest (‘Krummholz’ belt)\n2225.5\n14.45\nConiferous mature forest CC<80\n1394.3\n9.06\nConiferous mature forest CC≥80\n1283.5\n8.34\nAlpine grassland, heath\n1095.7\n7.12\nOld coniferous forest, multilayered CC<80\n1070.5\n6.95\nConiferous pole timber CC≥80\n686.1\n4.46\nDebris-covered areas\n594.7\n3.86\nOld coniferous forest, multilayered CC≥80\n594.3\n3.86\nGrassland, buffer strip between forest/open land\n462.7\n3.01\nErosion area, gully\n447.3\n2.9\nYoung coniferous (growth, thicket)\n439.8\n2.86\nBroad-leaved mature forest CC≥80\n392.4\n2.55\nClearcut areas\n365.7\n2.38\nOld broad-leaved forest, multilayered CC≥80\n359\n2.33\nConiferous pole timber CC<80\n340.4\n2.21\nBroad-leaved mature forest CC<80\n244\n1.58\nYoung coniferous (growth, thicket)\n206.1\n1.34\nBroad-leaved pole wood\n161.3\n1.05\nOld broad-leaved forest, multilayered CC<80\n158.7\n1.03\nAll other classes/areas of low importance and/or small extent\n130.3\n0.85\nWaterbody\n95.3\n0.62\nGravel bank, shoal, fluviatile\n17.2\n0.11\nTable 3: Change transition class statistics\nClass Transition\nChange Area 2003-13\nChange Area 2013-20\n(ha)\n(%)\n(ha)\n(%)\nNo change\n13,994.1\n90.9\n812.1\n68.5\nMature forest with canopy cover loss\n294.3\n1.9\n7.4\n0.6\nOld-growth forest with canopy cover loss\n119\n0.8\n4.1\n0.3\nForest growth stage setback\n95.3\n0.6\n2.1\n0.2\nForest development stage progression\n306.4\n2\n264.2\n22.3\nForest canopy cover gain\n40.9\n0.3\n23.2\n2\nEarly forest establishment (regeneration/regrowth)\n158.7\n1\n10.1\n0.8\nClearcut\n242.7\n1.6\n17.9\n1.5\nOther Transition\n146.3\n0.9\n43.8\n3.7\nFor in-domain model training and evaluation, the study area is first divided into spatially\ncontiguous square blocks, which are randomly assigned to the training (70%), validation (15%), and\ntest (15%) sets, using the same seed to ensure reproducibility. In this context, the validation set is\nused within the training process to assess and adapt model performance, while the test set is left\nout in the whole training set up as an in-domain evaluation data set to calculate metrics such as\noverall accuracy (OA) and intersection over union (IoU). This spatial split helps ensure that the\ntest and validation data are geographically independent from the training data, reducing spatial\nautocorrelation and potential data leakage.\n3.2\nExperimental Framework\nTo systematically evaluate AI-driven approaches for alpine habitat monitoring, we designed a\ncomprehensive experimental framework that directly addresses our core research questions through\nrigorous comparison of CD paradigms under real-world data constraints. Our framework centers\non evaluating two fundamental approaches: post-classification CD (Approach 1) and direct CD\n(Approach 2), both visualized in Fig. 2.\n8\n",
+      "text_length": 2815,
+      "elements": [
+        {
+          "type": "table",
+          "bbox_1000": [
+            185,
+            96,
+            812,
+            421
+          ],
+          "bbox_pixels": [
+            235,
+            158,
+            1035,
+            694
+          ],
+          "label": "Table 2",
+          "description": "Table 2: New target classes and dataset statistics, listing class names (with canopy cover percentages), area in hectares, and total area share percentages for various forest, grassland, and other land cover types.",
+          "crop_path": "elements/p08_table_1_Table_2.png"
+        },
+        {
+          "type": "table",
+          "bbox_1000": [
+            185,
+            460,
+            812,
+            616
+          ],
+          "bbox_pixels": [
+            235,
+            759,
+            1035,
+            1016
+          ],
+          "label": "Table 3",
+          "description": "Table 3: Change transition class statistics, showing change areas (in hectares and percentages) for different forest transitions between 2003-13 and 2013-20, including categories like 'No change', 'Mature forest with canopy cover loss', 'Forest development stage progression', and 'Clearcut'.",
+          "crop_path": "elements/p08_table_2_Table_3.png"
+        }
+      ],
+      "extraction_time_seconds": 76.03,
+      "total_page_time_seconds": 76.15
+    },
+    {
       "page_number": 9,
       "image": "page_09.png",
       "annotated_image": "page_09_annotated.png",
@@ -65,6 +145,37 @@
       ],
       "extraction_time_seconds": 51.63,
       "total_page_time_seconds": 51.76
+    },
+    {
+      "page_number": 12,
+      "image": "page_12.png",
+      "annotated_image": "page_12_annotated.png",
+      "width": 1275,
+      "height": 1650,
+      "text": "Table 4: Hyperparameters for best-in class models\nApproach\nMethod\nBackbone/\nDecoder\nModal-\nities\nLR\nOpti-\nmizer\nBatch\nSize\nPre-\nTrained\nWeights\nInput Size\nPost-\nclassification\nCD\nU-Net\nmit_b2\nRGB+\nCIR+\nDEM\n5e-03\nAdamW/\nwd=1e-4\n32\nImageNet\n256×256\n(51.2×51.2 m)\nClay 1.0\nclay_v1_\nbase/ FCN-\nDecoder\nRGB+\nCIR+\nNDSM\n1e-04\nAdamW/\nwd=0.5\n6\nClay v1\n256×256\n(51.2×51.2 m)\nPrithvi-\nEO-2.0\nprithvi_\neo_v2_\n300/\nUnet-\nDecoder\nRGB+\nCIR+\nNDSM\n1e-04\nAdamW/\nwd=0.5\n32\nPrithvi-\nEO-2.0-\n300M\n224×224\n(44.8×44.8 m)\nDirect\nChange\nU-Net Bi-\nnary\nmit_b2\nRGB\n1e-04\nAdamW/\nwd=1e-3\n36\nImageNet\n256×256\n(51.2×51.2 m)\nU-Net\nmulti-\nclass\nefficientnet-\nb4\nRGB\n5e-04\nAdamW/\nwd=1e-3\n12\nImageNet\n256×256\n(51.2×51.2 m)\nChangeVIT ViT-small\nRGB\n5e-05\nAdamW/\nwd=1e-4\n16\nDinov2\n224×224\n(44.8×44.8 m)\nTo ensure full transparency and facilitate collaborative development, all experiments are logged\nand tracked using the Weights & Biases platform [43].\nThe source code, model weights, and\nprocessing scripts developed for this study will be made publicly available in the GitHub repository\nhttps://github.com/hkristen/habitalp_2 upon publication to ensure full reproducibility of our\nfindings.\n4\nExperimental Results\n4.1\nPerformance Comparison Across Paradigms\nOur comprehensive evaluation reveals distinct performance differences between post-classification\nand direct change detection paradigms across both in-domain and cross-temporal test scenarios.\nA comparison of performance metrics between the in-domain and cross-temporal test scenarios is\nshown in Figures 3 and 4 for the detection of binary and multi-class changes, respectively.\n12\n",
+      "text_length": 1607,
+      "elements": [
+        {
+          "type": "table",
+          "bbox_1000": [
+            120,
+            97,
+            870,
+            440
+          ],
+          "bbox_pixels": [
+            153,
+            160,
+            1109,
+            726
+          ],
+          "label": "Table 4",
+          "description": "Hyperparameters for best-in class models, listing approaches (Post-classification CD, Direct Change), methods (U-Net, Clay 1.0, Prithvi-EO-2.0, etc.), backbone/decoder architectures, modalities (RGB+, CIR+, DEM, NDSM), learning rates (LR), optimizers (AdamW with weight decay), batch sizes, pre-trained weights (ImageNet, Clay v1, Prithvi-EO-2.0-300M, Dinov2), and input sizes (256×256 or 224×224 with corresponding physical dimensions in meters).",
+          "crop_path": "elements/p12_table_1_Table_4.png"
+        }
+      ],
+      "extraction_time_seconds": 72.11,
+      "total_page_time_seconds": 72.21
     },
     {
       "page_number": 13,
@@ -212,6 +323,55 @@
       ],
       "extraction_time_seconds": 75.21,
       "total_page_time_seconds": 75.39
+    },
+    {
+      "page_number": 16,
+      "image": "page_16.png",
+      "annotated_image": "page_16_annotated.png",
+      "width": 1275,
+      "height": 1650,
+      "text": "Table 7: Per-class performance metric from best models (in-domain test dataset)\nPost-class. (CLAY 1.0)\nDirect Change (U-Net)\nChange Transition\nClass\nOA (%) Macro IoU Macro F1 OA (%) Macro IoU Macro F1 Class freq. (%)\nNo Change\n0.57\n0.56\n0.72\n0.86\n0.8\n0.89\n90.9\nForest dev.\nstage\nprog.\n0.56\n0.1\n0.18\n0.04\n0.02\n0.03\n2\nMature\nforest\ncanopy loss\n0.36\n0.23\n0.38\n0.23\n0.08\n0.15\n1.9\nClearcut\n0.66\n0.4\n0.57\n0.08\n0.04\n0.08\n1.6\nEarly forest estab-\nlish.\n0.41\n0.11\n0.2\n0.29\n0.15\n0.27\n1\nOther Transition\n0.72\n0.02\n0.04\n0.26\n0.11\n0.21\n0.9\nOld growth canopy\nloss\n0.25\n0.15\n0.25\n0.67\n0.45\n0.62\n0.8\nForest growth set-\nback\n0.33\n0.01\n0.02\n0.01\n0.0\n0.0\n0.6\nForest canopy gain\n0.74\n0.1\n0.18\n0.11\n0.06\n0.11\n0.3\nMacro Average\n0.51\n0.19\n0.28\n0.28\n0.19\n0.26\n4.2\nMultimodal Data Impact Assessment\nThe following results show the influence of the different data inputs on the results, both for single-date\nsemantic segmentation and for change detection, both using the U-Net baseline approach. Table 8\ndemonstrates the substantial contribution of elevation data to habitat classification performance.\nThe addition of nDSM to RGB and NIR inputs improved semantic segmentation accuracy by 9%,\nfrom 31% to 40%, representing a 29% relative improvement. Further incorporation of LiDAR-derived\nterrain attributes yielded the best performance at 50% accuracy with 0.31 macro IoU.\nFor change detection tasks, the impact of multimodal data was limited. Binary change detection\naccuracy remained at 41% with NIR addition, increased to 44% with nDSM inclusion, and returned\nto 41% with full LiDAR attributes. The maximum improvement of 3 percentage points (RGB\nto RGB+NIR+nDSM) contrasts sharply with the 19 percentage-point gain observed for semantic\nsegmentation tasks.\nTable 8: Results of multimodal data impact assessment using the U-Net post-classification and direct\nCD approach\nChange Metrics 2003-2013\nSemantic Segmentation Metrics 2013\nModalities\nOverall\nMacro\nMacro\nOverall\nMacro\nMacro\nAccuracy (%)\nIoU\nF1-Score Accuracy (%)\nIoU\nF1-Score\nRGB\n0.41\n0.13\n0.21\n0.3\n0.16\n0.26\nRGB + NIR\n0.41\n0.14\n0.22\n0.31\n0.17\n0.27\nRGB + NIR + nDSM\n0.44\n0.14\n0.22\n0.40\n0.24\n0.37\nRGB + NIR + LiDAR\n0.41\n0.14\n0.22\n0.5\n0.31\n0.45\n5\nDiscussion\nOur results demonstrate that foundation models, particularly Clay 1.0, offer consistent but modest\nperformance advantages over traditional CNN architectures for multi-class change detection in\nAlpine habitat monitoring. These findings align with literature showing that GFMs such as Prithvi\nand Clay achieve robust results in settings with limited training data by leveraging self-supervised\npre-training on large, temporally diverse datasets [5, 22]. Clay’s accuracy improvement over U-Net\n16\n",
+      "text_length": 2685,
+      "elements": [
+        {
+          "type": "table",
+          "bbox_1000": [
+            180,
+            100,
+            816,
+            360
+          ],
+          "bbox_pixels": [
+            229,
+            165,
+            1040,
+            594
+          ],
+          "label": "Table 7",
+          "description": "Per-class performance metric from best models (in-domain test dataset), comparing Post-class (CLAY 1.0) and Direct Change (U-Net) approaches across various change transition classes, including OA (%), Macro IoU, Macro F1, and Class freq. (%)",
+          "crop_path": "elements/p16_table_1_Table_7.png"
+        },
+        {
+          "type": "table",
+          "bbox_1000": [
+            180,
+            630,
+            816,
+            758
+          ],
+          "bbox_pixels": [
+            229,
+            1039,
+            1040,
+            1250
+          ],
+          "label": "Table 8",
+          "description": "Results of multimodal data impact assessment using the U-Net post-classification and direct CD approach, showing Change Metrics (2003-2013) and Semantic Segmentation Metrics (2013) for different modalities (RGB, RGB + NIR, RGB + NIR + nDSM, RGB + NIR + LiDAR)",
+          "crop_path": "elements/p16_table_2_Table_8.png"
+        }
+      ],
+      "extraction_time_seconds": 80.42,
+      "total_page_time_seconds": 80.54
     }
   ],
   "timing": {}

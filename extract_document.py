@@ -19,6 +19,10 @@ from datetime import datetime
 from pathlib import Path
 
 import fitz  # PyMuPDF
+import matplotlib
+
+matplotlib.use("Agg")  # Non-interactive backend
+import matplotlib.pyplot as plt
 from PIL import Image, ImageDraw
 from openai import OpenAI
 
@@ -34,6 +38,149 @@ def get_client():
     return OpenAI(base_url=LLAMA_SERVER, api_key="not-needed")
 
 
+def extract_latex_from_description(description: str) -> str:
+    """Extract LaTeX from description field.
+
+    The model typically returns equations with descriptions like:
+    - "LaTeX: \\sin x + \\cos y"
+    - "Formula for computing P: LaTeX: P = (cos phi / cos phi_g)..."
+    """
+    if not description:
+        return None
+
+    # Look for 'LaTeX:' prefix (case insensitive)
+    match = re.search(r"LaTeX:\s*(.+)", description, re.IGNORECASE | re.DOTALL)
+    if match:
+        latex = match.group(1).strip()
+        # Clean up common issues
+        # Remove trailing description after the LaTeX
+        latex = re.split(r"\.\s+[A-Z]", latex)[0]  # Stop at sentence boundary
+        return latex
+
+    return None
+
+
+def render_latex_to_image(latex: str, output_path: Path, dpi: int = 200) -> bool:
+    """Render LaTeX string to PNG image using pdflatex + ImageMagick.
+
+    Returns True if successful, False otherwise.
+    """
+    import subprocess
+    import tempfile
+    import shutil
+
+    if not latex:
+        return False
+
+    # Clean up the LaTeX
+    latex = latex.strip()
+
+    # Remove \( \) delimiters if present
+    latex = latex.replace(r"\(", "").replace(r"\)", "")
+
+    # Remove leading/trailing dollar signs (we'll add our own)
+    latex = latex.strip("$")
+
+    # Determine if we need align environment or just equation
+    needs_align = r"\begin{align" in latex or "&" in latex
+    needs_cases = r"\begin{cases}" in latex
+
+    # Build LaTeX document
+    if needs_align or needs_cases:
+        # Use align* for multi-line with alignment
+        if not latex.startswith(r"\begin{"):
+            math_content = f"\\begin{{align*}}\n{latex}\n\\end{{align*}}"
+        else:
+            math_content = latex
+        doc = f"""\\documentclass[preview,border=2pt]{{standalone}}
+\\usepackage{{amsmath}}
+\\usepackage{{amssymb}}
+\\begin{{document}}
+{math_content}
+\\end{{document}}
+"""
+    else:
+        # Simple equation
+        doc = f"""\\documentclass[preview,border=2pt]{{standalone}}
+\\usepackage{{amsmath}}
+\\usepackage{{amssymb}}
+\\begin{{document}}
+$\\displaystyle {latex}$
+\\end{{document}}
+"""
+
+    # Create temp directory for LaTeX compilation
+    tmp_dir = tempfile.mkdtemp(prefix="latex_render_")
+
+    try:
+        # Write LaTeX source
+        tex_file = Path(tmp_dir) / "equation.tex"
+        with open(tex_file, "w") as f:
+            f.write(doc)
+
+        # Run pdflatex
+        result = subprocess.run(
+            ["pdflatex", "-interaction=nonstopmode", "-halt-on-error", "equation.tex"],
+            cwd=tmp_dir,
+            capture_output=True,
+            timeout=30,
+        )
+
+        pdf_file = Path(tmp_dir) / "equation.pdf"
+        if not pdf_file.exists():
+            # LaTeX compilation failed
+            return False
+
+        # Convert PDF to PNG using ImageMagick
+        result = subprocess.run(
+            [
+                "convert",
+                "-density",
+                str(dpi),
+                "-background",
+                "white",
+                "-alpha",
+                "remove",
+                "-alpha",
+                "off",
+                str(pdf_file),
+                str(output_path),
+            ],
+            capture_output=True,
+            timeout=30,
+        )
+
+        return output_path.exists()
+
+    except subprocess.TimeoutExpired:
+        print("      LaTeX render timeout")
+        return False
+    except Exception as e:
+        print(f"      LaTeX render error: {str(e)[:60]}")
+        return False
+    finally:
+        # Clean up temp directory
+        shutil.rmtree(tmp_dir, ignore_errors=True)
+
+
+def clean_extracted_text(text: str) -> str:
+    """Clean extracted text by removing margin line numbers.
+
+    Academic papers (e.g., ICLR submissions) often have 3-digit line numbers
+    in the margins that get extracted by PyMuPDF.
+    """
+    lines = text.split("\n")
+    cleaned = []
+
+    for line in lines:
+        # Skip lines that are just 3-digit numbers (margin line numbers)
+        if re.match(r"^\d{3}$", line.strip()):
+            continue
+        cleaned.append(line)
+
+    return "\n".join(cleaned)
+
+
 def pdf_page_to_image(pdf_path: Path, page_num: int, output_path: Path) -> tuple:
     """Convert single PDF page to image. Returns (width, height, text)."""
     doc = fitz.open(pdf_path)
@@ -44,8 +191,9 @@ def pdf_page_to_image(pdf_path: Path, page_num: int, output_path: Path) -> tuple
     pix = page.get_pixmap(matrix=mat)
     pix.save(str(output_path))
 
-    # Extract text
+    # Extract and clean text
     text = page.get_text("text")
+    text = clean_extracted_text(text)
 
     width, height = pix.width, pix.height
     doc.close()
@@ -145,28 +293,39 @@ def parse_elements(raw_response: str, width: int, height: int) -> list:
                     int(bbox[3] / 1000 * height),
                 ]
 
-                elements.append(
-                    {
-                        "type": elem_type.rstrip("s"),
-                        "bbox_1000": bbox,
-                        "bbox_pixels": px_bbox,
-                        "label": item.get("label", elem_type),
-                        "description": item.get("description", ""),
-                    }
-                )
+                elem_data = {
+                    "type": elem_type.rstrip("s"),
+                    "bbox_1000": bbox,
+                    "bbox_pixels": px_bbox,
+                    "label": item.get("label", elem_type),
+                    "description": item.get("description", ""),
+                }
+
+                # For equations, extract LaTeX from description
+                if elem_data["type"] == "equation":
+                    latex = extract_latex_from_description(elem_data["description"])
+                    if latex:
+                        elem_data["latex"] = latex
+
+                elements.append(elem_data)
 
     return elements
 
 
 def crop_element(
     image_path: Path, elem: dict, output_dir: Path, page_num: int, idx: int
-) -> str:
-    """Crop element from page and save. Returns relative path to crop."""
+) -> tuple:
+    """Crop element from page and save.
+
+    For equations with LaTeX, also renders the LaTeX to a separate image.
+
+    Returns tuple of (crop_path, rendered_path) where rendered_path may be None.
+    """
     img = Image.open(image_path)
     bbox = elem.get("bbox_pixels", [])
 
     if len(bbox) != 4:
-        return None
+        return None, None
 
     x1, y1, x2, y2 = bbox
 
@@ -194,7 +353,15 @@ def crop_element(
     crop_path = elements_dir / filename
     crop.save(str(crop_path))
 
-    return f"elements/{filename}"
+    # For equations with LaTeX, render to separate image
+    rendered_path = None
+    if elem_type == "equation" and elem.get("latex"):
+        rendered_filename = filename.replace(".png", "_rendered.png")
+        rendered_full_path = elements_dir / rendered_filename
+        if render_latex_to_image(elem["latex"], rendered_full_path):
+            rendered_path = f"elements/{rendered_filename}"
+
+    return f"elements/{filename}", rendered_path
 
 
 def create_annotated_page(image_path: Path, elements: list, output_path: Path):
@@ -287,10 +454,15 @@ def extract_document(
             pos = f"{bbox[1] // 10}%-{bbox[3] // 10}%" if len(bbox) == 4 else "?"
             print(f"    - {elem_type}: {label} (vertical: {pos})")
 
-            # Crop element
-            crop_path = crop_element(page_image, elem, output_dir, page_num, i + 1)
+            # Crop element (and render LaTeX for equations)
+            crop_path, rendered_path = crop_element(
+                page_image, elem, output_dir, page_num, i + 1
+            )
             if crop_path:
                 elem["crop_path"] = crop_path
+            if rendered_path:
+                elem["rendered_path"] = rendered_path
+                print(f"      + LaTeX rendered")
 
         # Create annotated page
         if elements:

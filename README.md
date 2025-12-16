@@ -92,20 +92,20 @@ python -m http.server 8080
 ## Sample Extractions
 
 ### SAM3 Paper (sam3.pdf)
-- 9 pages extracted (1, 2, 3, 4, 5, 6, 7, 8, 30)
-- 16 elements: 6 figures, 5 tables, 1 chart, 4 equations
+- 12 pages extracted (1-9, 26, 29, 30)
+- 21 elements: 8 figures, 8 tables, 1 chart, 4 equations
 - Equations include LaTeX extraction and rendered images
 - Average detection time: ~40s/page
 
 ### USGS Map Projections (usgs_snyder1987.pdf)
-- 10 pages extracted (1, 9, 16, 21, 32, 34, 42, 44, 51, 52)
-- 8 figures + 7 equations (trigonometric formulas)
-- All equations have both cropped and LaTeX-rendered versions
+- 13 pages extracted (1, 9, 16, 21, 32, 34, 42, 44, 51, 52, 147, 189, 192)
+- 8 figures + 23 equations (trigonometric and projection formulas)
+- Most equations have both cropped and LaTeX-rendered versions
 - Average detection time: ~42s/page
 
 ### Alpine Habitat Change (2511.00073v1.pdf)
-- 5 pages extracted (6, 9, 13, 14, 15)
-- 6 figures including radar charts, 2 tables
+- 9 pages extracted (6-9, 12-16)
+- 6 figures including radar charts, 8 tables
 - Average detection time: ~35s/page
 
 ## Local Setup
@@ -118,12 +118,12 @@ cd osgeo-library
 
 # Using uv (recommended)
 uv venv
-uv pip install PyMuPDF Pillow openai
+uv pip install PyMuPDF Pillow openai matplotlib
 
 # Or standard venv
 python -m venv .venv
 source .venv/bin/activate
-pip install PyMuPDF Pillow openai
+pip install PyMuPDF Pillow openai matplotlib
 ```
 
 ### 2. Start Vision Model Server
@@ -170,18 +170,22 @@ PDF Files (5000+)
 +------+--------+
 |               |
 v               v
-PyMuPDF         Qwen3-VL-32B
+PyMuPDF         Qwen3-VL-235B
 (text)          (visual grounding)
 |               |
 v               v
 Text +          Bounding boxes
-Metadata        + Descriptions
+Metadata        + Descriptions + LaTeX
 |               |
 +-------+-------+
         |
         v
    Crop Elements
-   (figures, tables)
+   (figures, tables, equations)
+        |
+        v
+   Render LaTeX ──> *_rendered.png
+   (matplotlib)
         |
         v
    extraction.json

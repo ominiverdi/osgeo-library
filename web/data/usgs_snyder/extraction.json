@@ -1,7 +1,7 @@
 {
   "document": "usgs_snyder1987",
   "source_file": "usgs_snyder1987.pdf",
-  "extraction_date": "2025-12-16T19:20:55.241171",
+  "extraction_date": "2025-12-16T22:14:13.390319",
   "model": "qwen3-vl-235b",
   "pages": [
     {
@@ -404,6 +404,361 @@
       ],
       "extraction_time_seconds": 38.63,
       "total_page_time_seconds": 38.78
+    },
+    {
+      "page_number": 147,
+      "image": "page_147.png",
+      "annotated_image": "page_147_annotated.png",
+      "width": 1316,
+      "height": 1679,
+      "text": "18. POL YCONIC PROJECTION \nwhere the ±takes the same sign as <j>. If<!> = 0, equation (18-36) is indeterminate, \nbut C = 0. M and R are found from (3-21) and (18-26), respectively, omitting \nsubscripts n. Then \nXb \nYb \nXc \nYc \nbut if <!>2 = 0, \nXb \nYb \nor if <!>1 = 0, \nXc \nYc \nThen \nD \nB \nX \ny \n= R 2 sin [(A.- A.0) sin <!>2] \n= C2 + R2 (1 - cos [(A.-A.0) sin <l>2JJ \n= R 1 sin [(A.-A.o) sin <l>d \n= R 1 ! 1 - cos [(A.-X.0) sin <!>1]) \n=a (l..-l..o) \n=C2 \n=a (A-Ao) \n=0 \n= (xb-Xc)l(yb-Yc) \n= Xc + D (C +R-ye) \n= (B ± D [R2 (1 +D2)-B2]1'2)!(1 +D2) \n= C + R ± (R2-x2)112 \n(18-37) \n(18-38) \n(18-39) \n(18-40) \n(18-37a) \n(18-38a) \n(18-39a) \n(18-40a) \n(18-41) \n(18-42) \n(18-43) \n(18-44) \nwhere the ±in (18-43) and (18-44) takes the sign opposite that of <j>. If <1> = 0, B \nand R are infinite, but \n(18-45) \n(18-46) \nFor the inverse formulas for the IMW Modified Polyconic, given a, e, <1>2, <!>1, \nXb A.0, x and y, to find <!> and X: \nStep 1: Constants are calculated: Xt, x2, Yl, Mt. M2, Y2, c2, P, Q, P'' and Q' \nfrom above equations (18-23) through (18-33) and (3-21). \nStep 2: A first trial (<\\>, X), called (<!>t1 , At1) are calculated: \n<l>tl \n= <!>2 \nAt1 = [x!(a cos <l>t)J + Ao \n(18-47) \n(18-48) \nStep 3: The first test values of (x, y), called (Xt1 , Yt 1), are calculated from C<!>t1 , Xt), \nusing the latter as (<\\>, A) in equations (18-34) through (18-46). \nStep 4: Test values (Xt1, Yt) are used with the given (x, y) to adjust (<\\>1,, At1), to \nprovide second trial values of (<!>t:?, At2): \n<l>t2 = [(<l>t1-<l>l) (y-yc)I(Yt1 -yc)] + <!>1 \nAt:? = ((At1-Ao)X/Xt1] + Ao \n(18-49) \n(18-50) \nStep 5: Step 3 is repeated, but using (<l>tz, Xtz) as(<\\>, A) to obtain (Xtz, Yt2). Step 4 is \nthen repeated, replacing subscripts (t1, t2) with (t2, t3), respectively. Steps 3 \nand 4 are repeated, changing subscripts, until the final (Xtn• Ytn) vary from \n(x, y), respectively, by an acceptable total absolute error, such as 1 meter \n(0.001 mm at map scale). \n135 \n",
+      "text_length": 1963,
+      "elements": [
+        {
+          "type": "equation",
+          "bbox_1000": [
+            285,
+            147,
+            715,
+            210
+          ],
+          "bbox_pixels": [
+            375,
+            246,
+            940,
+            352
+          ],
+          "label": "Equation 18-37 to 18-40",
+          "description": "LaTeX: \\begin{align*}\nx_b &= R_2 \\sin \\left[ (\\lambda - \\lambda_0) \\sin \\phi_2 \\right] \\quad (18-37) \\\\\n y_b &= C_2 + R_2 \\left[ 1 - \\cos \\left[ (\\lambda - \\lambda_0) \\sin \\phi_2 \\right] \\right] \\quad (18-38) \\\\\n x_c &= R_1 \\sin \\left[ (\\lambda - \\lambda_0) \\sin \\phi_1 \\right] \\quad (18-39) \\\\\n y_c &= R_1 \\left\\{ 1 - \\cos \\left[ (\\lambda - \\lambda_0) \\sin \\phi_1 \\right] \\right\\} \\quad (18-40)\n\\end{align*}",
+          "crop_path": "elements/p147_equation_1_Equation_18-37_to_18-40.png",
+          "rendered_path": "elements/p147_equation_1_Equation_18-37_to_18-40_rendered.png",
+          "latex": "\\begin{align*}\nx_b &= R_2 \\sin \\left[ (\\lambda - \\lambda_0) \\sin \\phi_2 \\right] \\quad (18-37) \\\\\n y_b &= C_2 + R_2 \\left[ 1 - \\cos \\left[ (\\lambda - \\lambda_0) \\sin \\phi_2 \\right] \\right] \\quad (18-38) \\\\\n x_c &= R_1 \\sin \\left[ (\\lambda - \\lambda_0) \\sin \\phi_1 \\right] \\quad (18-39) \\\\\n y_c &= R_1 \\left\\{ 1 - \\cos \\left[ (\\lambda - \\lambda_0) \\sin \\phi_1 \\right] \\right\\} \\quad (18-40)\n\\end{align*}"
+        },
+        {
+          "type": "equation",
+          "bbox_1000": [
+            285,
+            250,
+            715,
+            282
+          ],
+          "bbox_pixels": [
+            375,
+            419,
+            940,
+            473
+          ],
+          "label": "Equation 18-37a to 18-38a",
+          "description": "LaTeX: \\begin{align*}\nx_b &= \\alpha (\\lambda - \\lambda_0) \\quad (18-37a) \\\\\n y_b &= C_2 \\quad (18-38a)\n\\end{align*}",
+          "crop_path": "elements/p147_equation_2_Equation_18-37a_to_18-38a.png",
+          "rendered_path": "elements/p147_equation_2_Equation_18-37a_to_18-38a_rendered.png",
+          "latex": "\\begin{align*}\nx_b &= \\alpha (\\lambda - \\lambda_0) \\quad (18-37a) \\\\\n y_b &= C_2 \\quad (18-38a)\n\\end{align*}"
+        },
+        {
+          "type": "equation",
+          "bbox_1000": [
+            285,
+            320,
+            715,
+            353
+          ],
+          "bbox_pixels": [
+            375,
+            537,
+            940,
+            592
+          ],
+          "label": "Equation 18-39a to 18-40a",
+          "description": "LaTeX: \\begin{align*}\nx_c &= \\alpha (\\lambda - \\lambda_0) \\quad (18-39a) \\\\\n y_c &= 0 \\quad (18-40a)\n\\end{align*}",
+          "crop_path": "elements/p147_equation_3_Equation_18-39a_to_18-40a.png",
+          "rendered_path": "elements/p147_equation_3_Equation_18-39a_to_18-40a_rendered.png",
+          "latex": "\\begin{align*}\nx_c &= \\alpha (\\lambda - \\lambda_0) \\quad (18-39a) \\\\\n y_c &= 0 \\quad (18-40a)\n\\end{align*}"
+        },
+        {
+          "type": "equation",
+          "bbox_1000": [
+            285,
+            390,
+            715,
+            453
+          ],
+          "bbox_pixels": [
+            375,
+            654,
+            940,
+            760
+          ],
+          "label": "Equation 18-41 to 18-44",
+          "description": "LaTeX: \\begin{align*}\nD &= (x_b - x_c) / (y_b - y_c) \\quad (18-41) \\\\\nB &= x_c + D (C + R - y_c) \\quad (18-42) \\\\\nx &= \\left[ B \\pm D \\left[ R^2 (1 + D^2) - B^2 \\right]^{1/2} \\right] / (1 + D^2) \\quad (18-43) \\\\\ny &= C + R \\pm (R^2 - x^2)^{1/2} \\quad (18-44)\n\\end{align*}",
+          "crop_path": "elements/p147_equation_4_Equation_18-41_to_18-44.png",
+          "rendered_path": "elements/p147_equation_4_Equation_18-41_to_18-44_rendered.png",
+          "latex": "\\begin{align*}\nD &= (x_b - x_c) / (y_b - y_c) \\quad (18-41) \\\\\nB &= x_c + D (C + R - y_c) \\quad (18-42) \\\\\nx &= \\left[ B \\pm D \\left[ R^2 (1 + D^2) - B^2 \\right]^{1/2} \\right] / (1 + D^2) \\quad (18-43) \\\\\ny &= C + R \\pm (R^2 - x^2)^{1/2} \\quad (18-44)\n\\end{align*}"
+        },
+        {
+          "type": "equation",
+          "bbox_1000": [
+            285,
+            507,
+            715,
+            540
+          ],
+          "bbox_pixels": [
+            375,
+            851,
+            940,
+            906
+          ],
+          "label": "Equation 18-45 to 18-46",
+          "description": "LaTeX: \\begin{align*}\nx &= \\alpha (\\lambda - \\lambda_0) \\quad (18-45) \\\\\ny &= C \\quad (18-46)\n\\end{align*}",
+          "crop_path": "elements/p147_equation_5_Equation_18-45_to_18-46.png",
+          "rendered_path": "elements/p147_equation_5_Equation_18-45_to_18-46_rendered.png",
+          "latex": "\\begin{align*}\nx &= \\alpha (\\lambda - \\lambda_0) \\quad (18-45) \\\\\ny &= C \\quad (18-46)\n\\end{align*}"
+        },
+        {
+          "type": "equation",
+          "bbox_1000": [
+            285,
+            647,
+            715,
+            679
+          ],
+          "bbox_pixels": [
+            375,
+            1086,
+            940,
+            1140
+          ],
+          "label": "Equation 18-47 to 18-48",
+          "description": "LaTeX: \\begin{align*}\n\\phi_{t_1} &= \\phi_2 \\quad (18-47) \\\\\n\\lambda_{t_1} &= \\left[ x / (\\alpha \\cos \\phi_{t_1}) \\right] + \\lambda_0 \\quad (18-48)\n\\end{align*}",
+          "crop_path": "elements/p147_equation_6_Equation_18-47_to_18-48.png",
+          "rendered_path": "elements/p147_equation_6_Equation_18-47_to_18-48_rendered.png",
+          "latex": "\\begin{align*}\n\\phi_{t_1} &= \\phi_2 \\quad (18-47) \\\\\n\\lambda_{t_1} &= \\left[ x / (\\alpha \\cos \\phi_{t_1}) \\right] + \\lambda_0 \\quad (18-48)\n\\end{align*}"
+        },
+        {
+          "type": "equation",
+          "bbox_1000": [
+            285,
+            767,
+            715,
+            799
+          ],
+          "bbox_pixels": [
+            375,
+            1287,
+            940,
+            1341
+          ],
+          "label": "Equation 18-49 to 18-50",
+          "description": "LaTeX: \\begin{align*}\n\\phi_{t_2} &= \\left[ (\\phi_{t_1} - \\phi_1) (y - y_c) / (y_{t_1} - y_c) \\right] + \\phi_1 \\quad (18-49) \\\\\n\\lambda_{t_2} &= \\left[ (\\lambda_{t_1} - \\lambda_0) x / x_{t_1} \\right] + \\lambda_0 \\quad (18-50)\n\\end{align*}",
+          "crop_path": "elements/p147_equation_7_Equation_18-49_to_18-50.png",
+          "rendered_path": "elements/p147_equation_7_Equation_18-49_to_18-50_rendered.png",
+          "latex": "\\begin{align*}\n\\phi_{t_2} &= \\left[ (\\phi_{t_1} - \\phi_1) (y - y_c) / (y_{t_1} - y_c) \\right] + \\phi_1 \\quad (18-49) \\\\\n\\lambda_{t_2} &= \\left[ (\\lambda_{t_1} - \\lambda_0) x / x_{t_1} \\right] + \\lambda_0 \\quad (18-50)\n\\end{align*}"
+        }
+      ],
+      "extraction_time_seconds": 287.98,
+      "total_page_time_seconds": 288.18
+    },
+    {
+      "page_number": 189,
+      "image": "page_189.png",
+      "annotated_image": "page_189_annotated.png",
+      "width": 1315,
+      "height": 1675,
+      "text": "23. GENERAL PERSPECTIVE PROJECTION \nN = a/(1-e2 sin2 <!>)112 \nN1 = a/(1-e2 sin2 <!>1)112 \nC = [(N +h)/a] cos <1> \nS = \\[N(l-e2) + h]!a) sin <1> \n~U = <1>1 - arcsin [N1e2 sin <1>1 cos <!>APa)] \nH = Pa cos <l>glcos <1>1 - N1 - h0 \nK =HI[P cos (<!>1-<l>g)- S sin <1>1 -\nC cos <1>1 cos (A.-A.0)] \nx =KG sin (A.->..o) \ny =K[P sin (<!>1-<l>g) + S cos <1>1 - C sin <1>1 cos (>..-A.0)] \n(4-20) \n(8-23) \n(23-15) \n(23-16) \n(23-17) \n(23-18) \n(23-19) \n(23-19a) \n(23-20) \nwhere P = the distance of the point of perspective from the center of the Earth, \ndivided by a, the semimajor axis. \nH = the height of the point of perspective in a direction perpendicular to the \nsurface of the ellipsoid at nadir point (<I>I> A.0), but measured from the height h0 of \nthe nadir above the ellipsoid, not above sea level. \n<l>g = the geocentric latitude of the point of perspective, measured as the angle \nbetween the direct line from the center to this point, and the equatorial plane, not \nas the geocentric latitude corresponding to <!>1. \nh = the height of(<!>, A.) above .the ellipsoid. The use of h makes these formulas \nmore general, but for most plotting of graticules it would be zero. \nIf H is given rather than P, the latter may be computed as follows: \nP = (cos <1>1/cos <I> g) (H + N 1 + h0)/a \n(23-21) \nSince <l>g is calculated from Pin equation (23-17), iteration is involved, with <!>1 \nas the first trial value of <l>g· The comments following the forward formulas for the \nsphere apply approximately here. The straight parallel is the latitude <1> whose \nsine equals Pa sin <!>gi[N(1-e2) + h], if h is a constant, such as zero. This is an \niterative calculation with successive substitution of<!>, starting with <1>1 as a trial. \nThe central meridian A.0 is also straight. \nFor the inverse formulas for the Vertical Perspective projection of the ellip-\nsoid, given a, e2 , P, <1>11 >..0, h0, h, x, andy, to find<!>, A.: \nEquations (23-17) and (23-18) are used to compute <l>g and H (or (23-21) to \ncompute P if H is given), then \nB =P cos (<!>1-<l>g) \nD = P sin (<1>1-<l>g) \nL = 1-e2 cos2 <1>1 \nG = 1-e2 sin2 <!>1 \nJ = 2e2 sin <1>1 cos <!>1 \nu = - 2BLH - 2DGy + BJy + DHJ \nv = L~ + Gy2 - HJy + (1-e2)x2 \n(23-22) \n(23-23) \n(23-24) \n(23-25) \n(23-26) \n(23-27) \n(23-28) \nIf his zero, E = 1 in the next equation (23-29). If his not zero, use a first trial \nE=l. \nThen, \nt = P 2 (1-e2 cos2 <l>g) - E (1-e2) \nK' = [- u + (u2-4tv)112]12t \nX \n= a[(B-H!K') cos <1>1 - (y!K'-D) sin <!>1] \nY = ax!K' \nS = (y!K'-D) cos <!>1 + (B-HIK') sin <1>1 \nA. \n= A-0 + arctan (Y/X) \n(23-29) \n(23-30) \n(23-31) \n(23-32) \n(23-33) \n(23-34) \nIf his not zero, <1> may be initially estimated at arcsin S to calculate a trial <1> from \nequation (23-35) and then E from (23-36). Equations (23-29) through (23-36) \n177 \n",
+      "text_length": 2777,
+      "elements": [
+        {
+          "type": "equation",
+          "bbox_1000": [
+            214,
+            84,
+            788,
+            224
+          ],
+          "bbox_pixels": [
+            281,
+            140,
+            1036,
+            375
+          ],
+          "label": "Equation 1",
+          "description": "Set of equations for general perspective projection, including formulas for N, N₁, C, S, φg, H, K, x, and y, with corresponding equation numbers (4-20) through (23-20).",
+          "crop_path": "elements/p189_equation_1_Equation_1.png",
+          "rendered_path": "elements/p189_equation_1_Equation_1_rendered.png"
+        },
+        {
+          "type": "equation",
+          "bbox_1000": [
+            302,
+            405,
+            698,
+            426
+          ],
+          "bbox_pixels": [
+            397,
+            678,
+            917,
+            713
+          ],
+          "label": "Equation 2",
+          "description": "Formula for computing P from H: P = (cos φ₁ / cos φg) (H + N₁ + h₀) / a, labeled as equation (23-21).",
+          "crop_path": "elements/p189_equation_2_Equation_2.png",
+          "rendered_path": "elements/p189_equation_2_Equation_2_rendered.png"
+        },
+        {
+          "type": "equation",
+          "bbox_1000": [
+            258,
+            604,
+            788,
+            707
+          ],
+          "bbox_pixels": [
+            339,
+            1011,
+            1036,
+            1184
+          ],
+          "label": "Equation 3",
+          "description": "Set of equations defining intermediate variables B, D, L, G, J, u, and v for inverse formulas, labeled as equations (23-22) through (23-28).",
+          "crop_path": "elements/p189_equation_3_Equation_3.png",
+          "rendered_path": "elements/p189_equation_3_Equation_3_rendered.png"
+        },
+        {
+          "type": "equation",
+          "bbox_1000": [
+            258,
+            770,
+            788,
+            873
+          ],
+          "bbox_pixels": [
+            339,
+            1289,
+            1036,
+            1462
+          ],
+          "label": "Equation 4",
+          "description": "Set of equations for computing t, K', X, Y, S, and λ in the inverse projection, labeled as equations (23-29) through (23-34).",
+          "crop_path": "elements/p189_equation_4_Equation_4.png",
+          "rendered_path": "elements/p189_equation_4_Equation_4_rendered.png"
+        }
+      ],
+      "extraction_time_seconds": 111.87,
+      "total_page_time_seconds": 112.05
+    },
+    {
+      "page_number": 192,
+      "image": "page_192.png",
+      "annotated_image": "page_192_annotated.png",
+      "width": 1283,
+      "height": 1665,
+      "text": "180 \nMAP PROJECTIONS-A WORKING MANUAL \n(xo, y0 ) = offsets of the (Xt, Yt) axes to establish a different origin for the \n(Xt', Yt') axes. They may also be set at zero to retain the (Xt, \nYt) axes. \nThe two sets of axes are related as follows: \nXt' \nYt' \nXt cos e - Yt sin e + Xo \nYt cos e + Xt sin e + Yo \n(23-62a) \n(23-62b) \nFor inverse computations using projective constants, given K1-K11, Xt', and \nYt', to find <1> and A, the following are calculated in order: \nAl \n= Xt'K5-Kl \nA2 \n= Xt'K6-K2 \nA3 \n= Xt'K7-K3 \nA4 \n= K4-xt' \nA5 \n= Yt'K5-Ks \nA6 \n= Yt'K6-K9 \nA7 \n= Yt'K7-K10 \nAs \n= Ku-Yt' \nA9 \n= A1As-A4A5 \nAw = A1A7-AsA5 \nA 11 = A 2A 5-A1A 6 \nA 12 = A 2A 7-A3A 6 \nA 13 = A 2A 8-A4A 6 \nA14 = A102 + Au21(1-e2) + A 1/ \nA15 = A0lo + A12A1a \nAl6 = A92-EAu2+Ala2 \n(23-63) \n(23-64) \n(23-65) \n(23-66) \n(23-67) \n(23-68) \n(23-69) \n(23-70) \n(23-71) \n(23-72) \n(23-73) \n(23-74) \n(23-75) \n(23-76) \n(23-77) \n(23-78) \nwhere E is found from (23-36) if his not zero, orE = 1 if his zero. Then \n(23-79) \nand <1> is found from (23-35) if h is not zero, or (23-37) if his zero, taking one \nsign in (23-79) for the latitude desired, and the opposite sign for the latitude \nhidden from view at the same coordinates. The same sign applies throughout the \nmap, once it is determined for a point for which the latitude is obviously right or \nwrong. \n(23-80) \nIn this case the ATAN2 function is not used, but 180° must be added to or sub-\ntracted from A if the denominator has the same sign as A 11 • \nIf h is not zero, E is initially assumed to be 1. After trial values of <1> and A are \ndetermined above, an h suitable for that point may be used with the new <1> in \ncalculating E; then A 16, S, <1> and A are recalculated. Iteration continues until the \nchange in the calculated <!> is negligible. \nIf his zero, since E = 1 and (23-37) is explicit in <!>, no iteration is required. \nFinally, to compute \"camera\" parameters from given constants K 1-K11 \n(Bender, ca. 1970, p. 26-27), given a, e2, and an assumed h0 , first the following \nthree simultaneous equations are solved for X 0 , Y 0 , and Z 0, the space coordinates \nof the point of perspective divided by a (see description of axes following (23-40)): \nK 1X 0 + K2Y0 + K 3Z 0 = -K4 \nKsXo + K9Yo + K10Zo \n= -Ku \nK~o + K6Yo + K7Zo = -1 \n(23-81) \n",
+      "text_length": 2283,
+      "elements": [
+        {
+          "type": "equation",
+          "bbox_1000": [
+            437,
+            137,
+            820,
+            175
+          ],
+          "bbox_pixels": [
+            560,
+            228,
+            1052,
+            291
+          ],
+          "label": "Equation 23-62a, 23-62b",
+          "description": "LaTeX: \\begin{align*} x_t' &= x_t \\cos \\theta - y_t \\sin \\theta + x_0 \\\\ y_t' &= y_t \\cos \\theta + x_t \\sin \\theta + y_0 \\end{align*}",
+          "latex": "\\begin{align*} x_t' &= x_t \\cos \\theta - y_t \\sin \\theta + x_0 \\\\ y_t' &= y_t \\cos \\theta + x_t \\sin \\theta + y_0 \\end{align*}",
+          "crop_path": "elements/p192_equation_1_Equation_23-62a_23-62b.png",
+          "rendered_path": "elements/p192_equation_1_Equation_23-62a_23-62b_rendered.png"
+        },
+        {
+          "type": "equation",
+          "bbox_1000": [
+            437,
+            227,
+            820,
+            480
+          ],
+          "bbox_pixels": [
+            560,
+            377,
+            1052,
+            799
+          ],
+          "label": "Equation 23-63 to 23-78",
+          "description": "LaTeX: \\begin{align*} A_1 &= x_t' K_5 - K_1 \\\\ A_2 &= x_t' K_6 - K_2 \\\\ A_3 &= x_t' K_7 - K_3 \\\\ A_4 &= K_4 - x_t' \\\\ A_5 &= y_t' K_5 - K_8 \\\\ A_6 &= y_t' K_6 - K_9 \\\\ A_7 &= y_t' K_7 - K_{10} \\\\ A_8 &= K_{11} - y_t' \\\\ A_9 &= A_1 A_8 - A_4 A_5 \\\\ A_{10} &= A_1 A_7 - A_3 A_5 \\\\ A_{11} &= A_2 A_5 - A_1 A_6 \\\\ A_{12} &= A_2 A_7 - A_3 A_6 \\\\ A_{13} &= A_2 A_8 - A_4 A_6 \\\\ A_{14} &= A_{10}^2 + A_{11}^2 / (1 - e^2) + A_{12}^2 \\\\ A_{15} &= A_9 A_{10} + A_{12} A_{13} \\\\ A_{16} &= A_9^2 - E A_{11}^2 + A_{13}^2 \\end{align*}",
+          "latex": "\\begin{align*} A_1 &= x_t' K_5 - K_1 \\\\ A_2 &= x_t' K_6 - K_2 \\\\ A_3 &= x_t' K_7 - K_3 \\\\ A_4 &= K_4 - x_t' \\\\ A_5 &= y_t' K_5 - K_8 \\\\ A_6 &= y_t' K_6 - K_9 \\\\ A_7 &= y_t' K_7 - K_{10} \\\\ A_8 &= K_{11} - y_t' \\\\ A_9 &= A_1 A_8 - A_4 A_5 \\\\ A_{10} &= A_1 A_7 - A_3 A_5 \\\\ A_{11} &= A_2 A_5 - A_1 A_6 \\\\ A_{12} &= A_2 A_7 - A_3 A_6 \\\\ A_{13} &= A_2 A_8 - A_4 A_6 \\\\ A_{14} &= A_{10}^2 + A_{11}^2 / (1 - e^2) + A_{12}^2 \\\\ A_{15} &= A_9 A_{10} + A_{12} A_{13} \\\\ A_{16} &= A_9^2 - E A_{11}^2 + A_{13}^2 \\end{align*}",
+          "crop_path": "elements/p192_equation_2_Equation_23-63_to_23-78.png",
+          "rendered_path": "elements/p192_equation_2_Equation_23-63_to_23-78_rendered.png"
+        },
+        {
+          "type": "equation",
+          "bbox_1000": [
+            437,
+            513,
+            820,
+            533
+          ],
+          "bbox_pixels": [
+            560,
+            854,
+            1052,
+            887
+          ],
+          "label": "Equation 23-79",
+          "description": "LaTeX: S = (A_{15}/A_{14}) \\pm [(A_{15}/A_{14})^2 - A_{16}/A_{14}]^{1/2}",
+          "latex": "S = (A_{15}/A_{14}) \\pm [(A_{15}/A_{14})^2 - A_{16}/A_{14}]^{1/2}",
+          "crop_path": "elements/p192_equation_3_Equation_23-79.png",
+          "rendered_path": "elements/p192_equation_3_Equation_23-79_rendered.png"
+        },
+        {
+          "type": "equation",
+          "bbox_1000": [
+            437,
+            628,
+            820,
+            648
+          ],
+          "bbox_pixels": [
+            560,
+            1045,
+            1052,
+            1078
+          ],
+          "label": "Equation 23-80",
+          "description": "LaTeX: \\lambda = \\arctan \\left[ (A_9 - A_{10} S) / (A_{12} S - A_{13}) \\right]",
+          "latex": "\\lambda = \\arctan \\left[ (A_9 - A_{10} S) / (A_{12} S - A_{13}) \\right]",
+          "crop_path": "elements/p192_equation_4_Equation_23-80.png",
+          "rendered_path": "elements/p192_equation_4_Equation_23-80_rendered.png"
+        },
+        {
+          "type": "equation",
+          "bbox_1000": [
+            437,
+            846,
+            820,
+            893
+          ],
+          "bbox_pixels": [
+            560,
+            1408,
+            1052,
+            1486
+          ],
+          "label": "Equation 23-81",
+          "description": "LaTeX: \\begin{align*} K_1 X_0 + K_2 Y_0 + K_3 Z_0 &= -K_4 \\\\ K_8 X_0 + K_9 Y_0 + K_{10} Z_0 &= -K_{11} \\\\ K_5 X_0 + K_6 Y_0 + K_7 Z_0 &= -1 \\end{align*}",
+          "latex": "\\begin{align*} K_1 X_0 + K_2 Y_0 + K_3 Z_0 &= -K_4 \\\\ K_8 X_0 + K_9 Y_0 + K_{10} Z_0 &= -K_{11} \\\\ K_5 X_0 + K_6 Y_0 + K_7 Z_0 &= -1 \\end{align*}",
+          "crop_path": "elements/p192_equation_5_Equation_23-81.png",
+          "rendered_path": "elements/p192_equation_5_Equation_23-81_rendered.png"
+        }
+      ],
+      "extraction_time_seconds": 209.74,
+      "total_page_time_seconds": 210.04
     }
   ],
   "timing": {}

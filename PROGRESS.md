@@ -778,6 +778,75 @@ cd /media/nvme2g-a/llm_toolbox
 
 ### Next Steps
 
-- [ ] Process more equation-heavy documents
+- [x] Process more equation-heavy documents
 - [ ] Improve LaTeX parsing for edge cases
 - [ ] Add batch processing for full library
+
+---
+
+## 2025-12-16: Automated LaTeX Pipeline
+
+### Fully Automated Equation Extraction
+
+Updated `extract_document.py` to automatically:
+1. **Detect equations** with bounding boxes via Qwen3-VL
+2. **Extract LaTeX** from the model's description field
+3. **Crop element** from PDF page image
+4. **Render LaTeX** to separate image using matplotlib
+5. **Store all paths** in extraction.json (`crop_path`, `rendered_path`, `latex`)
+
+### New Extractions
+
+**SAM3 Paper** - Added pages 9, 26, 29, 30:
+- Page 9: Tables 6, 8, 9 (benchmark results)
+- Page 26: Figure 7 (domain adaptation visualization)
+- Page 29: Figure 8 (detailed architecture diagram)
+- Page 30: Equations 1-3 (loss functions)
+- Total: 12 pages, 21 elements
+
+**USGS Snyder 1987** - Added pages 147, 189, 192:
+- Page 147: 7 equations (18-37 through 18-50, projection formulas)
+- Page 189: 4 equations (perspective projection formulas)
+- Page 192: 5 equations (inverse projection formulas)
+- Total: 13 pages, 31 elements (8 figures, 23 equations)
+
+**Alpine Habitat Change** - Added pages 7, 8, 12, 16:
+- Tables 1-4, 7-8 (dataset statistics, model performance)
+- Total: 9 pages, 14 elements (6 figures, 8 tables)
+
+### Pipeline Changes
+
+```python
+# In parse_elements(): Extract LaTeX from description
+if elem_data["type"] == "equation":
+    latex = extract_latex_from_description(elem_data["description"])
+    if latex:
+        elem_data["latex"] = latex
+
+# In crop_element(): Render LaTeX for equations
+if elem_type == "equation" and elem.get("latex"):
+    render_latex_to_image(elem["latex"], rendered_path)
+```
+
+### Rendering Limitations
+
+Some complex equations fail to render due to matplotlib mathtext limitations:
+- `\begin{align*}` environments not supported
+- Complex multi-line equation blocks
+
+For these, the cropped PDF image is still available - just no rendered version.
+
+### Statistics
+
+| Document | Pages | Figures | Tables | Equations | Rendered |
+|----------|-------|---------|--------|-----------|----------|
+| SAM3 | 12 | 8 | 8 | 4 | 3 |
+| USGS Snyder | 13 | 8 | 0 | 23 | 19 |
+| Alpine Change | 9 | 6 | 8 | 0 | 0 |
+| **Total** | **34** | **22** | **16** | **27** | **22** |
+
+### Next Steps
+
+- [ ] Deploy to Cloudflare Pages
+- [ ] Add support for `\begin{align*}` rendering (sympy or separate LaTeX renderer)
+- [ ] Process full library (~5000 PDFs)
