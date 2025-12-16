@@ -1,0 +1,176 @@
+{
+  "source_file": "/home/shared/openlibrarymisc/EO_AI_fModel/contribs/aiSeg_sam3_2025.pdf",
+  "extraction_date": "2025-12-16T10:45:00",
+  "extraction_tool": "multimodal/claude-sonnet-4",
+  "model": "anthropic/claude-sonnet-4",
+  "pages": [
+    {
+      "page_number": 2,
+      "model": "anthropic/claude-sonnet-4",
+      "model_display": "Claude Sonnet 4",
+      "extraction_result": {
+        "success": true,
+        "data": {
+          "page_type": "methodology",
+          "text_content": "Under review as a conference paper at ICLR 2026\n\nFigure 2: Illustration of supported initial and optional interactive refinement prompts in the PCS task.\n\nWhile SAM 3 is not designed for long referring language expressions or queries requiring reasoning, we show that it can be straightforwardly combined with a Multimodal Large Language Model (MLLM) to handle more complex language prompts.\n\nThe PCS task is inherently ambiguous due to its open-vocabulary nature, with many concepts having multiple interpretations; e.g., \"small window\" is subjective (small vs large) and has ambiguous boundaries (with shutters vs without). Our approach systematically accounts for these ambiguities at every stage, including data collection, metric design, and modeling.\n\nOur model (Section 3) consists of a detector and a tracker that share a vision encoder (Bolya et al., 2025). The detector is a DETR-based (Carion et al., 2020) model conditioned on text, geometry, and image exemplars. To address the challenge of open-vocabulary concept detection, we introduce a separate presence head to decouple recognition and localization.\n\nTo unlock major performance gains, we build a scalable human- and model-in-the-loop data engine (Section 4) that annotates a large and diverse training dataset with 4M unique phrases and 52M masks, and a synthetic dataset with 38M phrases and 1.4B masks.\n\nWe additionally create the Segment Anything with Concepts (SA-Co) benchmark for PCS (Section 5) containing 214K unique concepts with exhaustive masks in 124K images and 1.7K videos, >50x more concepts than existing benchmarks.\n\nOur experiments (Section 6) show that SAM 3 sets a new state-of-the-art in promptable segmentation, reaching a zero-shot mask AP of 47.0 on LVIS vs the current best of 38.5.\n\n2 PROMPTABLE CONCEPT SEGMENTATION (PCS)\n\nWe define the Promptable Concept Segmentation task as follows: given an image or short video (<=30 secs), detect, segment and track all instances of a visual concept specified by a short text phrase, image exemplars, or a combination of both.",
+          "visual_elements": [
+            {
+              "type": "workflow_diagram",
+              "number": "Figure 2",
+              "caption": "Illustration of supported initial and optional interactive refinement prompts in the PCS task.",
+              "description": "A four-panel workflow diagram showing the Promptable Concept Segmentation process: (1) INITIAL PROMPT - an underwater scene with fish, showing text input 'a fish' and/or bounding box; (2) OUTPUT - segmentation masks (colored overlays) for each detected fish instance; (3) REFINEMENT VISUAL PROMPTS - demonstration of 1+ positive (green) or negative (red) bounding box examples for interactive category refinement; (4) OUTPUT - refined segmentation masks after user feedback. The images show tropical fish in an aquarium setting with colorful segmentation masks.",
+              "components": ["Initial prompt input panel", "Mask output panel", "Refinement prompts panel", "Refined output panel"],
+              "data_summary": "Demonstrates the full PCS workflow from text/box input through mask generation to interactive refinement"
+            }
+          ],
+          "tables_structured": [],
+          "equations": [],
+          "key_concepts": [
+            "Promptable Concept Segmentation (PCS)",
+            "SAM 3",
+            "interactive refinement",
+            "open-vocabulary segmentation",
+            "mask generation",
+            "presence head",
+            "data engine"
+          ],
+          "methods_mentioned": [
+            "SAM 3",
+            "DETR-based detector",
+            "SAM 2 transformer encoder-decoder",
+            "presence head",
+            "vision encoder"
+          ],
+          "datasets_mentioned": [
+            "SA-Co benchmark (214K concepts, 124K images, 1.7K videos)",
+            "LVIS",
+            "Training dataset (4M phrases, 52M masks)",
+            "Synthetic dataset (38M phrases, 1.4B masks)"
+          ],
+          "metrics_reported": [
+            {"metric": "zero-shot mask AP", "value": "47.0", "context": "on LVIS (vs 38.5 previous best)"},
+            {"metric": "improvement", "value": ">2x", "context": "on SA-Co benchmark vs baselines"},
+            {"metric": "inference time", "value": "30ms", "context": "single image with 100+ objects on H200 GPU"}
+          ],
+          "citations_mentioned": [
+            "Bolya et al., 2025",
+            "Carion et al., 2020"
+          ]
+        }
+      },
+      "extracted_images": []
+    },
+    {
+      "page_number": 3,
+      "model": "anthropic/claude-sonnet-4",
+      "model_display": "Claude Sonnet 4",
+      "extraction_result": {
+        "success": true,
+        "data": {
+          "page_type": "methodology",
+          "text_content": "Figure 3: SAM 3 architecture overview. See Fig. 8 for a more detailed diagram.\n\nAll prompts must be consistent in their category definition, or the model's behavior is undefined; e.g., \"fish\" cannot be refined with subsequent exemplar prompts of just the tail; instead the text prompt should be updated. Exemplar prompts are particularly useful when the model initially misses some instances, or when the concept is rare.\n\n3 MODEL\n\nSAM 3 is a generalization of SAM 2, supporting the new PCS task (Section 2) as well as the PVS task. It takes concept prompts (simple noun phrases, image exemplars) or visual prompts (points, boxes, masks) to define the objects to be (individually) segmented spatio-temporally.\n\nOur architecture is broadly based on the SAM and (M)DETR series. Fig. 3 shows the SAM 3 architecture, consisting of a dual encoder-decoder transformer - a detector for image-level capabilities - which is used in combination with a tracker and memory for video.\n\nDetector Architecture. The architecture of the detector follows the general DETR paradigm. The image and text prompt are first encoded by PE and image exemplars, if present, are encoded by an exemplar encoder.\n\nPresence Token. It can be difficult for each of the proposal queries to both recognize (what) and localize (where) an object in the image/frame. For the recognition component, contextual cues from the entire image are important.",
+          "visual_elements": [
+            {
+              "type": "architecture_diagram",
+              "number": "Figure 3",
+              "caption": "SAM 3 architecture overview. See Fig. 8 for a more detailed diagram.",
+              "description": "A detailed architecture diagram showing the SAM 3 model components and data flow. TOP PATH (Detection): Text input 'a penguin' flows through Text Encoder to Detector, which outputs 'masks detected in frame t'. These merge with 'newly detected masks' to produce 'output for frame t'. BOTTOM PATH (Tracking): An exemplar image flows through Image Encoder to Tracker, with 'frame t' and 'mask, point or box' inputs. The Tracker connects to Memory Bank and outputs 'masks propagated from frame t-1'. COLOR LEGEND: Gray boxes = from PE (Perception Encoder), Blue boxes = from SAM 2, Green boxes = new in SAM 3. The diagram shows bidirectional arrows indicating the interaction between detector and tracker paths.",
+              "components": [
+                "Text Encoder",
+                "Image Encoder", 
+                "Detector",
+                "Tracker",
+                "Memory Bank",
+                "Perception Encoder (PE)"
+              ],
+              "data_summary": "Shows dual-path architecture: detection path for image-level segmentation and tracking path for video with memory"
+            }
+          ],
+          "tables_structured": [],
+          "equations": [],
+          "key_concepts": [
+            "SAM 3 architecture",
+            "dual encoder-decoder transformer",
+            "detector",
+            "tracker",
+            "Memory Bank",
+            "presence token",
+            "concept prompts",
+            "visual prompts"
+          ],
+          "methods_mentioned": [
+            "SAM 3",
+            "SAM 2",
+            "DETR",
+            "M-DETR",
+            "Perception Encoder (PE)",
+            "exemplar encoder",
+            "Text Encoder",
+            "Image Encoder"
+          ],
+          "datasets_mentioned": [],
+          "metrics_reported": [],
+          "citations_mentioned": [
+            "Gupta et al., 2019",
+            "Carion et al., 2020",
+            "Kamath et al., 2021",
+            "Bolya et al., 2025",
+            "Zhu et al., 2020",
+            "Lin et al., 2023",
+            "Hu et al., 2023",
+            "Cai et al., 2024",
+            "Cheng et al., 2021"
+          ]
+        }
+      },
+      "extracted_images": []
+    },
+    {
+      "page_number": 4,
+      "model": "anthropic/claude-sonnet-4",
+      "model_display": "Claude Sonnet 4",
+      "extraction_result": {
+        "success": true,
+        "data": {
+          "page_type": "methodology",
+          "text_content": "We decouple the recognition and localization steps by introducing a learned global presence token. This token is solely responsible for predicting whether the target concept in the form of a noun phrase (NP) is present in the image/frame, i.e. p(NP is present in input). Each proposal query qi only needs to solve the localization problem p(qi is a match | NP is present in input). The final score for each proposal query is the product of its own score and the presence score.\n\nImage Exemplars and Interactivity. SAM 3 supports image exemplars, given as a pair - a bounding box and an associated binary label (positive or negative) - which can be used in isolation or to supplement the text prompt.\n\nTracker and Video Architecture. Given a video and a prompt P, we use the detector and a tracker (see Fig. 3) to detect and track objects corresponding to the prompt throughout the video.\n\nTracking an Object with SAM 2 Style Propagation. A masklet is initialized for every object detected on the first frame. Then, on each subsequent frame, the tracker module predicts the new masklet locations.\n\nMatching and Updating Based on Detections. After obtaining the tracked masks M_t, we match them with the current frame detections O_t through a simple IoU based matching function.\n\nInstance Refinement with Visual Prompts. After obtaining the initial set of masks (or masklets), SAM 3 allows refining individual masks(lets) using positive and negative clicks.",
+          "visual_elements": [],
+          "tables_structured": [],
+          "equations": [
+            {
+              "number": "1",
+              "latex": "\\hat{\\mathcal{M}}_t = \\text{propagate}(\\mathcal{M}_{t-1}), \\quad \\mathcal{O}_t = \\text{detect}(I_t, P), \\quad \\mathcal{M}_t = \\text{match\\_and\\_update}\\left(\\hat{\\mathcal{M}}_t, \\mathcal{O}_t\\right)",
+              "description": "Core tracking equations for SAM 3 video processing. M-hat_t represents propagated masklets from previous frame M_{t-1}. O_t represents new detections in current frame I_t given prompt P. M_t is the final matched and updated mask set combining propagated masks with new detections."
+            }
+          ],
+          "key_concepts": [
+            "presence token",
+            "recognition vs localization decoupling",
+            "image exemplars",
+            "tracker architecture",
+            "masklet propagation",
+            "SAM 2 style propagation",
+            "IoU matching",
+            "instance refinement",
+            "memory bank"
+          ],
+          "methods_mentioned": [
+            "presence token",
+            "SAM 2 style propagation",
+            "IoU matching function",
+            "prompt encoder",
+            "mask decoder",
+            "memory encoder"
+          ],
+          "datasets_mentioned": [],
+          "metrics_reported": [],
+          "citations_mentioned": []
+        }
+      },
+      "extracted_images": []
+    }
+  ],
+  "api_calls": 3,
+  "errors": [],
+  "images_extracted": 0
+}

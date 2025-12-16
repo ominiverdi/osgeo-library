@@ -23,6 +23,7 @@ MODEL_DISPLAY_NAMES = {
     "google/gemma-3-4b-it:free": "Gemma 3 4B",
     "nvidia/nemotron-nano-12b-v2-vl:free": "Nemotron VL",
     "amazon/nova-2-lite-v1:free": "Amazon Nova 2",
+    "anthropic/claude-sonnet-4": "Claude Sonnet 4",
 }
 
 

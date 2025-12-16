@@ -215,6 +215,7 @@
         .model-badge.mistral { background: linear-gradient(135deg, #ff6b35 0%, #f7931e 100%); }
         .model-badge.nemotron { background: linear-gradient(135deg, #76b900 0%, #1a1a1a 100%); }
         .model-badge.nova { background: linear-gradient(135deg, #ff9900 0%, #146eb4 100%); }
+        .model-badge.claude { background: linear-gradient(135deg, #d97706 0%, #92400e 100%); }
         .stats {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
@@ -552,6 +553,7 @@
         function getModelBadgeClass(modelDisplay) {
             if (!modelDisplay) return '';
             const lower = modelDisplay.toLowerCase();
+            if (lower.includes('claude')) return 'claude';
             if (lower.includes('gemini')) return 'gemini';
             if (lower.includes('gemma')) return 'gemma';
             if (lower.includes('mistral')) return 'mistral';
