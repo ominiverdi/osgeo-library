@@ -38,8 +38,8 @@ def extract_traditional_page(
     page_num: int,
     output_dir: Path | None = None,
     pdf_name: str = "pdf",
-    min_area: int = 40000,
-    min_dimension: int = 150,
+    min_area: int = 20000,
+    min_dimension: int = 80,
 ) -> dict:
     """Extract traditional data from a single page (text, images, etc.)."""
     page = doc[page_num]
