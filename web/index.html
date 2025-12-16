@@ -301,8 +301,24 @@
     <script>
         let comparisonData = null;
         let currentPdf = null;
-        let currentPage = 1;
+        let currentPageKey = null;  // Can be "2" or "2_Amazon_Nova_2"
         let currentModelFilter = '';
+        
+        // Extract page number from key (handles both "2" and "2_Model_Name" formats)
+        function getPageNum(key) {
+            const parts = String(key).split('_');
+            return parseInt(parts[0]);
+        }
+        
+        // Sort page keys by page number then model name
+        function sortPageKeys(keys) {
+            return keys.sort((a, b) => {
+                const numA = getPageNum(a);
+                const numB = getPageNum(b);
+                if (numA !== numB) return numA - numB;
+                return String(a).localeCompare(String(b));
+            });
+        }
         
         async function loadData() {
             try {
@@ -329,7 +345,7 @@
             
             select.addEventListener('change', (e) => {
                 currentPdf = e.target.value;
-                currentPage = 1;
+                currentPageKey = null;
                 currentModelFilter = '';
                 document.getElementById('model-filter').value = '';
                 populateModelFilter();
@@ -347,8 +363,8 @@
             const pages = comparisonData.pdfs[currentPdf].pages;
             const models = new Set();
             
-            for (const pageNum in pages) {
-                const modelDisplay = pages[pageNum].multimodal?.model_display;
+            for (const pageKey in pages) {
+                const modelDisplay = pages[pageKey].multimodal?.model_display;
                 if (modelDisplay) {
                     models.add(modelDisplay);
                 }
@@ -363,20 +379,21 @@
             
             select.addEventListener('change', (e) => {
                 currentModelFilter = e.target.value;
+                currentPageKey = null;  // Reset page selection
                 populatePageSelect();
                 renderComparison();
             });
         }
         
         function getFilteredPages(pages) {
-            const pageNums = Object.keys(pages).map(Number).sort((a, b) => a - b);
+            const pageKeys = sortPageKeys(Object.keys(pages));
             if (!currentModelFilter) {
-                return pageNums.map(String);
+                return pageKeys;
             }
-            return pageNums.filter(num => {
-                const modelDisplay = pages[num].multimodal?.model_display;
+            return pageKeys.filter(key => {
+                const modelDisplay = pages[key].multimodal?.model_display;
                 return modelDisplay === currentModelFilter;
-            }).map(String);
+            });
         }
         
         function populatePageSelect() {
@@ -386,58 +403,61 @@
             if (!currentPdf || !comparisonData.pdfs[currentPdf]) return;
             
             const pages = comparisonData.pdfs[currentPdf].pages;
-            const filteredPages = getFilteredPages(pages);
+            const filteredKeys = getFilteredPages(pages);
             
-            for (const pageNum of filteredPages) {
-                const pageData = pages[pageNum];
+            for (const pageKey of filteredKeys) {
+                const pageData = pages[pageKey];
+                const pageNum = pageData.page_number || getPageNum(pageKey);
                 const modelName = pageData.multimodal?.model_display || '';
                 const option = document.createElement('option');
-                option.value = pageNum;
+                option.value = pageKey;
                 option.textContent = modelName ? `Page ${pageNum} (${modelName})` : `Page ${pageNum}`;
                 select.appendChild(option);
             }
             
             select.addEventListener('change', (e) => {
-                currentPage = parseInt(e.target.value);
+                currentPageKey = e.target.value;
                 renderComparison();
             });
             
             // Select first page
-            if (filteredPages.length > 0) {
-                currentPage = parseInt(filteredPages[0]);
-                select.value = currentPage;
+            if (filteredKeys.length > 0) {
+                currentPageKey = filteredKeys[0];
+                select.value = currentPageKey;
             }
         }
         
         function prevPage() {
             if (!currentPdf || !comparisonData.pdfs[currentPdf]) return;
-            const pages = Object.keys(comparisonData.pdfs[currentPdf].pages).map(Number).sort((a,b) => a-b);
-            const idx = pages.indexOf(currentPage);
+            const pages = comparisonData.pdfs[currentPdf].pages;
+            const keys = sortPageKeys(getFilteredPages(pages));
+            const idx = keys.indexOf(currentPageKey);
             if (idx > 0) {
-                currentPage = pages[idx - 1];
-                document.getElementById('page-select').value = currentPage;
+                currentPageKey = keys[idx - 1];
+                document.getElementById('page-select').value = currentPageKey;
                 renderComparison();
             }
         }
         
         function nextPage() {
             if (!currentPdf || !comparisonData.pdfs[currentPdf]) return;
-            const pages = Object.keys(comparisonData.pdfs[currentPdf].pages).map(Number).sort((a,b) => a-b);
-            const idx = pages.indexOf(currentPage);
-            if (idx < pages.length - 1) {
-                currentPage = pages[idx + 1];
-                document.getElementById('page-select').value = currentPage;
+            const pages = comparisonData.pdfs[currentPdf].pages;
+            const keys = sortPageKeys(getFilteredPages(pages));
+            const idx = keys.indexOf(currentPageKey);
+            if (idx < keys.length - 1) {
+                currentPageKey = keys[idx + 1];
+                document.getElementById('page-select').value = currentPageKey;
                 renderComparison();
             }
         }
         
         function renderComparison() {
-            if (!currentPdf || !currentPage) {
+            if (!currentPdf || !currentPageKey) {
                 return;
             }
             
             const pdfData = comparisonData.pdfs[currentPdf];
-            const pageData = pdfData.pages[currentPage];
+            const pageData = pdfData.pages[currentPageKey];
             
             if (!pageData) {
                 document.getElementById('original-panel').innerHTML = '<div class="no-data">No data for this page</div>';
@@ -446,10 +466,12 @@
                 return;
             }
             
+            const pageNum = pageData.page_number || getPageNum(currentPageKey);
+            
             // Render original page image
             if (pageData.image) {
                 document.getElementById('original-panel').innerHTML = 
-                    `<img class="page-image" src="data/${pageData.image}" alt="Page ${currentPage}">`;
+                    `<img class="page-image" src="data/${pageData.image}" alt="Page ${pageNum}">`;
             } else {
                 document.getElementById('original-panel').innerHTML = '<div class="no-data">No image available</div>';
             }
