@@ -22,17 +22,18 @@ import requests
 OPENROUTER_BASE_URL = "https://openrouter.ai/api/v1"
 
 # Vision models available on OpenRouter free tier (text+image->text)
+# Tested and confirmed working as of 2025-12-16
 VISION_MODELS = {
     # Google models
-    "gemini": "google/gemini-2.0-flash-exp:free",  # 1M context, best quality but rate limited
-    "gemma-27b": "google/gemma-3-27b-it:free",  # 131K context
-    "gemma-12b": "google/gemma-3-12b-it:free",  # 32K context
+    "gemini": "google/gemini-2.0-flash-exp:free",  # 1M context, best quality but aggressive rate limits
+    "gemma-27b": "google/gemma-3-27b-it:free",  # 131K context, often rate limited
+    "gemma-12b": "google/gemma-3-12b-it:free",  # 32K context, good balance
     "gemma-4b": "google/gemma-3-4b-it:free",  # 32K context, fastest
     # Other providers
-    "mistral": "mistralai/mistral-small-3.1-24b-instruct:free",  # 128K context, solid
     "nemotron": "nvidia/nemotron-nano-12b-v2-vl:free",  # 128K context, document specialist
-    "nova": "amazon/nova-2-lite-v1:free",  # 1M context
+    "nova": "amazon/nova-2-lite-v1:free",  # 1M context, reliable
 }
+# Note: mistral-small-3.1 claims multimodal but returns 404 for image input
 
 # Short names for display
 MODEL_DISPLAY_NAMES = {
@@ -40,13 +41,12 @@ MODEL_DISPLAY_NAMES = {
     "google/gemma-3-27b-it:free": "Gemma 3 27B",
     "google/gemma-3-12b-it:free": "Gemma 3 12B",
     "google/gemma-3-4b-it:free": "Gemma 3 4B",
-    "mistralai/mistral-small-3.1-24b-instruct:free": "Mistral Small 3.1",
     "nvidia/nemotron-nano-12b-v2-vl:free": "Nemotron VL",
     "amazon/nova-2-lite-v1:free": "Amazon Nova 2",
 }
 
-# Default model
-DEFAULT_MODEL = "mistral"
+# Default model - Nova is reliable with good quality
+DEFAULT_MODEL = "nova"
 
 EXTRACTION_PROMPT = """You are analyzing a page from a scientific research paper about Earth Observation, Remote Sensing, or AI/ML for geospatial applications.
 
