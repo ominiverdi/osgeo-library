@@ -113,23 +113,146 @@ Based on typical paper structure, try these pages for variety:
 
 ---
 
+## 2025-12-16: Model Comparison and Claude Integration
+
+### What we did
+
+1. **Tested multiple free multimodal models via OpenRouter**
+
+   | Model | Content Quality | Figure Description | Equations | Verdict |
+   |-------|----------------|-------------------|-----------|---------|
+   | Gemini 2.0 Flash | Good | Good | Untested | Aggressive rate limits |
+   | Amazon Nova 2 | Good | Basic | Missed | Reliable, recommended |
+   | Nemotron VL | Poor | Poor (hallucinated) | Missed | Not recommended |
+   | Gemma 3 12B | Decent | Basic | Untested | Sometimes rate limited |
+   | Mistral Small 3.1 | N/A | N/A | N/A | No image support (404) |
+
+2. **Added Claude Sonnet 4 as reference extraction**
+   - Manually extracted pages 2, 3, 4 by showing images to Claude
+   - Excellent results:
+     - **Figure 2**: Full workflow description with all 4 panels
+     - **Figure 3**: Architecture diagram with all components listed
+     - **Page 4 equation**: Full LaTeX + semantic explanation
+   - Claude extractions saved to `web/data/sam3_claude_p2-4.json`
+
+3. **Built model comparison features**
+   - Model filter dropdown to compare specific models
+   - Color-coded model badges (Claude=orange, Nova=orange-blue, etc.)
+   - Page selector shows model name
+   - Incremental merge preserves existing extractions
+
+4. **Improved image extraction**
+   - Area-based filtering (min 20,000 px) + min dimension (80px)
+   - Deduplication of identical images
+   - PyMuPDF extracts images in both Traditional and Multimodal panels
+
+### Key findings
+
+**Claude is the best for content understanding** - correctly identifies:
+- Figure structure (4-panel workflow, architecture components)
+- Mathematical equations with LaTeX representation
+- Semantic meaning of equations (not just symbols)
+
+**PyMuPDF limitations for figures:**
+- Extracts embedded raster images only
+- Composite figures appear as fragments
+- Vector graphics (diagrams, equations) not extracted as images
+- Need alternative approach for figure/equation extraction
+
+### Available models (extract_multimodal.py)
+
+```bash
+--model nova      # Amazon Nova 2 (recommended, reliable)
+--model gemma-12b # Gemma 3 12B (good, sometimes rate limited)
+--model gemma-4b  # Gemma 3 4B (fast, untested quality)
+--model nemotron  # Nemotron VL (not recommended)
+--model gemini    # Gemini 2.0 Flash (best but rate limited)
+```
+
+### Current comparison data
+
+```
+Page 2: Claude Sonnet 4, Amazon Nova 2, Gemma 3 12B, Nemotron VL
+Page 3: Claude Sonnet 4, Nemotron VL
+Page 4: Claude Sonnet 4, Nemotron VL
+```
+
+---
+
 ## Next Steps
 
 ### Immediate
 - [x] Colleagues evaluate extraction quality using comparison website
-- [ ] Extract more pages when API rate limits reset
-- [ ] Test on diverse pages (architecture, tables, results)
+- [x] Test on diverse pages (architecture, tables, results)
+- [ ] Research alternatives for figure/equation extraction (pdfplumber, pdfminer, Marker, Nougat)
 - [ ] Test second PDF sample (2403.04385.pdf)
 
 ### Short term
 - [ ] Design `osgeo_research_kb` database schema
 - [x] Extract individual figures (not just page images)
+- [ ] Improve equation extraction (LaTeX from PDF)
 - [ ] Add vector embeddings for semantic search
 
 ### Long term
 - [ ] Process full library (~5000 PDFs)
 - [ ] Implement `search_research_papers()` function
 - [ ] Enable queries like "show me the SAM3 architecture diagram"
+
+---
+
+## Research: Figure/Equation Extraction Alternatives
+
+### Investigated Tools
+
+#### Marker (datalab-to/marker) - 30.4k stars
+- **Best for**: Full PDF to markdown/JSON conversion
+- **Figures**: Extracts and saves images
+- **Equations**: LaTeX fenced with `$$`
+- **Tables**: Excellent (can use LLM for accuracy)
+- **Speed**: Fast (~0.18s/page on H100)
+- **License**: GPL (commercial requires paid license)
+- **Install**: `pip install marker-pdf`
+- **Use**: `marker_single paper.pdf -o output/ --use_llm`
+
+#### Nougat (facebookresearch/nougat) - 9.8k stars
+- **Best for**: Academic papers (trained on arXiv/PMC)
+- **Figures**: Semantic understanding only (no image extraction)
+- **Equations**: Native LaTeX output (excellent)
+- **Tables**: Good (Mathpix Markdown format)
+- **Speed**: Slower (neural model)
+- **License**: MIT (code), CC-BY-NC (model weights)
+- **Install**: `pip install nougat-ocr`
+- **Use**: `nougat paper.pdf -o output/`
+- **Limitation**: English only, no CJK support
+
+### Comparison for Our Use Case
+
+| Tool | Figures | Equations | Tables | Best For |
+|------|---------|-----------|--------|----------|
+| **PyMuPDF** | Raw images only | None | Basic | Text extraction, speed |
+| **Marker** | Extracts images | LaTeX (good) | Excellent | General PDFs, RAG |
+| **Nougat** | Semantic only | LaTeX (excellent) | Good | Scientific papers |
+| **Claude** | Via vision | Excellent | Excellent | Quality reference |
+
+### Recommended Hybrid Approach
+
+1. **PyMuPDF**: Fast text extraction, image detection
+2. **Marker**: Figure extraction + LaTeX equations
+3. **Nougat**: Academic-specific, equation-heavy papers
+4. **Claude/Multimodal**: Quality verification, figure descriptions
+
+### Next: Test Marker and Nougat
+
+```bash
+# Install on server
+pip install marker-pdf nougat-ocr
+
+# Test Marker
+marker_single paper.pdf -o marker_out/ --use_llm
+
+# Test Nougat
+nougat paper.pdf -o nougat_out/
+```
 
 ---
 
