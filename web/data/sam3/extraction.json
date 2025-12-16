@@ -1,7 +1,7 @@
 {
   "document": "sam3",
   "source_file": "sam3.pdf",
-  "extraction_date": "2025-12-16T17:37:15.322414",
+  "extraction_date": "2025-12-16T19:03:38.111330",
   "model": "qwen3-vl-32b",
   "pages": [
     {
@@ -90,6 +90,37 @@
           "crop_path": "elements/p03_figure_1_Figure_3.png"
         }
       ]
+    },
+    {
+      "page_number": 4,
+      "image": "page_04.png",
+      "annotated_image": "page_04_annotated.png",
+      "width": 1275,
+      "height": 1650,
+      "text": "162\n163\n164\n165\n166\n167\n168\n169\n170\n171\n172\n173\n174\n175\n176\n177\n178\n179\n180\n181\n182\n183\n184\n185\n186\n187\n188\n189\n190\n191\n192\n193\n194\n195\n196\n197\n198\n199\n200\n201\n202\n203\n204\n205\n206\n207\n208\n209\n210\n211\n212\n213\n214\n215\nUnder review as a conference paper at ICLR 2026\nWe decouple the recognition and localization steps by introducing a learned global presence token.\nThis token is solely responsible for predicting whether the target concept in the form of a noun phrase\n(NP) is present in the image/frame, i.e. p(NP is present in input). Each proposal query qi only needs\nto solve the localization problem p(qi is a match | NP is present in input). The final score for each\nproposal query is the product of its own score and the presence score.\nImage Exemplars and Interactivity. SAM 3 supports image exemplars, given as a pair—a bounding\nbox and an associated binary label (positive or negative)—which can be used in isolation or to\nsupplement the text prompt. The model then detects all the instances that match the prompt. For\nexample, given a positive bounding box on a dog, the model will detect all dogs in the image. This\nis different from the PVS task in SAM 1 and 2, where a geometric/visual prompt yields only a\nsingle object instance. Each image exemplar is encoded separately by the exemplar encoder using\nan embedding for the position, an embedding for the label, and ROI-pooled visual features, then\nconcatenated and processed by a small transformer. The resulting prompt is concatenated to the text\nprompt to comprise the prompt tokens. Image exemplars can be interactively provided based on\nerrors in current detections to refine the output.\nTracker and Video Architecture. Given a video and a prompt P, we use the detector and a tracker\n(see Fig. 3) to detect and track objects corresponding to the prompt throughout the video. On each\nframe, the detector finds new objects Ot and the tracker propagates masklets Mt−1 (spatial-temporal\nmasks) from frames at the previous time t −1 to their new locations ˆ\nMt on the current frame at time\nt. We use a matching function to associate propagated masklets ˆ\nMt with new object masks emerging\nin the current frame Ot,\nˆ\nMt = propagate (Mt−1) ,\nOt = detect (It, P) ,\nMt = match and update\n\u0010\nˆ\nMt, Ot\n\u0011\n.\nTracking an Object with SAM 2 Style Propagation. A masklet is initialized for every object\ndetected on the first frame. Then, on each subsequent frame, the tracker module predicts the new\nmasklet locations\nˆ\nMt of those already-tracked objects based on their previous locations Mt−1\nthrough a single-frame propagation step similar to the video object segmentation task in SAM 2.\nThe tracker shares the same image/frame encoder (PE backbone) as the detector. After training the\ndetector, we freeze PE and train the tracker as in SAM 2, including a prompt encoder, mask decoder,\nmemory encoder, and a memory bank that encodes the object’s appearance using features from the\npast frames and conditioning frames (frames where the object is first detected or user-prompted). The\nmemory encoder is a transformer with self-attention across visual features on the current frame and\ncross-attention from the visual features to the spatial memory features in the memory bank.\nDuring inference, we only retain frames where the object is confidently present in the memory bank.\nThe mask decoder is a two-way transformer between the encoder hidden states and the output tokens.\nTo handle ambiguity, we predict three output masks for every tracked object on each frame along with\ntheir confidence, and select the most confident output as the predicted mask on the current frame.\nMatching and Updating Based on Detections. After obtaining the tracked masks ˆ\nMt, we match\nthem with the current frame detections Ot through a simple IoU based matching function (§D.3) and\nadd them to Mt on the current frame. We further spawn new masklets for all newly detected objects\nthat are not matched. The merging might suffer from ambiguities, especially in crowded scenes. We\naddress this with two temporal disambiguation strategies outlined next.\nFirst, we use temporal information in the form of a masklet detection score (§D.3) to measure how\nconsistently a masklet is matched to a detection within a temporal window (based on the number\nof past frames where it was matched to a detection). If a masklet’s detection score falls below a\nthreshold, we suppress it. Second, we use the detector outputs to resolve specific failure modes of the\ntracker due to occlusions or distractors. We periodically re-prompt the tracker with high-confidence\ndetection masks Ot, replacing the tracker’s own predictions ˆ\nMt. This ensures that the memory bank\nhas recent and reliable references (other than the tracker’s own predictions).\nInstance Refinement with Visual Prompts. After obtaining the initial set of masks (or masklets),\nSAM 3 allows refining individual masks(lets) using positive and negative clicks. Specifically, given\nthe user clicks, we apply the prompt encoder to encode them, and feed the encoded prompt into the\nmask decoder to predict an adjusted mask. In videos the mask is then propagated across the entire\nvideo to obtain a refined masklet.\n4\n",
+      "text_length": 5190,
+      "elements": [
+        {
+          "type": "equation",
+          "bbox_1000": [
+            182,
+            112,
+            818,
+            140
+          ],
+          "bbox_pixels": [
+            232,
+            184,
+            1042,
+            231
+          ],
+          "label": "Equation 1",
+          "description": "LaTeX: \\mathcal{M}_t = \\text{propagate} \\left( \\mathcal{M}_{t-1} \\right), \\quad \\mathcal{O}_t = \\text{detect} \\left( I_t, P \\right), \\quad \\mathcal{M}_t = \\text{match\\_and\\_update} \\left( \\hat{\\mathcal{M}}_t, \\mathcal{O}_t \\right)",
+          "crop_path": "elements/p04_equation_1_Equation_1.png"
+        }
+      ],
+      "extraction_time_seconds": 41.93,
+      "total_page_time_seconds": 42.07
     },
     {
       "page_number": 5,
@@ -297,5 +328,6 @@
         }
       ]
     }
-  ]
+  ],
+  "timing": {}
 }

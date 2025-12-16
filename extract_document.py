@@ -58,20 +58,21 @@ def detect_elements(image_path: Path, client: OpenAI) -> str:
     with open(image_path, "rb") as f:
         image_data = base64.standard_b64encode(f.read()).decode("utf-8")
 
-    prompt = """Analyze this document page and locate all visual elements (figures, tables, diagrams, charts).
+    prompt = """Analyze this document page and locate all visual elements (figures, tables, diagrams, charts, equations).
 
 For each element found, provide:
-- type: figure, table, diagram, or chart  
+- type: figure, table, diagram, chart, or equation
 - bbox: bounding box as [x1, y1, x2, y2] in 0-1000 scale (top-left to bottom-right)
-- label: identifier if visible (e.g., "Figure 1", "Table 2")
-- description: brief description of content
+- label: identifier if visible (e.g., "Figure 1", "Table 2", "Equation 3")
+- description: brief description of content (for equations, include the LaTeX representation if possible)
 
 Return JSON format:
 {
   "figure": [{"bbox": [x1,y1,x2,y2], "label": "Figure 1", "description": "..."}],
   "table": [{"bbox": [x1,y1,x2,y2], "label": "Table 1", "description": "..."}],
   "diagram": [],
-  "chart": []
+  "chart": [],
+  "equation": [{"bbox": [x1,y1,x2,y2], "label": "Equation 1", "description": "LaTeX: ..."}]
 }
 
 Use empty arrays [] for categories with no elements."""
@@ -106,6 +107,18 @@ def parse_elements(raw_response: str, width: int, height: int) -> list:
         content = content.split("```json")[1].split("```")[0]
     elif "```" in content:
         content = content.split("```")[1].split("```")[0]
+
+    # Fix invalid JSON escapes (common in LaTeX output)
+    # Replace single backslashes that aren't valid JSON escapes
+    import re
+
+    # Valid JSON escapes: \", \\, \/, \b, \f, \n, \r, \t, \uXXXX
+    # First, normalize already-escaped backslashes to a placeholder
+    content = content.replace("\\\\", "\x00DBL\x00")
+    # Fix single backslashes that aren't valid JSON escapes
+    content = re.sub(r'\\(?!["\\/bfnrtu])', r"\\\\", content)
+    # Restore double backslashes
+    content = content.replace("\x00DBL\x00", "\\\\")
 
     try:
         data = json.loads(content.strip())
@@ -184,7 +197,13 @@ def create_annotated_page(image_path: Path, elements: list, output_path: Path):
     img = Image.open(image_path)
     draw = ImageDraw.Draw(img)
 
-    colors = {"figure": "red", "table": "blue", "diagram": "green", "chart": "orange"}
+    colors = {
+        "figure": "red",
+        "table": "blue",
+        "diagram": "green",
+        "chart": "orange",
+        "equation": "purple",
+    }
 
     for elem in elements:
         bbox = elem.get("bbox_pixels", [])

@@ -91,6 +91,7 @@
         .element-card.figure { border-left-color: #e74c3c; }
         .element-card.table { border-left-color: #3498db; }
         .element-card.diagram { border-left-color: #27ae60; }
+        .element-card.equation { border-left-color: #9b59b6; }
         
         .element-header {
             padding: 10px 15px;
@@ -109,6 +110,7 @@
         .element-type.figure { background: #e74c3c; }
         .element-type.table { background: #3498db; }
         .element-type.diagram { background: #27ae60; }
+        .element-type.equation { background: #9b59b6; }
         
         .element-body {
             padding: 15px;
@@ -197,7 +199,6 @@
 </head>
 <body>
     <h1>Document Extraction Viewer</h1>
-    <p class="subtitle">Visual element detection using Qwen3-VL-32B</p>
     
     <div class="controls">
         <select id="doc-select">
@@ -357,7 +358,8 @@
                     <p style="text-align:center;color:#666;margin-top:10px">
                         <span style="color:red">Red = Figure</span> | 
                         <span style="color:blue">Blue = Table</span> | 
-                        <span style="color:green">Green = Diagram</span>
+                        <span style="color:green">Green = Diagram</span> |
+                        <span style="color:purple">Purple = Equation</span>
                     </p>
                 `;
             } else {
