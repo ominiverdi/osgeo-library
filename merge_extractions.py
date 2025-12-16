@@ -15,6 +15,24 @@ from datetime import datetime
 import fitz  # PyMuPDF
 
 
+# Lookup for model display names
+MODEL_DISPLAY_NAMES = {
+    "google/gemini-2.0-flash-exp:free": "Gemini 2.0 Flash",
+    "google/gemma-3-27b-it:free": "Gemma 3 27B",
+    "google/gemma-3-12b-it:free": "Gemma 3 12B",
+    "google/gemma-3-4b-it:free": "Gemma 3 4B",
+    "nvidia/nemotron-nano-12b-v2-vl:free": "Nemotron VL",
+    "amazon/nova-2-lite-v1:free": "Amazon Nova 2",
+}
+
+
+def get_model_display_name(model_id: str, fallback: str | None = None) -> str:
+    """Get display name for a model ID."""
+    if model_id in MODEL_DISPLAY_NAMES:
+        return MODEL_DISPLAY_NAMES[model_id]
+    return fallback if fallback else model_id
+
+
 def generate_page_image(
     doc: fitz.Document, page_num: int, output_dir: Path, dpi: int = 150
 ) -> str:
@@ -50,9 +68,14 @@ def load_extraction_data(json_path: Path) -> dict:
         result = page.get("extraction_result", {})
 
         # Build extraction data with model info
+        page_model = page.get("model", model)
+        page_model_display = page.get("model_display")
+        if not page_model_display:
+            page_model_display = get_model_display_name(page_model)
+
         extracted = {
-            "model": page.get("model", model),
-            "model_display": page.get("model_display", model),
+            "model": page_model,
+            "model_display": page_model_display,
         }
 
         if result.get("error"):
