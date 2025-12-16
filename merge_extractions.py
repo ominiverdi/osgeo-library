@@ -211,13 +211,28 @@ def main():
             "pdfs": {},
         }
 
+    # Get existing pages for this PDF (incremental mode)
+    existing_pages = {}
+    if pdf_name in all_comparisons.get("pdfs", {}):
+        existing_pages = all_comparisons["pdfs"][pdf_name].get("pages", {})
+        print(f"  Found {len(existing_pages)} existing page entries", file=sys.stderr)
+
+    # Merge: new pages override existing ones with same key
+    merged_pages = {**existing_pages, **comparison_pages}
+
     # Update/add this PDF's data
     all_comparisons["pdfs"][pdf_name] = {
         "pdf_path": str(args.pdf_path),
         "total_pages": fitz.open(args.pdf_path).page_count,
-        "pages": comparison_pages,
+        "pages": merged_pages,
     }
     all_comparisons["generated_date"] = datetime.now().isoformat()
+
+    new_count = len(comparison_pages)
+    total_count = len(merged_pages)
+    print(
+        f"  Added/updated {new_count} entries, total now {total_count}", file=sys.stderr
+    )
 
     # Save
     with open(comparisons_path, "w") as f:
