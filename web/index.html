@@ -507,13 +507,39 @@
                     </div>
                     <div class="stat-box">
                         <div class="stat-value">${data.image_count || 0}</div>
-                        <div class="stat-label">Images Detected</div>
+                        <div class="stat-label">Images in PDF</div>
                     </div>
                     <div class="stat-box">
-                        <div class="stat-value">${data.block_count || 0}</div>
-                        <div class="stat-label">Text Blocks</div>
+                        <div class="stat-value">${data.extracted_images?.length || 0}</div>
+                        <div class="stat-label">Figures Extracted</div>
                     </div>
                 </div>
+            `;
+            
+            // Show extracted images
+            if (data.extracted_images && data.extracted_images.length > 0) {
+                html += `
+                    <div class="section">
+                        <div class="section-title">Extracted Figures (${data.extracted_images.length})</div>
+                        <div class="extracted-images">
+                            ${data.extracted_images.map(img => `
+                                <div class="extracted-image-item">
+                                    <img src="data/images/${img.filename}" alt="${escapeHtml(img.filename)}" 
+                                         onerror="this.style.display='none'; this.nextElementSibling.style.display='block'">
+                                    <div style="display:none;color:#999;font-size:10px">Image not found</div>
+                                    <div class="img-info">
+                                        ${img.width}x${img.height} ${img.format}<br>
+                                        ${(img.size_bytes / 1024).toFixed(1)} KB
+                                    </div>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                `;
+            }
+            
+            // Show extracted text
+            html += `
                 <div class="section">
                     <div class="section-title">Extracted Text</div>
                     <div class="extraction-text">${escapeHtml(data.text || 'No text extracted')}</div>

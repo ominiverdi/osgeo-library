@@ -33,20 +33,73 @@ def get_model_display_name(model_id: str, fallback: str | None = None) -> str:
     return fallback if fallback else model_id
 
 
-def extract_traditional_page(doc: fitz.Document, page_num: int) -> dict:
-    """Extract traditional data from a single page (text, image count, etc.)."""
+def extract_traditional_page(
+    doc: fitz.Document,
+    page_num: int,
+    output_dir: Path | None = None,
+    pdf_name: str = "pdf",
+    min_area: int = 40000,
+    min_dimension: int = 150,
+) -> dict:
+    """Extract traditional data from a single page (text, images, etc.)."""
     page = doc[page_num]
     text = page.get_text("text")
     blocks = page.get_text("dict", flags=11)  # TEXT_PRESERVE_WHITESPACE = 11
-    images = page.get_images(full=True)
+    image_list = page.get_images(full=True)
     links = page.get_links()
+
+    # Extract actual images if output_dir provided
+    extracted_images = []
+    if output_dir is not None:
+        seen_sizes = set()
+        for img_idx, img_info in enumerate(image_list):
+            xref = img_info[0]
+            try:
+                base_image = doc.extract_image(xref)
+                image_bytes = base_image["image"]
+                width = base_image["width"]
+                height = base_image["height"]
+                image_ext = base_image["ext"]
+
+                # Apply same filtering as multimodal extraction
+                area = width * height
+                if area < min_area or min(width, height) < min_dimension:
+                    continue
+
+                # Deduplicate
+                size_key = (width, height, len(image_bytes))
+                if size_key in seen_sizes:
+                    continue
+                seen_sizes.add(size_key)
+
+                # Save image
+                img_filename = (
+                    f"{pdf_name}_p{page_num + 1:03d}_img{img_idx + 1:02d}.{image_ext}"
+                )
+                img_path = output_dir / img_filename
+                if not img_path.exists():
+                    with open(img_path, "wb") as f:
+                        f.write(image_bytes)
+
+                extracted_images.append(
+                    {
+                        "filename": img_filename,
+                        "width": width,
+                        "height": height,
+                        "format": image_ext,
+                        "size_bytes": len(image_bytes),
+                    }
+                )
+            except Exception:
+                continue
 
     return {
         "text": text,
         "text_length": len(text),
         "block_count": len(blocks.get("blocks", [])),
-        "image_count": len(images),
+        "image_count": len(image_list),
         "link_count": len(links),
+        "extracted_images": extracted_images,
     }
 
 
@@ -164,9 +217,14 @@ def main():
 
     # Open PDF and generate page images
     doc = fitz.open(args.pdf_path)
-    pdf_name = args.pdf_path.name
+    pdf_name = args.pdf_path.name  # Full name for display
+    pdf_stem = args.pdf_path.stem  # Without extension for filenames
     images_dir = args.output_dir / "data"
     images_dir.mkdir(parents=True, exist_ok=True)
+
+    # Create images subdir for extracted figures
+    extracted_images_dir = images_dir / "images"
+    extracted_images_dir.mkdir(exist_ok=True)
 
     # Build comparison structure
     # For model comparison, we create multiple page entries: page_num_model
@@ -184,7 +242,18 @@ def main():
             print(
                 f"  Extracting traditional data for page {page_num}...", file=sys.stderr
             )
-            traditional_cache[page_num] = extract_traditional_page(doc, page_num - 1)
+            traditional_cache[page_num] = extract_traditional_page(
+                doc,
+                page_num - 1,
+                output_dir=extracted_images_dir,
+                pdf_name=pdf_stem,
+            )
+            traditional_cache[page_num] = extract_traditional_page(
+                doc,
+                page_num - 1,
+                output_dir=images_dir,
+                pdf_name=pdf_name,
+            )
 
         for extraction in all_extractions[page_num]:
             model_display = extraction.get("model_display", "Unknown")
