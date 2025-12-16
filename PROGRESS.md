@@ -792,7 +792,7 @@ Updated `extract_document.py` to automatically:
 1. **Detect equations** with bounding boxes via Qwen3-VL
 2. **Extract LaTeX** from the model's description field
 3. **Crop element** from PDF page image
-4. **Render LaTeX** to separate image using matplotlib
+4. **Render LaTeX** to separate image using pdflatex + ImageMagick
 5. **Store all paths** in extraction.json (`crop_path`, `rendered_path`, `latex`)
 
 ### New Extractions
@@ -828,25 +828,28 @@ if elem_type == "equation" and elem.get("latex"):
     render_latex_to_image(elem["latex"], rendered_path)
 ```
 
-### Rendering Limitations
+### LaTeX Rendering with pdflatex
 
-Some complex equations fail to render due to matplotlib mathtext limitations:
-- `\begin{align*}` environments not supported
-- Complex multi-line equation blocks
+Switched from matplotlib mathtext to **pdflatex + ImageMagick** for proper LaTeX rendering:
+- Full LaTeX support: `align*`, `cases`, matrices, all environments
+- Uses `standalone` document class for minimal output
+- Converts PDF to PNG via ImageMagick `convert`
+- Requires: `texlive`, `imagemagick` (system packages)
 
-For these, the cropped PDF image is still available - just no rendered version.
+### Text Cleaning
+
+Added automatic removal of margin line numbers from academic papers (e.g., ICLR submissions have 3-digit line numbers like 000, 001, 002... in margins).
 
 ### Statistics
 
 | Document | Pages | Figures | Tables | Equations | Rendered |
 |----------|-------|---------|--------|-----------|----------|
-| SAM3 | 12 | 8 | 8 | 4 | 3 |
-| USGS Snyder | 13 | 8 | 0 | 23 | 19 |
+| SAM3 | 12 | 8 | 8 | 3 | 3 |
+| USGS Snyder | 13 | 8 | 0 | 23 | 23 |
 | Alpine Change | 9 | 6 | 8 | 0 | 0 |
-| **Total** | **34** | **22** | **16** | **27** | **22** |
+| **Total** | **34** | **22** | **16** | **26** | **26** |
 
 ### Next Steps
 
 - [ ] Deploy to Cloudflare Pages
-- [ ] Add support for `\begin{align*}` rendering (sympy or separate LaTeX renderer)
 - [ ] Process full library (~5000 PDFs)
