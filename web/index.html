@@ -383,9 +383,21 @@
                             </div>
                             <div class="element-body">
                                 ${elem.crop_path ? `
-                                    <img class="element-image" src="${basePath}/${elem.crop_path}" 
-                                         alt="${elem.label}"
-                                         onclick="showModal('${basePath}/${elem.crop_path}')">
+                                    <div style="margin-bottom:10px">
+                                        <div style="font-size:11px;color:#666;margin-bottom:3px">Cropped from PDF:</div>
+                                        <img class="element-image" src="${basePath}/${elem.crop_path}" 
+                                             alt="${elem.label}"
+                                             onclick="showModal('${basePath}/${elem.crop_path}')">
+                                    </div>
+                                ` : ''}
+                                ${elem.rendered_path ? `
+                                    <div style="margin-bottom:10px">
+                                        <div style="font-size:11px;color:#666;margin-bottom:3px">Rendered from LaTeX:</div>
+                                        <img class="element-image" src="${basePath}/${elem.rendered_path}" 
+                                             alt="${elem.label} (rendered)"
+                                             onclick="showModal('${basePath}/${elem.rendered_path}')"
+                                             style="background:#fafafa;border:1px dashed #ccc;">
+                                    </div>
                                 ` : ''}
                                 ${elem.description ? `
                                     <div class="element-description">${escapeHtml(elem.description)}</div>

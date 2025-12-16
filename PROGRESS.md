@@ -699,7 +699,85 @@ osgeo-library/
 
 ### Next Steps
 
-- [ ] Test Qwen3-VL-235B for comparison
+- [x] Test Qwen3-VL-235B for comparison
 - [ ] Extract more pages from both documents
-- [ ] Add more test documents
+- [x] Add more test documents
 - [ ] Deploy web viewer to Cloudflare Pages
+
+---
+
+## 2025-12-16: Equation Detection and LaTeX Rendering
+
+### Major Improvements
+
+1. **Upgraded to Qwen3-VL-235B** for better equation detection accuracy
+   - Switched from 32B model for improved bounding box precision on equations
+   - Model: `Qwen3-VL-235B-A22B-Instruct-UD-TQ1_0.gguf` (47GB)
+
+2. **Added equation extraction with LaTeX**
+   - Model extracts LaTeX representation of detected equations
+   - Both cropped image AND rendered LaTeX saved for comparison
+   - Handles multi-line equations (splits on `\\`)
+   - Handles `\begin{cases}...\end{cases}` by converting to stacked lines
+
+3. **LaTeX-to-image rendering**
+   - Uses matplotlib mathtext with Computer Modern font (`math_fontfamily='cm'`)
+   - Font size: 18pt for readability
+   - Output: `{element}_rendered.png` alongside cropped `{element}.png`
+
+4. **Filename sanitization**
+   - Removed special characters from filenames (parentheses, em-dashes)
+   - Pattern: `p{page}_{type}_{idx}_{label}.png`
+   - Example: `p44_equation_1_Equation_5-9_and_5-10.png` (was `Equation_(5-9)_and_(.png`)
+
+### Documents Extracted
+
+**SAM3 Paper** - Added pages 4 and 30 with equations:
+- Page 4: Equation 1 (similarity function with Iverson bracket)
+- Page 30: Equations 1-4 (loss functions including cases notation)
+
+**USGS Snyder 1987** - Page 44 with 7 equations:
+- Equations 5-9 through 5-14a (trigonometric formulas)
+- All equations have both cropped and rendered versions
+
+**Alpine Habitat Change (2511.00073v1.pdf)** - New document:
+- Pages 6, 9, 13-15 extracted
+- 6 figures including radar charts
+- 2 tables
+
+### Updated Web Viewer
+
+- Shows both "Cropped from PDF" and "Rendered from LaTeX" for equations
+- Side-by-side comparison allows quality verification
+- Detection timing displayed per page
+
+### Server Configuration (Qwen3-VL-235B)
+
+```bash
+cd /media/nvme2g-a/llm_toolbox
+./llama.cpp-latest/build-rocm/bin/llama-server \
+  --model models/Qwen3-VL-235B/Qwen3-VL-235B-A22B-Instruct-UD-TQ1_0.gguf \
+  --mmproj models/Qwen3-VL-235B/mmproj-F16.gguf \
+  --host 0.0.0.0 --port 8090 \
+  --ctx-size 8192 --parallel 1 -ngl 999
+```
+
+### Known Limitations
+
+1. **Equation bounding boxes** - Sometimes slightly off (model limitation), hence LaTeX rendering as backup
+2. **LaTeX extraction errors** - Model occasionally misreads complex formulas (e.g., SAM3 p30 Equation 3)
+3. **Multi-line equations** - Required special handling for `\begin{cases}` notation
+
+### Files Modified
+
+- `extract_document.py` - Added LaTeX extraction and rendering, filename sanitization
+- `web/index.html` - Dual display for equation images (cropped + rendered)
+- `web/data/sam3/` - Added equation extractions for pages 4, 30
+- `web/data/usgs_snyder/` - Re-extracted page 44 with clean filenames
+- `web/data/alpine_change/` - New document extraction
+
+### Next Steps
+
+- [ ] Process more equation-heavy documents
+- [ ] Improve LaTeX parsing for edge cases
+- [ ] Add batch processing for full library

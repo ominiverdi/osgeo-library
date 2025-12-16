@@ -160,7 +160,7 @@
           ],
           "label": "Figure 4—Continued",
           "description": "Diagram illustrating distortion patterns on the Lambert Conformal Conic Projection, showing scale errors (+1%, +2%, -1%) relative to the standard parallels (0% error). Includes a simplified outline of North America for context.",
-          "crop_path": "elements/p34_figure_2_Figure_4—Continued.png"
+          "crop_path": "elements/p34_figure_2_Figure_4Continued.png"
         }
       ],
       "extraction_time_seconds": 59.3,
@@ -222,7 +222,8 @@
           ],
           "label": "Equation (5-9) and (5-10)",
           "description": "LaTeX: \\sin \\phi = \\sin \\alpha \\sin \\phi' + \\cos \\alpha \\cos \\phi' \\cos (\\lambda' - \\beta) \\quad (5-9) \\\\ \\sin (\\lambda - \\lambda_0) = \\cos \\phi' \\sin (\\lambda' - \\beta) / \\cos \\phi \\quad (5-10)",
-          "crop_path": "elements/p44_equation_1_Equation_(5-9)_and_(.png"
+          "crop_path": "elements/p44_equation_1_Equation_5-9_and_5-10.png",
+          "rendered_path": "elements/p44_equation_1_Equation_5-9_and_5-10_rendered.png"
         },
         {
           "type": "equation",
@@ -240,7 +241,8 @@
           ],
           "label": "Equation (5-10a)",
           "description": "LaTeX: \\cos (\\lambda - \\lambda_0) = [\\sin \\alpha \\cos \\phi' \\cos (\\lambda' - \\beta) - \\cos \\alpha \\sin \\phi'] / \\cos \\phi \\quad (5-10a)",
-          "crop_path": "elements/p44_equation_2_Equation_(5-10a).png"
+          "crop_path": "elements/p44_equation_2_Equation_5-10a.png",
+          "rendered_path": "elements/p44_equation_2_Equation_5-10a_rendered.png"
         },
         {
           "type": "equation",
@@ -258,7 +260,8 @@
           ],
           "label": "Equation (5-10b)",
           "description": "LaTeX: \\tan (\\lambda - \\lambda_0) = \\cos \\phi' \\sin (\\lambda' - \\beta) / [\\sin \\alpha \\cos \\phi' \\cos (\\lambda' - \\beta) - \\cos \\alpha \\sin \\phi'] \\quad (5-10b)",
-          "crop_path": "elements/p44_equation_3_Equation_(5-10b).png"
+          "crop_path": "elements/p44_equation_3_Equation_5-10b.png",
+          "rendered_path": "elements/p44_equation_3_Equation_5-10b_rendered.png"
         },
         {
           "type": "equation",
@@ -276,7 +279,8 @@
           ],
           "label": "Equation (5-11) and (5-12)",
           "description": "LaTeX: \\sin \\phi' = -\\cos \\phi \\sin (\\lambda - \\lambda_0) \\quad (5-11) \\\\ \\cos \\lambda' = \\sin \\phi / [1 - \\cos^2 \\phi \\sin^2 (\\lambda - \\lambda_0)]^{1/2} \\quad (5-12)",
-          "crop_path": "elements/p44_equation_4_Equation_(5-11)_and_.png"
+          "crop_path": "elements/p44_equation_4_Equation_5-11_and_5-12.png",
+          "rendered_path": "elements/p44_equation_4_Equation_5-11_and_5-12_rendered.png"
         },
         {
           "type": "equation",
@@ -294,7 +298,8 @@
           ],
           "label": "Equation (5-12a)",
           "description": "LaTeX: \\tan \\lambda' = -\\cos (\\lambda - \\lambda_0) / \\tan \\phi \\quad (5-12a)",
-          "crop_path": "elements/p44_equation_5_Equation_(5-12a).png"
+          "crop_path": "elements/p44_equation_5_Equation_5-12a.png",
+          "rendered_path": "elements/p44_equation_5_Equation_5-12a_rendered.png"
         },
         {
           "type": "equation",
@@ -312,7 +317,8 @@
           ],
           "label": "Equation (5-13) and (5-14)",
           "description": "LaTeX: \\sin \\phi' = -\\cos \\phi \\sin (\\lambda - \\lambda_0) \\quad (5-13) \\\\ \\cos \\lambda' = \\cos \\phi \\cos (\\lambda - \\lambda_0) / [1 - \\cos^2 \\phi \\sin^2 (\\lambda - \\lambda_0)]^{1/2} \\quad (5-14)",
-          "crop_path": "elements/p44_equation_6_Equation_(5-13)_and_.png"
+          "crop_path": "elements/p44_equation_6_Equation_5-13_and_5-14.png",
+          "rendered_path": "elements/p44_equation_6_Equation_5-13_and_5-14_rendered.png"
         },
         {
           "type": "equation",
@@ -330,7 +336,8 @@
           ],
           "label": "Equation (5-14a)",
           "description": "LaTeX: \\tan \\lambda' = \\tan \\phi / \\cos (\\lambda - \\lambda_0) \\quad (5-14a)",
-          "crop_path": "elements/p44_equation_7_Equation_(5-14a).png"
+          "crop_path": "elements/p44_equation_7_Equation_5-14a.png",
+          "rendered_path": "elements/p44_equation_7_Equation_5-14a_rendered.png"
         }
       ],
       "extraction_time_seconds": 221.72,

@@ -12,6 +12,7 @@ Usage:
 import argparse
 import base64
 import json
+import re
 import sys
 import time
 from datetime import datetime
@@ -66,6 +67,8 @@ For each element found, provide:
 - label: identifier if visible (e.g., "Figure 1", "Table 2", "Equation 3")
 - description: brief description of content (for equations, include the LaTeX representation if possible)
 
+IMPORTANT: Make sure each bounding box FULLY contains the element with a small margin around it (about 2-3% padding on each side). Nothing should be cut off.
+
 Return JSON format:
 {
   "figure": [{"bbox": [x1,y1,x2,y2], "label": "Figure 1", "description": "..."}],
@@ -110,8 +113,6 @@ def parse_elements(raw_response: str, width: int, height: int) -> list:
 
     # Fix invalid JSON escapes (common in LaTeX output)
     # Replace single backslashes that aren't valid JSON escapes
-    import re
-
     # Valid JSON escapes: \", \\, \/, \b, \f, \n, \r, \t, \uXXXX
     # First, normalize already-escaped backslashes to a placeholder
     content = content.replace("\\\\", "\x00DBL\x00")
@@ -178,9 +179,13 @@ def crop_element(
 
     crop = img.crop((x1, y1, x2, y2))
 
-    # Generate filename
+    # Generate filename - sanitize label for filesystem
     elem_type = elem.get("type", "element")
-    label = elem.get("label", "").replace(" ", "_").replace("/", "-")[:20]
+    label = elem.get("label", "")
+    # Remove/replace problematic characters
+    label = re.sub(r"[^\w\s-]", "", label)  # Remove special chars except hyphen
+    label = re.sub(r"\s+", "_", label)  # Replace spaces with underscore
+    label = label[:30]  # Limit length
     filename = f"p{page_num:02d}_{elem_type}_{idx}_{label}.png"
 
     elements_dir = output_dir / "elements"
