@@ -2,6 +2,21 @@
 
 Brief log of what changed and when.
 
+## 2025-12-16 (evening)
+
+- **db/data structure**: New per-page JSON structure for database ingestion
+  - `db/data/{doc}/document.json` - document metadata
+  - `db/data/{doc}/pages/page_001.json` - per-page text, elements, timing
+  - `db/data/{doc}/images/` - page renders and annotated versions
+  - `db/data/{doc}/elements/` - cropped figures, tables, equations
+- **migrate_to_db.py**: Converts existing web/data extractions to db/data structure
+- **extract_all_pages.py**: Batch extraction of all PDF pages with resumability
+  - Skips already-extracted pages (`--skip-existing`)
+  - Per-page JSON output (not monolithic)
+  - Progress tracking in document.json
+- **run_extraction.sh**: Wrapper script for overnight batch runs
+- **gitignore**: Added db/data/ (generated content too large for git)
+
 ## 2025-12-16
 
 - **LaTeX rendering**: Switched from matplotlib to pdflatex + ImageMagick for full LaTeX support (`align*`, `cases`, matrices)

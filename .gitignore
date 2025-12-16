@@ -22,3 +22,9 @@ pdfs/
 # IDE
 .vscode/
 .idea/
+
+# Database content (generated data - too large for git)
+db/data/
+
+# Web viewer data (sample extractions for demo)
+# Uncomment to exclude: web/data/

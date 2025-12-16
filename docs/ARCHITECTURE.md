@@ -47,7 +47,7 @@ python extract_document.py paper.pdf --pages 1,2,3 --output-dir web/data/paper
 python extract_document.py paper.pdf --pages 4,5 --output-dir web/data/paper --merge
 ```
 
-**Output structure:**
+**Output structure (web viewer - demo only):**
 ```
 web/data/paper/
   extraction.json
@@ -57,6 +57,49 @@ web/data/paper/
     p01_figure_1_Figure_1.png
     p04_equation_1_Equation_1.png
     p04_equation_1_Equation_1_rendered.png
+```
+
+### extract_all_pages.py
+
+Batch extraction for database ingestion. Outputs per-page JSON files.
+
+```bash
+# Extract all pages from PDF
+python extract_all_pages.py paper.pdf --name paper
+
+# Skip already extracted pages (resumable)
+python extract_all_pages.py paper.pdf --name paper --skip-existing
+
+# Check status
+python extract_all_pages.py --list
+```
+
+**Output structure (db/data - for database ingestion):**
+```
+db/data/paper/
+  document.json           # Document metadata
+  pages/
+    page_001.json         # Per-page: text, elements, timing
+    page_002.json
+    ...
+  images/
+    page_001.png          # Original page render
+    page_001_annotated.png
+    ...
+  elements/
+    p01_figure_1_Figure_1.png
+    p04_equation_1_Equation_1.png
+    p04_equation_1_Equation_1_rendered.png
+```
+
+### migrate_to_db.py
+
+Converts existing web/data extractions to db/data structure.
+
+```bash
+python migrate_to_db.py              # Migrate all
+python migrate_to_db.py --doc sam3   # Migrate specific document
+python migrate_to_db.py --dry-run    # Preview only
 ```
 
 ### Coordinate System
