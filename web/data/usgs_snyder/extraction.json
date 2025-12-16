@@ -1,8 +1,8 @@
 {
   "document": "usgs_snyder1987",
   "source_file": "usgs_snyder1987.pdf",
-  "extraction_date": "2025-12-16T17:53:54.764776",
-  "model": "qwen3-vl-32b",
+  "extraction_date": "2025-12-16T19:20:55.241171",
+  "model": "qwen3-vl-235b",
   "pages": [
     {
       "page_number": 1,
@@ -196,6 +196,145 @@
       ],
       "extraction_time_seconds": 38.59,
       "total_page_time_seconds": 38.72
+    },
+    {
+      "page_number": 44,
+      "image": "page_44.png",
+      "annotated_image": "page_44_annotated.png",
+      "width": 1314,
+      "height": 1646,
+      "text": "32 \nMAP PROJECTIONS-A WORKING MANUAL \nEquation (5-8b) is generally preferable to (5-8) or (5-8a) for the reasons stated \nafter equation (5-4b). \nThese are general formulas for the oblique transformation. (For azimuthal pro-\njections, 13 may always be taken as zero. Other values of 13 merely have the effect \nof rotating the X and Y axes without changing the projection.) \nThe inverse forms of these equations are similar in appearance. To find the \ngeographic coordinates in terms of the transformed coordinates, \nor \nor \nsin 4> =sin a sin 4>' + cos a cos 4>' cos (X.'- 13) \nsin (X. -\nX.0) =cos 4>' sin (X.' - 13)/cos 4> \ncos (X. -\nX-0) = [sin a cos 4>' cos (X.' -\n13) - cos a sin 4>']/cos 4> \n(5-9) \n(5-10) \n(5-10a) \ntan (X. -\nX.0) = cos 4>' sin (X.' - 13)/[sin a cos 4>' cos (X.' -\n13) - cos a sin 4>'] (5-10b) \nwith equation (5-10b) usually preferable to (5-10) and (5-10a) for the same \nreasons as those given for (5-4b). \nIf a = 0, the formulas simplify considerably for the transverse or equatorial \naspects. It is then more convenient to have central meridian X.0 coincide with the \nequator of the basic projection rather than with its meridian 13. This may be \naccomplished by replacing (X. -\nX.0) with (X. -\nX.0 -\n90°) and simplifying. \nIf 13 = 0, so that the true North Pole is placed at (X.' = 0, 4>' = 0): \nsin 4>' = -cos 4> sin (X. -\nX.0) \ncos X.' =sin <f>/[1 - cos2 4> sin2(X. -\nX-0)]112 \nor \ntan X.' = - cos (X. -\nX-0)/tan 4> \nIf 13 = 90°, placing the true North Pole at (X.' = 90°, 4>' = 0): \nsin 4>' = - cos 4> sin (X. -\nX.0 ) \ncos X.' =cos 4> cos (X. -\nX-0)/[1 - cos2 4> sin2 (X. -\nX-0)]112 \nor \ntan X.' =tan <f>/cos (X. -\nX-0) \nThe inverse equations (5-9) through (5-10b) may be similarly altered. \n(5-11) \n(5-12) \n(5-12a) \n(5-13) \n(5-14) \n(5-14a) \nAs stated earlier, these formulas may be directly incorporated into the formu-\nlas for the rectangular coordinates x and y of the basic map projection for a direct \ncomputer or calculator output. If only one or two projections are involved in a \npackage, this may be more efficient. For such transformations of several projec-\ntions in one software package, it is often easier to calculate the transverse or \noblique projection coordinates by first calculating 4>' and X.' for each point to be \nplotted (using a general subroutine) and then calculating the rectangular coordi-\nnates by inserting 4>' and X.' into the basic projection formulas. In still other cases, \na graphical method has been used. \nWhile these formulas, or their equivalents, will be incorporated into the formu-\nlas given later for individual oblique and transverse projections, the concept \nshould help interrelate the various aspects or types of centers of a given projec-\ntion. The extension of these concepts to the ellipsoid is much more involved tech-\nnically and in some cases requires approximation. General discussion of this is \nomitted here. \n",
+      "text_length": 2894,
+      "elements": [
+        {
+          "type": "equation",
+          "bbox_1000": [
+            246,
+            170,
+            798,
+            207
+          ],
+          "bbox_pixels": [
+            323,
+            279,
+            1048,
+            340
+          ],
+          "label": "Equation (5-9) and (5-10)",
+          "description": "LaTeX: \\sin \\phi = \\sin \\alpha \\sin \\phi' + \\cos \\alpha \\cos \\phi' \\cos (\\lambda' - \\beta) \\quad (5-9) \\\\ \\sin (\\lambda - \\lambda_0) = \\cos \\phi' \\sin (\\lambda' - \\beta) / \\cos \\phi \\quad (5-10)",
+          "crop_path": "elements/p44_equation_1_Equation_(5-9)_and_(.png"
+        },
+        {
+          "type": "equation",
+          "bbox_1000": [
+            246,
+            231,
+            798,
+            255
+          ],
+          "bbox_pixels": [
+            323,
+            380,
+            1048,
+            419
+          ],
+          "label": "Equation (5-10a)",
+          "description": "LaTeX: \\cos (\\lambda - \\lambda_0) = [\\sin \\alpha \\cos \\phi' \\cos (\\lambda' - \\beta) - \\cos \\alpha \\sin \\phi'] / \\cos \\phi \\quad (5-10a)",
+          "crop_path": "elements/p44_equation_2_Equation_(5-10a).png"
+        },
+        {
+          "type": "equation",
+          "bbox_1000": [
+            246,
+            278,
+            798,
+            302
+          ],
+          "bbox_pixels": [
+            323,
+            457,
+            1048,
+            497
+          ],
+          "label": "Equation (5-10b)",
+          "description": "LaTeX: \\tan (\\lambda - \\lambda_0) = \\cos \\phi' \\sin (\\lambda' - \\beta) / [\\sin \\alpha \\cos \\phi' \\cos (\\lambda' - \\beta) - \\cos \\alpha \\sin \\phi'] \\quad (5-10b)",
+          "crop_path": "elements/p44_equation_3_Equation_(5-10b).png"
+        },
+        {
+          "type": "equation",
+          "bbox_1000": [
+            246,
+            430,
+            798,
+            465
+          ],
+          "bbox_pixels": [
+            323,
+            707,
+            1048,
+            765
+          ],
+          "label": "Equation (5-11) and (5-12)",
+          "description": "LaTeX: \\sin \\phi' = -\\cos \\phi \\sin (\\lambda - \\lambda_0) \\quad (5-11) \\\\ \\cos \\lambda' = \\sin \\phi / [1 - \\cos^2 \\phi \\sin^2 (\\lambda - \\lambda_0)]^{1/2} \\quad (5-12)",
+          "crop_path": "elements/p44_equation_4_Equation_(5-11)_and_.png"
+        },
+        {
+          "type": "equation",
+          "bbox_1000": [
+            246,
+            488,
+            798,
+            512
+          ],
+          "bbox_pixels": [
+            323,
+            803,
+            1048,
+            842
+          ],
+          "label": "Equation (5-12a)",
+          "description": "LaTeX: \\tan \\lambda' = -\\cos (\\lambda - \\lambda_0) / \\tan \\phi \\quad (5-12a)",
+          "crop_path": "elements/p44_equation_5_Equation_(5-12a).png"
+        },
+        {
+          "type": "equation",
+          "bbox_1000": [
+            246,
+            547,
+            798,
+            582
+          ],
+          "bbox_pixels": [
+            323,
+            900,
+            1048,
+            957
+          ],
+          "label": "Equation (5-13) and (5-14)",
+          "description": "LaTeX: \\sin \\phi' = -\\cos \\phi \\sin (\\lambda - \\lambda_0) \\quad (5-13) \\\\ \\cos \\lambda' = \\cos \\phi \\cos (\\lambda - \\lambda_0) / [1 - \\cos^2 \\phi \\sin^2 (\\lambda - \\lambda_0)]^{1/2} \\quad (5-14)",
+          "crop_path": "elements/p44_equation_6_Equation_(5-13)_and_.png"
+        },
+        {
+          "type": "equation",
+          "bbox_1000": [
+            246,
+            605,
+            798,
+            629
+          ],
+          "bbox_pixels": [
+            323,
+            995,
+            1048,
+            1035
+          ],
+          "label": "Equation (5-14a)",
+          "description": "LaTeX: \\tan \\lambda' = \\tan \\phi / \\cos (\\lambda - \\lambda_0) \\quad (5-14a)",
+          "crop_path": "elements/p44_equation_7_Equation_(5-14a).png"
+        }
+      ],
+      "extraction_time_seconds": 221.72,
+      "total_page_time_seconds": 221.93
     },
     {
       "page_number": 51,

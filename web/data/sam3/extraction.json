@@ -1,8 +1,8 @@
 {
   "document": "sam3",
   "source_file": "sam3.pdf",
-  "extraction_date": "2025-12-16T19:03:38.111330",
-  "model": "qwen3-vl-32b",
+  "extraction_date": "2025-12-16T19:17:40.202233",
+  "model": "qwen3-vl-235b",
   "pages": [
     {
       "page_number": 1,
@@ -103,24 +103,24 @@
         {
           "type": "equation",
           "bbox_1000": [
-            182,
-            112,
-            818,
-            140
+            162,
+            400,
+            835,
+            430
           ],
           "bbox_pixels": [
-            232,
-            184,
-            1042,
-            231
+            206,
+            660,
+            1064,
+            709
           ],
           "label": "Equation 1",
-          "description": "LaTeX: \\mathcal{M}_t = \\text{propagate} \\left( \\mathcal{M}_{t-1} \\right), \\quad \\mathcal{O}_t = \\text{detect} \\left( I_t, P \\right), \\quad \\mathcal{M}_t = \\text{match\\_and\\_update} \\left( \\hat{\\mathcal{M}}_t, \\mathcal{O}_t \\right)",
+          "description": "LaTeX: \\( \\hat{\\mathcal{M}}_t = \\text{propagate} \\left( \\mathcal{M}_{t-1} \\right), \\quad \\mathcal{O}_t = \\text{detect} \\left( I_t, P \\right), \\quad \\mathcal{M}_t = \\text{match\\_and\\_update} \\left( \\hat{\\mathcal{M}}_t, \\mathcal{O}_t \\right) \\)",
           "crop_path": "elements/p04_equation_1_Equation_1.png"
         }
       ],
-      "extraction_time_seconds": 41.93,
-      "total_page_time_seconds": 42.07
+      "extraction_time_seconds": 41.52,
+      "total_page_time_seconds": 41.65
     },
     {
       "page_number": 5,
@@ -327,6 +327,91 @@
           "crop_path": "elements/p08_chart_4_Figure_6.png"
         }
       ]
+    },
+    {
+      "page_number": 30,
+      "image": "page_30.png",
+      "annotated_image": "page_30_annotated.png",
+      "width": 1275,
+      "height": 1650,
+      "text": "1566\n1567\n1568\n1569\n1570\n1571\n1572\n1573\n1574\n1575\n1576\n1577\n1578\n1579\n1580\n1581\n1582\n1583\n1584\n1585\n1586\n1587\n1588\n1589\n1590\n1591\n1592\n1593\n1594\n1595\n1596\n1597\n1598\n1599\n1600\n1601\n1602\n1603\n1604\n1605\n1606\n1607\n1608\n1609\n1610\n1611\n1612\n1613\n1614\n1615\n1616\n1617\n1618\n1619\nUnder review as a conference paper at ICLR 2026\ntwo complementary components: a global-level classification that determines object presence within\nthe entire image, and a local-level localization that functions as foreground-background segmentation\nwhile preventing duplicate detections. Formally, we add the following probabilistic structure: instead\nof predicting p(queryi matches NP) directly, we break it down as follows:\np(queryi matches NP) = p(queryi matches NP | NP appears in image) · p(NP appears in image).\nTo compute p(NP appears in image), we use a presence token, which is added to our decoder and\nthen fed through an MLP classification head. Crucially, the presence score is shared by all object\nqueries. The per-query classification loss is kept as usual, but to account for the decomposition, we\nonly compute it when the NP is present in the image (see §B.1 for ablations on supervision strategy).\nThe same decomposition is applied to the semantic segmentation head, where we reuse the same\npresence score, and train the binary mask head only on the positive examples.\nBesides being more robust to false positives, decomposing the prediction in this manner is also more\nflexible, e.g. in typical counting tasks, we already know the NP is present in the image and instead want\nto know how many instances are present - in this case we can simply set p(NP is present in frame) =\n1. The presence token is concatenated with the object queries in all operations, but is excluded from\nDAC.\nWe also learn 4 geometric queries. Their function is similar to the 4 geometric queries in SAM\n1 and 2 (where they were called “output tokens”) and are used to perform the PVS on individual\nimage or video frames during the stags-2,-3 of training, see §D.4.1. The prompts are provided by the\n“geometry tokens” in the form of visual prompts. The presence score is set to 1 when performing the\nPVS task on a single frame, as the target is known to be present in the frame.\nSegmentation Head. The segmentation head is adapted from MaskFormer (Cheng et al., 2021).\nSemantic segmentation and instance segmentation share the same segmentation head. The conditioned\nfeatures from the fusion encoder are used to produce semantic segmentation masks, while instance\nsegmentation additionally uses the decoder’s output object queries. “Multi-scale” features are\nprovided to the segmentation head using SimpleFPN (Li et al., 2022d), since the vision encoder is a\n(single-scale) ViT.\nHandling Ambiguity. Experimentally, if we train a SAM 3 model without handling ambiguities as\ndescribed in §2 in any way, we observe that the model tends to predict several valid but conflicting\ninterpretations of the phrase. This is expected; if in our training dataset a given phrase has two\ndistinct interpretations, and roughly half the data is annotated assuming the first one, while the other\nhalf follows the second one, then the solution that minimizes the training loss is to output both\ninterpretations with 50% confidence. However, this behavior is undesirable for end-users, because it\nproduces conflicting, sometimes overlapping masks.\nTo address this issue, we add an ambiguity head to our model. Similar to SAM 1 and 2, this head is a\nmixture of experts, where we train in parallel K experts, and only supervise the expert that gets the\nlowest loss (winner-takes-all). We find that K = 2 performs the best and that it is more difficult to\ntrain K > 3 experts due to mode collapse.\nFor a mixture of K experts, each producing an output yk with loss Lk, the mixture loss is a weighted\naverage:\nLoss:\nLMoE =\nK\nX\nk=1\npk Lk\nGradient:\n∂LMoE\n∂θj\n= pj\n∂Lj\n∂θj\n.\nIn our winner-takes-all variant, only the expert with the lowest loss receives gradient:\nLoss:\nk⋆= arg min\nk\nLk,\nLWTA = Lk⋆\nGradient:\n∂LWTA\n∂θj\n=\n\n\n\n\n\n∂Lk⋆\n∂θj\n,\nif j = k⋆,\n0,\notherwise.\n30\n",
+      "text_length": 4103,
+      "elements": [
+        {
+          "type": "equation",
+          "bbox_1000": [
+            260,
+            169,
+            780,
+            188
+          ],
+          "bbox_pixels": [
+            331,
+            278,
+            994,
+            310
+          ],
+          "label": "Equation 1",
+          "description": "LaTeX: $p(\\text{query}_i \\text{ matches NP}) = p(\\text{query}_i \\text{ matches NP} \\mid \\text{NP appears in image}) \\cdot p(\\text{NP appears in image})$",
+          "crop_path": "elements/p30_equation_1_Equation_1.png"
+        },
+        {
+          "type": "equation",
+          "bbox_1000": [
+            260,
+            756,
+            709,
+            785
+          ],
+          "bbox_pixels": [
+            331,
+            1247,
+            903,
+            1295
+          ],
+          "label": "Equation 2",
+          "description": "LaTeX: $\\text{Loss:} \\quad \\mathcal{L}_{\\text{MoE}} = \\sum_{k=1}^{K} p_k \\mathcal{L}_k \\quad \\text{Gradient:} \\quad \\frac{\\partial \\mathcal{L}_{\\text{MoE}}}{\\partial \\theta_j} = p_j \\frac{\\partial \\mathcal{L}_j}{\\partial \\theta_j}$",
+          "crop_path": "elements/p30_equation_2_Equation_2.png"
+        },
+        {
+          "type": "equation",
+          "bbox_1000": [
+            260,
+            824,
+            640,
+            854
+          ],
+          "bbox_pixels": [
+            331,
+            1359,
+            816,
+            1409
+          ],
+          "label": "Equation 3",
+          "description": "LaTeX: $\\text{Loss:} \\quad k^* = \\arg\\min_k \\mathcal{L}_k, \\quad \\mathcal{L}_{\\text{WTA}} = \\mathcal{L}_{k^*}$",
+          "crop_path": "elements/p30_equation_3_Equation_3.png"
+        },
+        {
+          "type": "equation",
+          "bbox_1000": [
+            260,
+            862,
+            640,
+            909
+          ],
+          "bbox_pixels": [
+            331,
+            1422,
+            816,
+            1499
+          ],
+          "label": "Equation 4",
+          "description": "LaTeX: $\\text{Gradient:} \\quad \\frac{\\partial \\mathcal{L}_{\\text{WTA}}}{\\partial \\theta_j} = \\begin{cases} \\frac{\\partial \\mathcal{L}_{k^*}}{\\partial \\theta_j}, & \\text{if } j = k^*, \\\\ 0, & \\text{otherwise}. \\end{cases}$",
+          "crop_path": "elements/p30_equation_4_Equation_4.png"
+        }
+      ],
+      "extraction_time_seconds": 140.6,
+      "total_page_time_seconds": 140.75
     }
   ],
   "timing": {}

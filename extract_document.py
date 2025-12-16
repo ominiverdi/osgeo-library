@@ -24,7 +24,7 @@ from openai import OpenAI
 
 # Configuration
 LLAMA_SERVER = "http://localhost:8090/v1"
-MODEL_NAME = "qwen3-vl-32b"
+MODEL_NAME = "qwen3-vl-235b"
 DPI = 150
 
 
