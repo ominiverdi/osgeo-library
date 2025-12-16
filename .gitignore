@@ -12,6 +12,13 @@ __pycache__/
 output/
 *.log
 
+# Test PDFs (large files)
+pdfs/
+*.pdf
+
+# Model files (large)
+*.gguf
+
 # IDE
 .vscode/
 .idea/

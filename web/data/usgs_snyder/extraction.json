@@ -1,0 +1,264 @@
+{
+  "document": "usgs_snyder1987",
+  "source_file": "usgs_snyder1987.pdf",
+  "extraction_date": "2025-12-16T17:53:54.764776",
+  "model": "qwen3-vl-32b",
+  "pages": [
+    {
+      "page_number": 1,
+      "image": "page_01.png",
+      "annotated_image": "page_01_annotated.png",
+      "width": 1294,
+      "height": 1670,
+      "text": "",
+      "text_length": 0,
+      "elements": [
+        {
+          "type": "figure",
+          "bbox_1000": [
+            0,
+            235,
+            1000,
+            914
+          ],
+          "bbox_pixels": [
+            0,
+            392,
+            1294,
+            1526
+          ],
+          "label": "Figure 1",
+          "description": "A map projection diagram showing a conic projection of North America with grid lines, latitude and longitude markings, and an inset illustrating a detailed view of the projection's scale distortion with contour lines labeled with scale factors (e.g., 1.000, 0.998, 1.020). Another inset shows a graticule with labeled parallels and meridians, including the Equator and 90°W, with a marked point 'X'.",
+          "crop_path": "elements/p01_figure_1_Figure_1.png"
+        }
+      ]
+    },
+    {
+      "page_number": 9,
+      "image": "page_09.png",
+      "annotated_image": null,
+      "width": 1326,
+      "height": 1648,
+      "text": "CONTENTS \nvii \nILLUSTRATIONS \nPage \nFIGURE 1. Projections of the Earth onto the three major surfaces -------------------------------------------------------------------------------------- 6 \n2. Meridians and parallels on the sphere ----------------------------------------------------------------------------------------------------------- 9 \n3. Tissot's indicatrix --------------------------------------------------------------------------------------------------------------------------------- 20 \n4. Distortion patterns on common conformal map projections ----------------------------------------------------------------------------- 22, 23 \n5. Spherical triangle --------------------------------------------------------------------------------------------------------------------------------- 30 \n6. Rotation of a graticule for transformation of projection ------------------------------------------------------------------------------------- 31 \n7. Gerard us Mercator -------------------------------------------------------------------------------------------------------------------------------- 39 \n8. The Mercator projection ------------------------------------------------------------------------------------------------------------------------- 40 \n9. Johann Heinrich Lambert ------------------------------------------------------------------------------------------------------------------------ 49 \n10. The Transverse Mercator projection ----------------------------------------------------------------------------------------------------------- 50 \n11. Universal Transverse Mercator grid zone designations for the world --------------------------------------------------------------------- 62 \n12. Oblique Mercator projection --------------------------------------------------------------------------------------------------------------------- 67 \n13. Coordinate system for the Hotine Oblique Mercator projection ---------------------------------------------------------------------------- 73 \n14. Lambert Cylindrical Equal-Area projection --------------------------------------------------------------------------------------------------- 78 \n15. Behrmann Cylindrical Equal-Area projection ------------------------------------------------------------------------------------------------- 78 \n16. Transverse Cylindrical Equal-Area projection ------------------------------------------------------------------------------------------------ 79 \n17. Oblique Cylindrical Equal-Area projection ---------------------------------------------------------------------------------------------------- 79 \n18. The Miller Cylindrical projection --------------------------------------------------------------------------------------------------------------- 87 \n19. The Cassini projection ---------------------------------------------------------------------------------------------------------------------------- 93 \n20. Albers Equal-Area Conic projection ------------------------------------------------------------------------------------------------------------ 99 \n21. Lambert Conformal Conic projection --------------------------------------------------------------------------------------------------------- 104 \n22. Equidistant Conic projection ------------------------------------------------------------------------------------------------------------------- 112 \n23. Bi pol&.r Oblique Conic Conformal projection ------------------------------------------------------------------------------------------------ 121 \n24. Ferdinand Rudolph Hassler -------------------------------------------------------------------------------------------------------------------- 125 \n25. North America on a Polyconic projection grid ----------------------------------------------------------------------------------------------- 126 \n26. Typical IMW quadrangle graticule-modified Polyconic projection ----------------------------------------------------------------------- 137 \n27. Bonne projection --------------------------------------------------------------------------------------------------------------------------------- 139 \n28. Geometric projection of the parallels of the polar Orthographic projection -------------------------------------------------------------- 146 \n29. Orthographic projection: (A) polar aspect, (B) equatorial aspect, (C) oblique aspect -------------------------------------------------- 147 \n30. Geometric construction of polar, equatorial, and oblique Orthographic projections ---------------------------------------------------- 148 \n31. Geometric projection of the polar Stereographic projection ------------------------------------------------------------------------------- 155 \n32. Stereographic projection: (A) polar aspect, (B) equatorial aspect, (C) oblique aspect ------------------------------------------------- 156 \n33. Geometric projection of the parallels of the polar Gnomonic projection ------------------------------------------------------------------ 164 \n34. Gnomonic projection, range 60° from center: (A) polar aspect, (B) equatorial aspect, (C) oblique aspect --------------------------- 166 \n35. Geometric projection of the parallels of the polar Perspective projections, Vertical and Tilted -------------------------------------- 170 \n36. Vertical Perspective projection: (A) polar aspect, (B) equatorial aspect, (C) oblique aspect------------------------------------------ 171 \n37. Tilted Perspective projection ------------------------------------------------..:-----------------------------·------------------------------------ 172 \n38. Coordinate system for Tilted Perspective projection --------------------------------------------------------------------------------------- 176 \n39. Lambert Azimuthal Equal-Area projection: (A) polar aspect, (B) equatorial aspect, (C) oblique aspect ---------------------------- 183 \n40. Geometric construction of polar Lambert Azimuthal Equal-Area projection ------------------------------------------------------------ 185 \n41. Azimuthal Equidistant projection: (A) polar aspect, (B) equatorial aspect, (C) oblique aspect --------------------------------------- 193 \n42. Miller Oblated Stereographic projection of Europe and Africa ---------------------------------------------------------------------------- 204 \n43. GS-50 projection: 50-State map ---------------------------------------------------------------------------------------------------------------- 205 \n44. Modified-Stereographic Conformal projection of Alaska ----------------------------------------------------------------------------------- 205 \n45. Modified-Stereographic Conformal projection of 48 United States, bounded by a near-rectangle of constant scale --------------- 206 \n46. Two orbits of the Space Oblique Mercator projection -------------------------------------------------------------------------------------- 216 \n47. One quadrant of the Space Oblique Mercator projection ----------------------------------------------------------------------------------- 217 \n48. Cylindrical Satellite-Tracking projection ----------------------------------------------------------------------------------------------------- 232 \n49. Conic Satellite-Tracking projection (conformality at lats. 45o and 70° N.) --------------------------------------------------------------- 233 \n50. Conic Satellite-Tracking projection (conformality at lats. 45° and 80.9° N.) ------------------------------------------------------------- 234 \n51. Conic Satellite-Tracking projection (standard parallel 80.9° N.) -------------------------------------------------------------------------- 235 \n52. Van der Grinten projection --------------------------------------------------------------------------------------------------------------------- 240 \n53. Geometric construction of the Van der Grinten projection -------------------------------------------------------------------------------- 241 \n54. Interrupted Sinusoidal projection ---------------------------------------------------------------------·--------------------------------------- 246 \n55. Mollweide projection ---------------------------------------------------------------------------------------------------------------------------- 250 \n56. Eckert IV projection ---------------------------------------------------------------------------------------------------------------------------- 254 \n57. Eckert VI projection ---------------------------------------------------------------------------------------------------------------------------- 255 \n1-1402. Map showing the properties and uses of selected map projections, by Tau Rho Alpha and John P. Snyder --------------------- In pocket \n",
+      "text_length": 8698,
+      "elements": [],
+      "extraction_time_seconds": 18.16,
+      "total_page_time_seconds": 18.22
+    },
+    {
+      "page_number": 16,
+      "image": "page_16.png",
+      "annotated_image": null,
+      "width": 1323,
+      "height": 1649,
+      "text": "4 \nMAP PROJECTIONS-A WORKING MANUAL \n1. Area.-Many map projections are designed to be equal-area, so that a coin \nof any size, for example, on one part of the map covers exactly the same area of \nthe actual Earth as the same coin on any other part of the map. Shapes, angles, \nand scale must be distorted on most parts of such a map, but there are usually \nsome parts of an equal-area map which are designed to retain these characteris-\ntics correctly, or very nearly so. Less common terms used for equal-area projec-\ntions are equivalent, homolographic, or homalographic (from the-Greek-homalos----------\nor homos (\"same\") and graphos (\"write\")); authalic (from the Greek autos (\"same\") \nand ailos (\"area\")), and equiareal. \n2. Shape.-Many of the most common and most important projections are \nconformal or orthomorphic (from the Greek orthos or \"straight\" and morphe or \n\"shape\"), in that normally the relative local angles about every point on the map \nare shown correctly. (On a conformal map of the entire Earth there are usually \none or more \"singular\" points at which local angles are still distorted.) Although a \nlarge area must still be shown distorted in shape, its small features are shaped \nessentially correctly. Conformality applies on a point or infinitesimal basis, whereas \nan equal-area map projection shows areas correctly on a finite, in fact mapwide \nbasis. An important result of conformality is that the local scale in every direction \naround any one point is constant. Because local angles are correct, meridians \nintersect parallels at right (90°) angles on a conformal projection, just as they do on \nthe Earth. Areas are generally enlarged or reduced throughout the map, but they \nare correct along certain lines, depending on the projection. Nearly all large-scale \nmaps of the Geological Survey and other mapping agencies throughout the world \nare now prepared on a conformal projection. No map can be both equal-area and \nconformal. \nWhile some have used the term aphylactic for all projections which are neither \nequal-area nor conformal (Lee, 1944), other terms have commonly been used to \ndescribe special characteristics: \n3. Scale.-No map projection shows scale correctly throughout the map, but \nthere are usually one or more lines on the map along which the scale remains true. \nBy choosing the locations of these lines properly, the scale errors elsewhere may \nbe minimized, although some errors may still be large, depending on the size of \nthe area being mapped and the projection. Some projections show true scale \nbetween one or two points and every other point on the map, or along every \nmeridian. They are called equidistant projections. \n4. Direction.-While conformal maps give the relative local directions cor-\nrectly at any given point, there is one frequently used group of map projections, \ncalled azimuthal (or zenithal), on which the directions or azimuths of all points on \nthe map are shown correctly with respect to the center. One of these projections \nis also equal-area, another is conformal, and another is equidistant. There are also \nprojections on which directions from two points are correct, or on which direc-\ntions from all points to one or two selected points are correct, but these are rarely \nused. \n5. Special characteristics.-Several map projections provide special characteris-\ntics that no other projection provides. On the Mercator projection, all rhumb \nlines, or lines of constant direction, are shown as straight lines. On the Gnomonic \nprojection, all great circle paths-the shortest routes between points on a sphere-\nare shown as straight lines. On the Stereographic, all small circles, as well as \ngreat circles, are shown as circles on the map. Some newer projections are spe-\ncially designed for satellite mapping. Less useful but mathematically intriguing \nprojections have been designed to fit the sphere conformally into a square, an \nellipse, a triangle, or some other geometric figure. \n6. Method of construction.-ln the days before ready access to computers and \nplotters, ease of construction was of greater importance. With the advent of \ncomputers and even pocket calculators, very complicated formulas can be handled \nalmost as routinely as simple projections in the past. \n",
+      "text_length": 4270,
+      "elements": []
+    },
+    {
+      "page_number": 21,
+      "image": "page_21.png",
+      "annotated_image": "page_21_annotated.png",
+      "width": 1319,
+      "height": 1654,
+      "text": "2. LONGITUDE AND LATITUDE \nN. Pole \nFIGURE 2.-Meridians and parallels on the sphere. \nthose of British origin. In 1884, the International Meridian Conference, meeting \nin Washington, agreed to adopt the \"meridian passing through the center of the \ntransit instrument at the Observatory of Greenwich as the initial meridian for \nlongitude,\" resolving that \"from this meridian longitude shall be counted in two \ndirections up to 180 degrees, east longitude being plus and west longitude minus\" \n(Brown, 1949, p. 283, 297). \nThe choice of the prime meridian is arbitrary and may be stated in simple \nterms. The accurate measurement of the difference in longitude at sea between \ntwo points, however, was unattainable for centuries, even with a precision suffi-\ncient for the times. When extensive transatlantic exploration from Europe began \nwith the voyages of Christopher Columbus in 1492, the inability to measure \neast-west distance led to numerous shipwrecks with substantial loss of lives and \nwealth. Seafaring nations beginning with Spain offered sizable rewards for the \ninvention of satisfactory methods for measuring longitude. It finally became evi-\ndent that a portable, dependable clock was needed, so that the height of the Sun \nor stars could be related to the time in order to determine longitude. The study of \nthe pendulum by Galileo, the invention of the pendulum clock by Christian Huygens \nin 1656, and Robert Hooke's studies of the use of springs in watches in the 1660's \nprovided the basic instrument, but it was not until John Harrison of England \nresponded to his country's substantial reward posted in 1714 that the problem \nwas solved. For five decades, Harrison devised successively more reliable ver-\nsions of a marine chronometer, which were tested at sea and gradually accepted \nby the Board of Longitude in painstaking steps from 1765 to 1773. Final compensa-\ntion required intervention by the King and Parliament (Brown, 1949, p. 208-240; \nQuill, 1966). \nThus a major obstacle to accurate mapping was overcome. On land, the meas-\nurement of longitude lagged behind that of latitude until the development of the \nclock and the spread of geodetic triangulation in the 18th century made accuracy a \n9 \n",
+      "text_length": 2231,
+      "elements": [
+        {
+          "type": "figure",
+          "bbox_1000": [
+            277,
+            77,
+            666,
+            426
+          ],
+          "bbox_pixels": [
+            365,
+            127,
+            878,
+            704
+          ],
+          "label": "FIGURE 2",
+          "description": "Diagram of a globe showing meridians and parallels, with labels for N. Pole, Equator, Meridian, Parallel, Longitude, and Latitude. Numerical markings (0, 30, 60) indicate degrees along the lines.",
+          "crop_path": "elements/p21_figure_1_FIGURE_2.png"
+        }
+      ],
+      "extraction_time_seconds": 39.3,
+      "total_page_time_seconds": 39.45
+    },
+    {
+      "page_number": 32,
+      "image": "page_32.png",
+      "annotated_image": "page_32_annotated.png",
+      "width": 1314,
+      "height": 1659,
+      "text": "20 \nMAP PROJECTIONS-A WORKING MANUAL \n4. SCALE VARIATION AND ANGULAR DISTORTION \nSince no map projection maintains correct scale throughout, it is important to \ndetermine the extent to which it varies on a map. On a world map, qualitative \ndistortion is evident to an eye familiar with maps, after noting the extent to which \nlandmasses are improperly sized or out of shape, and the extent to which meridi-\nans and parallels do not intersect at right angles, or are not spaced uniformly \nalong a given meridian or given parallel. On maps of countries or even of continents, \ndistortion may not be evident to the eye, but it becomes apparent upon careful \nmeasurement and analysis. \nTISSOT'S INDICA TRIX \nIn 1859 and 1881, Nicolas Auguste Tissot published a classic analysis of the \ndistortion which occurs on a map projection (Tissot, 1881; Adams, 1919, p. 153-163; \nMaling, 1973, p. 64-67). The intersection of any two lines on the Earth is repre-\nsented on the flat map with an intersection at the same or a different angle. At \nalmost every point on the Earth, there is a right angle intersection of two lines in \nsome direction (not necessarily a meridian and a parallel) which are also shown at \nright angles on the map. All the other intersections at that point on the Earth will \nnot intersect at the same angle on the map, unless the map is conformal, at least \nat that point. The greatest deviation from the correct angle is called w, the \nmaximum angular deformation. For a conformal map, w is zero. (In some texts, 2w \nis used rather than w.) \nTissot showed this relationship graphically with a special ellipse of distortion \ncalled an indicatrix. An infinitely small circle on the Earth projects as an infinitely \nsmall, but perfect, ellipse on any map projection. If the projection is conformal, \nthe ellipse is a circle, an ellipse of zero eccentricity. Otherwise, the ellipse has a \nmajor axis and minor axis which are directly related to the scale distortion and to \nthe maximum angular deformation. \nIn figure 3, the left-hand drawing shows a circle representing the infinitely \nsmall circular element, crossed by a meridian >-. and parallel <!> on the Earth. The \nright-hand drawing shows this same element as it may appear on a typical map \nprojection. For general purposes, the map is assumed to be neither conformal nor \nequal-area. The meridian and parallel may no longer intersect at right angles, but \n(AJ \n(a) \nFIGURE 3.-Tissot's Indicatrix. An infinitely small circle on the Earth (A) appears as an ellipse \non a typical map (B). On a conformal map, (B) is a circle of the same or of a different size. \n",
+      "text_length": 2629,
+      "elements": [
+        {
+          "type": "figure",
+          "bbox_1000": [
+            244,
+            634,
+            838,
+            844
+          ],
+          "bbox_pixels": [
+            320,
+            1051,
+            1101,
+            1400
+          ],
+          "label": "FIGURE 3",
+          "description": "Tissot's Indicatrix. Two diagrams: (A) an infinitely small circle on the Earth, intersected by meridian λ and parallel φ, with labeled points A–H and angle ω; (B) the same element as an ellipse on a typical map projection, with labeled points A'–H' and angle ω'. The caption explains that on a typical map, the circle becomes an ellipse, while on a conformal map, it remains a circle (possibly of different size).",
+          "crop_path": "elements/p32_figure_1_FIGURE_3.png"
+        }
+      ],
+      "extraction_time_seconds": 51.47,
+      "total_page_time_seconds": 51.62
+    },
+    {
+      "page_number": 34,
+      "image": "page_34.png",
+      "annotated_image": "page_34_annotated.png",
+      "width": 1315,
+      "height": 1654,
+      "text": "22 \nMAP PROJECTIONS-A WORKING MANUAL \nc: \n~ \nQ,) \n:E \n= \n.... \nQ,) \n.... \n~ \n= \n....... \n:s ~ \n..= \n-\nN \nCl \nI \n-\n~ \nCl \n~ \n.... ..... \nc: \n-\nc: Cl \n~ ..... \n..... \nc.:» Q,) \nTransverse Mercator Projection \nFIGURE 4.-Distortion patterns on common conformal map projections. The Transverse Mercator and \nthe Stereographic are shown with reduction in scale along the central meridian or at the center of \nprojection, respectively. If there is no reduction, there is a single line of true scale along the \ncentral meridian on the Transverse Mercator and only a point of true scale at the center of the \nStereographic. The illustrations are conceptual rather than precise, since each base map projec-\ntion is an identical conic. \nerror= -lo/o \n---\n-\nLambert Conformal Conic Projection \nFIGURE 4.-Continued. \n",
+      "text_length": 804,
+      "elements": [
+        {
+          "type": "figure",
+          "bbox_1000": [
+            253,
+            62,
+            828,
+            348
+          ],
+          "bbox_pixels": [
+            332,
+            102,
+            1088,
+            575
+          ],
+          "label": "Figure 4",
+          "description": "Diagram illustrating distortion patterns on the Transverse Mercator Projection, showing scale errors (+2%, +1%, -1%, -2%) relative to the central meridian and lines of true scale. Includes a simplified outline of North America for context.",
+          "crop_path": "elements/p34_figure_1_Figure_4.png"
+        },
+        {
+          "type": "figure",
+          "bbox_1000": [
+            253,
+            555,
+            828,
+            844
+          ],
+          "bbox_pixels": [
+            332,
+            917,
+            1088,
+            1395
+          ],
+          "label": "Figure 4—Continued",
+          "description": "Diagram illustrating distortion patterns on the Lambert Conformal Conic Projection, showing scale errors (+1%, +2%, -1%) relative to the standard parallels (0% error). Includes a simplified outline of North America for context.",
+          "crop_path": "elements/p34_figure_2_Figure_4—Continued.png"
+        }
+      ],
+      "extraction_time_seconds": 59.3,
+      "total_page_time_seconds": 59.45
+    },
+    {
+      "page_number": 42,
+      "image": "page_42.png",
+      "annotated_image": "page_42_annotated.png",
+      "width": 1320,
+      "height": 1656,
+      "text": "30 \nMAP PROJECTIONS-A WORKING MANUAL \nC (N.Pole) \nFIGURE 5.-Spherical triangle. \ncos c = cos b cos a + sin b sin a cos C \n(5-2) \nIf Cis placed at the North Pole, it becomes the angle between two meridians \nextending to A and B. If A is taken as the starting point on the sphere, and B the \nsecond point, c is the great circle distance between them, and angle A is the \nazimuth Az east of north which point B bears to point A. When latitude <PI and \nlongitude X.0 are used for point A, and<!> and X. are used for point B, equation (5-2) \nbecomes the following for great circle distance: \ncos c = sin <I> I sin <!> + cos <PI cos <!> cos (A.- 1..0) \n(5-3) \nWhile (5-3) is the standard and simplest form of this equation, it is not accu-\nrate in practical computation for values of c very close to zero. For such cases, the \nequation may be rearranged as follows (Sinnott, 1984): \nsin (c/2) = /sin2[(<!>-<l>I)/2] + cos <PI cos<!> sin2 [(X.-X.0)!2])1-'z \n(5-3a) \nThis equation is also exact, and is very accurate in practice for values of c from 0 \nto nearly 180°. \nEquation (5-1) becomes the following for the azimuth: \nsin Az = sin (X.- X.0) cos <j>/sin c \n(5-4) \nor, with some rearrangement, \ncos Az = [cos <!>I sin <!> - sin <!>I cos <!> cos (X.- 1..0) ]/sin c \n(5-4a) \nor, eliminating c, \ntan Az = cos <!> sin (X.- X.0)/[cos <I> I sin <!> - sin <I> I cos <!> cos (X.- X.0)] \n(5-4b) \nEither of the three equations (5-4) through (5-4b) may be used for the azimuth, \ndepending on the form of equation preferred. Equation (5-4b) is usually preferred, \nsince it avoids the inaccuracies of finding an arcsin near 90° or an arccos near 0°. \nQuadrant adjustment as described under the list of symbols should be employed. \n",
+      "text_length": 1714,
+      "elements": [
+        {
+          "type": "figure",
+          "bbox_1000": [
+            417,
+            51,
+            675,
+            325
+          ],
+          "bbox_pixels": [
+            550,
+            84,
+            891,
+            538
+          ],
+          "label": "FIGURE 5",
+          "description": "Spherical triangle diagram showing three points: C (N. Pole), A (φ₀, λ₀), and B (φ, λ), connected by arcs labeled a, b, and c, representing sides of the spherical triangle.",
+          "crop_path": "elements/p42_figure_1_FIGURE_5.png"
+        }
+      ],
+      "extraction_time_seconds": 38.59,
+      "total_page_time_seconds": 38.72
+    },
+    {
+      "page_number": 51,
+      "image": "page_51.png",
+      "annotated_image": "page_51_annotated.png",
+      "width": 1328,
+      "height": 1654,
+      "text": "7. MERCATOR PROJECTION \nFIGURE 7.-Gerardus Mercator (1512-94). The inventor of the most famous map projection, which is \nthe prototype for conformal mapping. \nincreasingly spaced toward each pole so that conformality exists (fig. 8). The \nspacing of parallels at a given latitude on the sphere is proportional to the secant \nof the latitude. \nThe major navigational feature of the projection is found in the fact that a \nsailing route between two points is shown as a straight line, if the direction or \nazimuth of the ship remains constant with respect to north. This kind of route is \ncalled a loxodrome or rhumb line and is usually longer than the great circle path \n(which is the shortest possible route on the sphere). It is the same length as a \ngreat circle only if it follows the Equator or a meridian. The projection has been \nstandard since 1910 for nautical charts prepared by the former U.S. Coast and \nGeodetic Survey (now National Ocean Service) (Shalowitz, 1964, p. 302). \nThe great distortion of area on the Mercator projection of the Earth leads to \nmistaken concepts when it is the chief basis of world maps seen by students in \n39 \n",
+      "text_length": 1151,
+      "elements": [
+        {
+          "type": "figure",
+          "bbox_1000": [
+            177,
+            80,
+            740,
+            665
+          ],
+          "bbox_pixels": [
+            235,
+            132,
+            982,
+            1099
+          ],
+          "label": "FIGURE 7",
+          "description": "A black-and-white engraved portrait of Gerardus Mercator (1512–94), showing him with a beard, wearing a hat and a ruffled collar, framed in an oval. The caption identifies him as the inventor of the Mercator projection, the prototype for conformal mapping.",
+          "crop_path": "elements/p51_figure_1_FIGURE_7.png"
+        }
+      ],
+      "extraction_time_seconds": 41.83,
+      "total_page_time_seconds": 42.05
+    },
+    {
+      "page_number": 52,
+      "image": "page_52.png",
+      "annotated_image": "page_52_annotated.png",
+      "width": 1634,
+      "height": 1299,
+      "text": "hI \n~t-\nFhtl=h \n~~~~ \nltJ \n~~ \n~-~--\n~ \n[[V· . -· ·-fll\\~1~ \nWl_l_ 1- r -1 -I-t I r:JV\" \n~-\n~ \nI /1L:. \n~·'.;.~~'-­\n~-~<P ~ 1\\1' -•\\ \n(f I~ \\:u \nLfrC'/ \n0 \n--.C> \n0 \nl:r \n/,} \n' ' \nIY \nf-Llr~ \n~~n~-. \n-~4~-C>c \nlYi=\\ \n\\1 115 \nJl· \n,f \nC?. ~ \n•' \n~y \n~ \n~-\n1 .D \ni-\n--~ \n{J \n_I \nh.a I ,T\\ \n~~u \nr-1-1-\n1}~\\l~r ~ \n~l l.~v·r Pon \n'lr ~ n \n~-~ -I -\n~- -~ \n\\1 'IJV .· \nrc:=:: \nX \nFIGURE 8.-The Mercator projection. The best-known projection. All local angles are shown correctly; therefore, small shapes are essentially true, and it \nis called conformal. Since rhumb lines are shown straight on this projection, it is very useful in navigation. It is commonly used to show equatorial \nregions of the Earth and other bodies. \n\"\"\" \n0 \n~ \n\"0 \n~ \n8 \nM \n0 \n>-'3 0 z r \n~ \n0 \n~ \n~ z \n0 \nis: > \nz \nc:: > \nt\"' \n",
+      "text_length": 798,
+      "elements": [
+        {
+          "type": "figure",
+          "bbox_1000": [
+            145,
+            107,
+            916,
+            865
+          ],
+          "bbox_pixels": [
+            236,
+            138,
+            1496,
+            1123
+          ],
+          "label": "FIGURE 8",
+          "description": "The Mercator projection, a world map showing continents and oceans with a grid of latitude and longitude lines. The projection preserves local angles and small shapes, making it conformal and useful for navigation. It is commonly used for equatorial regions.",
+          "crop_path": "elements/p52_figure_1_FIGURE_8.png"
+        }
+      ],
+      "extraction_time_seconds": 38.63,
+      "total_page_time_seconds": 38.78
+    }
+  ],
+  "timing": {}
+}

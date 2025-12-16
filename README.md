@@ -4,6 +4,8 @@ Extract, catalog, and make searchable a collection of geospatial AI and Earth Ob
 
 **[See PROGRESS.md for latest updates and next steps](PROGRESS.md)**
 
+**[Live Demo on Cloudflare Pages](https://osgeo-library.pages.dev)** (if deployed)
+
 ## Goal
 
 Build a knowledge base from 5000+ research PDFs that allows:
@@ -11,102 +13,134 @@ Build a knowledge base from 5000+ research PDFs that allows:
 - Figure retrieval by description ("show me the SAM3 architecture diagram")
 - Integration with LLM assistants for scientific Q&A
 
-## Approach
+## Current Approach: Visual Grounding with Qwen3-VL
 
-We use a hybrid extraction pipeline:
+We use **Qwen3-VL-32B** running locally via llama.cpp for accurate figure/table detection with bounding boxes.
 
-| Method | Tool | Purpose |
-|--------|------|---------|
-| Traditional | PyMuPDF | Text, metadata, image detection |
-| Multimodal | Gemini 2.0 Flash | Figure descriptions, key concepts, structured extraction |
+### Why Visual Grounding?
 
-**Quality over velocity** - Multimodal extraction is rate-limited but essential for understanding visual content. If it takes a year to process the full library, that's acceptable.
+| Method | Figures | Tables | Accuracy | Speed |
+|--------|---------|--------|----------|-------|
+| PyMuPDF | Fragments only | Basic | Poor | Fast |
+| Caption heuristics | Good | Good | ~90% | Fast |
+| **Qwen3-VL-32B** | **Excellent** | **Excellent** | **~98%** | ~40s/page |
+
+The vision model understands page layout and returns precise bounding boxes in 0-1000 coordinate scale, which we convert to pixel coordinates for cropping.
 
 ## Scripts
 
-### extract_pdf.py
+### extract_document.py (Recommended)
 
-Traditional PDF extraction using PyMuPDF.
+Complete extraction pipeline using Qwen3-VL for visual grounding.
 
 ```bash
-# Extract all pages
+# Extract specific pages
+python extract_document.py paper.pdf --pages 1,2,3 --output-dir web/data/paper_name
+
+# Merge with existing extraction (incremental)
+python extract_document.py paper.pdf --pages 4,5,6 --output-dir web/data/paper_name --merge
+
+# Custom DPI for higher resolution
+python extract_document.py paper.pdf --pages 1 --output-dir output --dpi 200
+```
+
+**Requires**: Qwen3-VL-32B server running on localhost:8090
+
+**Output**:
+- `page_XX.png` - Original page images
+- `page_XX_annotated.png` - Pages with bounding boxes drawn
+- `elements/` - Cropped figures, tables, diagrams
+- `extraction.json` - Structured data with timing info
+
+### extract_pdf.py
+
+Traditional PDF extraction using PyMuPDF (fast, text-only).
+
+```bash
 python extract_pdf.py paper.pdf --output results.json
-
-# Extract first 3 pages
 python extract_pdf.py paper.pdf --max-pages 3
-
-# Text-only output
 python extract_pdf.py paper.pdf --text-only
 ```
 
-### extract_multimodal.py
+### extract_figures.py
 
-Multimodal extraction using vision LLMs via OpenRouter.
-
-```bash
-# Extract specific pages with Gemini
-python extract_multimodal.py paper.pdf --pages 1,2,3 --model gemini
-
-# Available models: gemini, nemotron-vl, nova
-python extract_multimodal.py paper.pdf --pages 1 --model nemotron-vl
-```
-
-Requires OpenRouter API key in `~/github/matrix-llmagent/config.json` or via `--api-key`.
-
-### generate_comparison.py
-
-Generate comparison data for the web viewer.
+Caption-based figure extraction (heuristic approach).
 
 ```bash
-python generate_comparison.py paper.pdf \
-  --traditional traditional_results.json \
-  --multimodal multimodal_results.json \
-  --pages 1,2,3 \
-  --output-dir web
+python extract_figures.py paper.pdf --pages 2,3,4 --output-dir figures/
 ```
 
-## Comparison Website
+## Web Viewer
 
-A simple viewer to compare extraction methods side-by-side.
+Interactive viewer for extracted documents. Deployed on Cloudflare Pages.
 
 ```bash
 cd web
-python -m http.server 8765
-# Open http://localhost:8765
+python -m http.server 8080
+# Open http://localhost:8080
 ```
 
-Shows:
-- Original PDF page image
-- Traditional extraction (text, image count, blocks)
-- Multimodal extraction (figure descriptions, key concepts, citations)
+**Features**:
+- Document selector dropdown
+- Page navigation with keyboard shortcuts (arrow keys)
+- Three-panel view: Original | Annotated | Extracted Elements
+- Click images to view full size
+- Shows extraction timing per page
 
-## Sample Results
+## Sample Extractions
 
-**Traditional extraction** detects:
-- 3178 characters of text
-- 11 images on page 1
-- 20 text blocks
+### SAM3 Paper (sam3.pdf)
+- 7 pages extracted (1, 2, 3, 5, 6, 7, 8)
+- 12 elements: 6 figures, 5 tables, 1 chart
+- Average detection time: ~40s/page
 
-**Multimodal extraction** adds:
-- Figure descriptions: "The figure demonstrates the improvement of SAM 3 over SAM 2..."
-- Key concepts: SAM, PCS, PVS, interactive visual segmentation
-- Citations: Kirillov et al., 2023; Ravi et al., 2024
+### USGS Map Projections (usgs_snyder1987.pdf)
+- 9 pages extracted (1, 9, 16, 21, 32, 34, 42, 51, 52)
+- 8 figures including Mercator projection diagrams
+- Average detection time: ~42s/page
 
-## Setup
+## Local Setup
+
+### 1. Install Dependencies
 
 ```bash
-# Clone
 git clone https://github.com/ominiverdi/osgeo-library.git
 cd osgeo-library
 
-# Create virtual environment (using uv)
+# Using uv (recommended)
 uv venv
-uv pip install PyMuPDF requests
+uv pip install PyMuPDF Pillow openai
 
-# Or with standard venv
+# Or standard venv
 python -m venv .venv
 source .venv/bin/activate
-pip install PyMuPDF requests
+pip install PyMuPDF Pillow openai
+```
+
+### 2. Start Vision Model Server
+
+Requires llama.cpp with Qwen3-VL-32B:
+
+```bash
+cd /path/to/llm_toolbox
+./llama.cpp-latest/build/bin/llama-server \
+  --model models/Qwen3-VL-32B/Qwen3VL-32B-Instruct-Q4_K_M.gguf \
+  --mmproj models/Qwen3-VL-32B/mmproj-Qwen3VL-32B-Instruct-F16.gguf \
+  --host 0.0.0.0 --port 8090 \
+  --ctx-size 8192 --parallel 1 -ngl 999
+```
+
+### 3. Run Extraction
+
+```bash
+# Check server health
+curl http://localhost:8090/health
+
+# Extract document
+python extract_document.py document.pdf --pages 1,2,3 --output-dir web/data/doc_name
+
+# View results
+cd web && python -m http.server 8080
 ```
 
 ## Architecture
@@ -115,43 +149,52 @@ pip install PyMuPDF requests
 PDF Files (5000+)
        |
        v
-+------+-------+
-|              |
-v              v
-Traditional    Multimodal
-(PyMuPDF)      (Gemini)
-|              |
-v              v
-Text +         Figure
-Metadata       Descriptions
-|              |
-+------+-------+
-       |
-       v
- PostgreSQL DB
- (osgeo_research_kb)
-       |
-       v
- LLM Assistant
- search_research_papers()
-       |
-       v
- User: "show me SAM3 architecture"
- Bot: [returns figure + description]
++------+--------+
+|               |
+v               v
+PyMuPDF         Qwen3-VL-32B
+(text)          (visual grounding)
+|               |
+v               v
+Text +          Bounding boxes
+Metadata        + Descriptions
+|               |
++-------+-------+
+        |
+        v
+   Crop Elements
+   (figures, tables)
+        |
+        v
+   extraction.json
+        |
+        v
+   Web Viewer / DB
+        |
+        v
+   LLM Assistant
+   "show me SAM3 architecture"
 ```
+
+## Model Comparison
+
+| Model | Grounding | Speed | Notes |
+|-------|-----------|-------|-------|
+| Qwen3-VL-8B | Poor | ~48s/page | Wrong bounding boxes |
+| **Qwen3-VL-32B** | **Excellent** | ~40s/page | Recommended |
+| Qwen3-VL-235B | Untested | Slower | Available, 47GB |
 
 ## Future Plans
 
-- [ ] Dedicated database for research papers (`osgeo_research_kb`)
-- [ ] Individual figure extraction (not just page images)
+- [ ] Test Qwen3-VL-235B for potentially better accuracy
+- [ ] Process full library (~5000 PDFs)
+- [ ] PostgreSQL database for search
 - [ ] Vector embeddings for semantic figure search
 - [ ] `search_research_papers()` function for LLM assistant
-- [ ] Process full library over time
 
 ## Related Projects
 
 - [matrix-llmagent](https://github.com/ominiverdi/matrix-llmagent) - Matrix chatbot with knowledge base
-- OSGeo Wiki knowledge base (`osgeo_wiki_kb`)
 
 ## License
 

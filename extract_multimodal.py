@@ -1,6 +1,10 @@
 #!/usr/bin/env python3
 """
-Multimodal PDF extraction using vision LLMs via OpenRouter.
+Multimodal PDF extraction using vision LLMs.
+
+Supports:
+- Local llama.cpp server with Qwen-VL models (recommended)
+- OpenRouter API (for remote/cloud models)
 
 Converts PDF pages to images and sends them to vision models
 for detailed content extraction including figure descriptions.
@@ -18,12 +22,31 @@ import fitz  # PyMuPDF
 import requests
 
 
+# === Backend Configuration ===
+
+# Local llama.cpp server (default)
+LOCAL_SERVER_URL = "http://localhost:8090/v1"
+
+# Local vision models (via llama.cpp)
+LOCAL_MODELS = {
+    "qwen3-vl-8b": {
+        "model": "models/Qwen3-VL-8B/Qwen3VL-8B-Instruct-Q4_K_M.gguf",
+        "mmproj": "models/Qwen3-VL-8B/mmproj-Qwen3VL-8B-Instruct-F16.gguf",
+        "display": "Qwen3-VL-8B (local)",
+    },
+    "qwen2-vl-7b": {
+        "model": "models/Qwen2-VL-7B/Qwen2-VL-7B-Instruct-Q4_K_M.gguf",
+        "mmproj": "models/Qwen2-VL-7B/mmproj-Qwen2-VL-7B-Instruct-f16.gguf",
+        "display": "Qwen2-VL-7B (local)",
+    },
+}
+
 # OpenRouter API configuration
 OPENROUTER_BASE_URL = "https://openrouter.ai/api/v1"
 
 # Vision models available on OpenRouter free tier (text+image->text)
 # Tested and confirmed working as of 2025-12-16
-VISION_MODELS = {
+OPENROUTER_MODELS = {
     # Google models
     "gemini": "google/gemini-2.0-flash-exp:free",  # 1M context, best quality but aggressive rate limits
     "gemma-27b": "google/gemma-3-27b-it:free",  # 131K context, often rate limited
@@ -35,8 +58,15 @@ VISION_MODELS = {
 }
 # Note: mistral-small-3.1 claims multimodal but returns 404 for image input
 
+# All available models (local + openrouter)
+VISION_MODELS = {**LOCAL_MODELS, **{k: v for k, v in OPENROUTER_MODELS.items()}}
+
 # Short names for display
 MODEL_DISPLAY_NAMES = {
+    # Local models
+    "qwen3-vl-8b": "Qwen3-VL-8B (local)",
+    "qwen2-vl-7b": "Qwen2-VL-7B (local)",
+    # OpenRouter models
     "google/gemini-2.0-flash-exp:free": "Gemini 2.0 Flash",
     "google/gemma-3-27b-it:free": "Gemma 3 27B",
     "google/gemma-3-12b-it:free": "Gemma 3 12B",
@@ -45,8 +75,8 @@ MODEL_DISPLAY_NAMES = {
     "amazon/nova-2-lite-v1:free": "Amazon Nova 2",
 }
 
-# Default model - Nova is reliable with good quality
-DEFAULT_MODEL = "nova"
+# Default model - local Qwen3-VL-8B (best speed/quality)
+DEFAULT_MODEL = "qwen3-vl-8b"
 
 EXTRACTION_PROMPT = """You are analyzing a page from a scientific research paper about Earth Observation, Remote Sensing, or AI/ML for geospatial applications.
 
@@ -249,7 +279,73 @@ def extract_images_from_page(
     return images_info
 
 
-def call_vision_model(
+def is_local_model(model_key: str) -> bool:
+    """Check if model is a local llama.cpp model."""
+    return model_key in LOCAL_MODELS
+
+
+def call_local_vision_model(
+    image_base64: str,
+    model_key: str,
+    prompt: str = EXTRACTION_PROMPT,
+    timeout: int = 600,  # 10 minutes - image encoding can take 100s+
+) -> dict:
+    """Call local llama.cpp vision model with an image."""
+
+    payload = {
+        "model": model_key,
+        "messages": [
+            {
+                "role": "user",
+                "content": [
+                    {
+                        "type": "image_url",
+                        "image_url": {"url": f"data:image/png;base64,{image_base64}"},
+                    },
+                    {"type": "text", "text": prompt},
+                ],
+            }
+        ],
+        "max_tokens": 4096,
+        "temperature": 0.3,
+    }
+
+    start_time = time.time()
+    try:
+        response = requests.post(
+            f"{LOCAL_SERVER_URL}/chat/completions",
+            json=payload,
+            timeout=timeout,
+        )
+        elapsed = time.time() - start_time
+    except requests.exceptions.ConnectionError:
+        return {
+            "error": True,
+            "message": f"Cannot connect to local server at {LOCAL_SERVER_URL}. Is llama-server running?",
+        }
+    except requests.exceptions.Timeout:
+        elapsed = time.time() - start_time
+        return {
+            "error": True,
+            "message": f"Request timed out after {elapsed:.1f}s",
+            "elapsed_seconds": elapsed,
+        }
+
+    if response.status_code != 200:
+        return {
+            "error": True,
+            "status_code": response.status_code,
+            "message": response.text,
+            "elapsed_seconds": elapsed,
+        }
+
+    result = response.json()
+    parsed = _parse_vision_response(result)
+    parsed["elapsed_seconds"] = elapsed
+    return parsed
+
+
+def call_openrouter_vision_model(
     api_key: str,
     image_base64: str,
     model: str,
@@ -296,8 +392,11 @@ def call_vision_model(
         }
 
     result = response.json()
+    return _parse_vision_response(result)
 
-    # Extract the response content
+
+def _parse_vision_response(result: dict) -> dict:
+    """Parse vision model response, extracting JSON if present."""
     if "choices" in result and len(result["choices"]) > 0:
         content = result["choices"][0]["message"]["content"]
         # Try to parse as JSON
@@ -318,11 +417,27 @@ def call_vision_model(
     return {"error": True, "message": "No response content", "raw": result}
 
 
+def call_vision_model(
+    api_key: str | None,
+    image_base64: str,
+    model_key: str,
+    prompt: str = EXTRACTION_PROMPT,
+) -> dict:
+    """Call vision model (local or OpenRouter) with an image."""
+    if is_local_model(model_key):
+        return call_local_vision_model(image_base64, model_key, prompt)
+    else:
+        if api_key is None:
+            return {"error": True, "message": "API key required for OpenRouter models"}
+        model_id = OPENROUTER_MODELS.get(model_key, model_key)
+        return call_openrouter_vision_model(api_key, image_base64, model_id, prompt)
+
+
 def extract_page_multimodal(
     doc: fitz.Document,
     page_num: int,
-    api_key: str,
-    model: str,
+    api_key: str | None,
+    model_key: str,
     dpi: int = 150,
     output_dir: Path | None = None,
     pdf_name: str = "pdf",
@@ -334,14 +449,14 @@ def extract_page_multimodal(
     image_base64 = pdf_page_to_base64(doc, page_num, dpi)
 
     # Call vision model
-    result = call_vision_model(api_key, image_base64, model)
+    result = call_vision_model(api_key, image_base64, model_key)
 
     # Get display name for model
-    model_display = MODEL_DISPLAY_NAMES.get(model, model)
+    model_display = MODEL_DISPLAY_NAMES.get(model_key, model_key)
 
     page_result = {
         "page_number": page_num + 1,
-        "model": model,
+        "model": model_key,
         "model_display": model_display,
         "extraction_result": result,
         "image_size_bytes": len(image_base64) * 3 // 4,  # Approximate decoded size
@@ -362,11 +477,11 @@ def extract_page_multimodal(
 
 def extract_pdf_multimodal(
     pdf_path: Path,
-    api_key: str,
-    model: str,
+    api_key: str | None,
+    model_key: str,
     pages: list[int] | None = None,
     dpi: int = 150,
-    delay: float = 3.0,
+    delay: float = 1.0,
     output_dir: Path | None = None,
     extract_images: bool = True,
 ) -> dict:
@@ -386,8 +501,9 @@ def extract_pdf_multimodal(
         "source_file": str(pdf_path),
         "file_size_bytes": pdf_path.stat().st_size,
         "extraction_date": datetime.now().isoformat(),
-        "extraction_tool": f"multimodal/{model}",
-        "model": model,
+        "extraction_tool": f"multimodal/{model_key}",
+        "model": model_key,
+        "model_display": MODEL_DISPLAY_NAMES.get(model_key, model_key),
         "dpi": dpi,
         "metadata": {
             "page_count": len(doc),
@@ -413,7 +529,7 @@ def extract_pdf_multimodal(
             doc,
             page_num,
             api_key,
-            model,
+            model_key,
             dpi,
             output_dir=images_dir,
             pdf_name=pdf_name,
@@ -434,7 +550,7 @@ def extract_pdf_multimodal(
                 }
             )
 
-        # Rate limiting - wait between requests
+        # Rate limiting - wait between requests (less needed for local models)
         if i < len(pages_to_extract) - 1:
             print(f"Waiting {delay}s before next request...", file=sys.stderr)
             time.sleep(delay)
@@ -465,7 +581,7 @@ def main():
         "--api-key",
         type=str,
         default=None,
-        help="OpenRouter API key (default: read from matrix-llmagent config)",
+        help="OpenRouter API key (only needed for OpenRouter models)",
     )
     parser.add_argument(
         "--dpi",
@@ -476,8 +592,8 @@ def main():
     parser.add_argument(
         "--delay",
         type=float,
-        default=3.0,
-        help="Delay between API calls in seconds (default: 3.0)",
+        default=1.0,
+        help="Delay between pages in seconds (default: 1.0, less needed for local)",
     )
     parser.add_argument(
         "--output",
@@ -503,16 +619,30 @@ def main():
         print(f"Error: File not found: {args.pdf_path}", file=sys.stderr)
         sys.exit(1)
 
-    # Load API key
-    api_key = args.api_key or load_api_key()
+    # Check if model exists
+    model_key = args.model
+    if (
+        model_key not in VISION_MODELS
+        and model_key not in LOCAL_MODELS
+        and model_key not in OPENROUTER_MODELS
+    ):
+        print(f"Error: Unknown model: {model_key}", file=sys.stderr)
+        print(f"Available models: {list(VISION_MODELS.keys())}", file=sys.stderr)
+        sys.exit(1)
+
+    # Load API key only for OpenRouter models
+    api_key = None
+    if not is_local_model(model_key):
+        try:
+            api_key = args.api_key or load_api_key()
+        except FileNotFoundError as e:
+            print(f"Error: {e}", file=sys.stderr)
+            sys.exit(1)
 
     # Parse pages argument
     pages = None
     if args.pages:
         pages = [int(p.strip()) for p in args.pages.split(",")]
-
-    # Get model ID
-    model = VISION_MODELS[args.model]
 
     # Determine output directory for images
     output_dir = args.output_dir
@@ -523,7 +653,9 @@ def main():
 
     extract_images = not args.no_images
 
-    print(f"Extracting with model: {model}", file=sys.stderr)
+    model_display = MODEL_DISPLAY_NAMES.get(model_key, model_key)
+    backend = "local" if is_local_model(model_key) else "OpenRouter"
+    print(f"Extracting with model: {model_display} ({backend})", file=sys.stderr)
     print(f"Pages: {pages or 'all'}", file=sys.stderr)
     print(f"Extract images: {extract_images}", file=sys.stderr)
     if extract_images:
@@ -532,7 +664,7 @@ def main():
     result = extract_pdf_multimodal(
         args.pdf_path,
         api_key,
-        model,
+        model_key,
         pages=pages,
         dpi=args.dpi,
         delay=args.delay,

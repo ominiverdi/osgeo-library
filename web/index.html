@@ -3,11 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PDF Extraction Comparison - OSGeo Library</title>
+    <title>Document Extraction Viewer - OSGeo Library</title>
     <style>
-        * {
-            box-sizing: border-box;
-        }
+        * { box-sizing: border-box; }
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
             margin: 0;
@@ -45,10 +43,9 @@
             border: none;
             cursor: pointer;
         }
-        .controls button:hover {
-            background: #2980b9;
-        }
-        .comparison-container {
+        .controls button:hover { background: #2980b9; }
+        
+        .main-container {
             display: grid;
             grid-template-columns: 1fr 1fr 1fr;
             gap: 20px;
@@ -67,723 +64,355 @@
             padding: 15px;
             font-weight: bold;
         }
-        .panel-header.traditional {
-            background: #e74c3c;
-        }
-        .panel-header.multimodal {
-            background: #27ae60;
-        }
-        .panel-header.original {
-            background: #3498db;
-        }
+        .panel-header.original { background: #3498db; }
+        .panel-header.annotated { background: #e74c3c; }
+        .panel-header.elements { background: #27ae60; }
+        
         .panel-content {
             padding: 15px;
-            max-height: 800px;
+            max-height: 850px;
             overflow-y: auto;
         }
         .page-image {
             width: 100%;
             height: auto;
             border: 1px solid #eee;
+            cursor: pointer;
         }
-        .extraction-text {
-            white-space: pre-wrap;
-            font-family: 'Monaco', 'Menlo', monospace;
-            font-size: 12px;
-            line-height: 1.5;
+        .page-image:hover { opacity: 0.9; }
+        
+        .element-card {
             background: #f8f9fa;
-            padding: 10px;
             border-radius: 4px;
-        }
-        .section {
             margin-bottom: 15px;
+            overflow: hidden;
+            border-left: 4px solid #3498db;
         }
-        .section-title {
+        .element-card.figure { border-left-color: #e74c3c; }
+        .element-card.table { border-left-color: #3498db; }
+        .element-card.diagram { border-left-color: #27ae60; }
+        
+        .element-header {
+            padding: 10px 15px;
+            background: #eee;
             font-weight: bold;
-            color: #2c3e50;
-            margin-bottom: 5px;
-            padding-bottom: 5px;
-            border-bottom: 1px solid #eee;
-        }
-        .figure-item {
-            background: #e8f4fd;
-            padding: 10px;
-            border-radius: 4px;
-            margin-bottom: 10px;
-        }
-        .figure-item .caption {
-            font-weight: bold;
-            color: #2980b9;
-        }
-        .figure-item .description {
-            margin-top: 5px;
-            font-style: italic;
-            color: #555;
-        }
-        .key-concepts {
             display: flex;
-            flex-wrap: wrap;
-            gap: 5px;
+            justify-content: space-between;
+            align-items: center;
         }
-        .concept-tag {
-            background: #9b59b6;
-            color: white;
-            padding: 3px 8px;
+        .element-type {
+            padding: 2px 8px;
             border-radius: 3px;
             font-size: 11px;
-        }
-        .citation-tag {
-            background: #f39c12;
             color: white;
-            padding: 3px 8px;
-            border-radius: 3px;
+        }
+        .element-type.figure { background: #e74c3c; }
+        .element-type.table { background: #3498db; }
+        .element-type.diagram { background: #27ae60; }
+        
+        .element-body {
+            padding: 15px;
+        }
+        .element-image {
+            width: 100%;
+            max-height: 300px;
+            object-fit: contain;
+            border: 1px solid #ddd;
+            margin-bottom: 10px;
+            cursor: pointer;
+        }
+        .element-description {
+            font-size: 13px;
+            color: #555;
+            line-height: 1.5;
+        }
+        .element-meta {
             font-size: 11px;
-        }
-        .type-tag {
-            background: #16a085;
-            color: white;
-            padding: 2px 6px;
-            border-radius: 3px;
-            font-size: 10px;
-            margin-right: 5px;
-        }
-        .extracted-images {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-            gap: 10px;
+            color: #888;
             margin-top: 10px;
         }
-        .extracted-image-item {
-            background: #f0f0f0;
-            padding: 8px;
+        
+        .text-preview {
+            font-family: 'Monaco', 'Menlo', monospace;
+            font-size: 11px;
+            background: #f8f9fa;
+            padding: 10px;
             border-radius: 4px;
-            text-align: center;
+            max-height: 200px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+            color: #555;
         }
-        .extracted-image-item img {
-            max-width: 100%;
-            max-height: 150px;
-            border: 1px solid #ddd;
-        }
-        .extracted-image-item .img-info {
-            font-size: 10px;
-            color: #666;
-            margin-top: 5px;
-        }
-        .visual-element {
+        
+        .doc-info {
             background: #e8f4fd;
-            padding: 10px;
+            padding: 15px;
             border-radius: 4px;
-            margin-bottom: 10px;
-            border-left: 3px solid #3498db;
-        }
-        .visual-element.architecture_diagram { border-left-color: #9b59b6; }
-        .visual-element.graph_chart { border-left-color: #e74c3c; }
-        .visual-element.table { border-left-color: #f39c12; }
-        .visual-element.results_figure { border-left-color: #27ae60; }
-        .visual-element.map, .visual-element.satellite_image { border-left-color: #1abc9c; }
-        .metrics-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
-            gap: 5px;
-            margin-top: 5px;
-        }
-        .metric-item {
-            background: #f8f9fa;
-            padding: 5px;
-            border-radius: 3px;
-            font-size: 11px;
-        }
-        .metric-item .metric-name { font-weight: bold; }
-        .metric-item .metric-value { color: #27ae60; }
-        .model-badge {
-            display: inline-block;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            padding: 8px 16px;
-            border-radius: 20px;
-            font-weight: bold;
-            font-size: 14px;
-            margin-bottom: 15px;
-            box-shadow: 0 2px 8px rgba(102, 126, 234, 0.4);
-        }
-        .model-badge.error {
-            background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
-            box-shadow: 0 2px 8px rgba(231, 76, 60, 0.4);
-        }
-        .model-badge.gemini { background: linear-gradient(135deg, #4285f4 0%, #34a853 100%); }
-        .model-badge.gemma { background: linear-gradient(135deg, #4285f4 0%, #ea4335 100%); }
-        .model-badge.mistral { background: linear-gradient(135deg, #ff6b35 0%, #f7931e 100%); }
-        .model-badge.nemotron { background: linear-gradient(135deg, #76b900 0%, #1a1a1a 100%); }
-        .model-badge.nova { background: linear-gradient(135deg, #ff9900 0%, #146eb4 100%); }
-        .model-badge.claude { background: linear-gradient(135deg, #d97706 0%, #92400e 100%); }
-        .stats {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 10px;
             margin-bottom: 15px;
         }
-        .stat-box {
-            background: #f8f9fa;
-            padding: 10px;
-            text-align: center;
-            border-radius: 4px;
-        }
-        .stat-value {
-            font-size: 24px;
-            font-weight: bold;
-            color: #2c3e50;
-        }
-        .stat-label {
-            font-size: 11px;
-            color: #666;
-        }
-        .loading {
-            text-align: center;
-            padding: 50px;
-            color: #666;
-        }
+        .doc-info h3 { margin: 0 0 10px 0; color: #2c3e50; }
+        .doc-info p { margin: 5px 0; font-size: 13px; }
+        
         .no-data {
             text-align: center;
             padding: 30px;
             color: #999;
             font-style: italic;
         }
+        
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.9);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+        .modal.active { display: flex; }
+        .modal img {
+            max-width: 95%;
+            max-height: 95%;
+            object-fit: contain;
+        }
+        .modal-close {
+            position: fixed;
+            top: 20px;
+            right: 30px;
+            color: white;
+            font-size: 40px;
+            cursor: pointer;
+        }
+        
         @media (max-width: 1200px) {
-            .comparison-container {
-                grid-template-columns: 1fr;
-            }
+            .main-container { grid-template-columns: 1fr 1fr; }
+        }
+        @media (max-width: 800px) {
+            .main-container { grid-template-columns: 1fr; }
         }
     </style>
 </head>
 <body>
-    <h1>PDF Extraction Comparison</h1>
-    <p class="subtitle">Compare Traditional vs Multimodal extraction methods for scientific papers</p>
+    <h1>Document Extraction Viewer</h1>
+    <p class="subtitle">Visual element detection using Qwen3-VL-32B</p>
     
     <div class="controls">
-        <select id="pdf-select">
-            <option value="">-- Select PDF --</option>
+        <select id="doc-select">
+            <option value="">-- Select Document --</option>
         </select>
         <select id="page-select">
             <option value="">-- Select Page --</option>
-        </select>
-        <select id="model-filter">
-            <option value="">-- All Models --</option>
         </select>
         <button onclick="prevPage()">Previous</button>
         <button onclick="nextPage()">Next</button>
     </div>
     
-    <div class="comparison-container">
-        <!-- Original PDF Page -->
+    <div class="main-container">
         <div class="panel">
-            <div class="panel-header original">Original PDF Page</div>
+            <div class="panel-header original">Original Page</div>
             <div class="panel-content" id="original-panel">
-                <div class="no-data">Select a PDF and page to view</div>
+                <div class="no-data">Select a document and page</div>
             </div>
         </div>
         
-        <!-- Traditional Extraction -->
         <div class="panel">
-            <div class="panel-header traditional">Traditional (PyMuPDF)</div>
-            <div class="panel-content" id="traditional-panel">
-                <div class="no-data">Select a PDF and page to view</div>
+            <div class="panel-header annotated">Annotated (Detected Elements)</div>
+            <div class="panel-content" id="annotated-panel">
+                <div class="no-data">Select a document and page</div>
             </div>
         </div>
         
-        <!-- Multimodal Extraction -->
         <div class="panel">
-            <div class="panel-header multimodal" id="multimodal-header">Multimodal Extraction</div>
-            <div class="panel-content" id="multimodal-panel">
-                <div class="no-data">Select a PDF and page to view</div>
+            <div class="panel-header elements">Extracted Elements</div>
+            <div class="panel-content" id="elements-panel">
+                <div class="no-data">Select a document and page</div>
             </div>
         </div>
     </div>
     
+    <div class="modal" id="image-modal" onclick="closeModal()">
+        <span class="modal-close">&times;</span>
+        <img id="modal-image" src="" alt="Full size">
+    </div>
+    
     <script>
-        let comparisonData = null;
-        let currentPdf = null;
-        let currentPageKey = null;  // Can be "2" or "2_Amazon_Nova_2"
-        let currentModelFilter = '';
+        const DOCUMENTS = {
+            'sam3': { name: 'SAM 3 Paper', path: 'data/sam3' },
+            'usgs_snyder': { name: 'USGS Map Projections (Snyder 1987)', path: 'data/usgs_snyder' }
+        };
         
-        // Extract page number from key (handles both "2" and "2_Model_Name" formats)
-        function getPageNum(key) {
-            const parts = String(key).split('_');
-            return parseInt(parts[0]);
-        }
+        let currentDoc = null;
+        let currentPageIdx = 0;
+        let docData = null;
         
-        // Sort page keys by page number then model name
-        function sortPageKeys(keys) {
-            return keys.sort((a, b) => {
-                const numA = getPageNum(a);
-                const numB = getPageNum(b);
-                if (numA !== numB) return numA - numB;
-                return String(a).localeCompare(String(b));
-            });
-        }
-        
-        async function loadData() {
+        async function loadDocument(docId) {
+            if (!DOCUMENTS[docId]) return;
+            
+            const path = DOCUMENTS[docId].path;
             try {
-                const response = await fetch('data/comparisons.json');
-                comparisonData = await response.json();
-                populatePdfSelect();
+                const response = await fetch(`${path}/extraction.json`);
+                docData = await response.json();
+                currentDoc = docId;
+                currentPageIdx = 0;
+                populatePageSelect();
+                renderPage();
             } catch (e) {
-                console.error('Failed to load comparison data:', e);
-                document.getElementById('original-panel').innerHTML = 
-                    '<div class="no-data">Error loading data. Make sure comparisons.json exists.</div>';
+                console.error('Failed to load document:', e);
+                docData = null;
             }
         }
         
-        function populatePdfSelect() {
-            const select = document.getElementById('pdf-select');
-            select.innerHTML = '<option value="">-- Select PDF --</option>';
+        function populateDocSelect() {
+            const select = document.getElementById('doc-select');
+            select.innerHTML = '<option value="">-- Select Document --</option>';
             
-            const pdfNames = Object.keys(comparisonData.pdfs);
-            for (const pdfName of pdfNames) {
+            for (const [id, doc] of Object.entries(DOCUMENTS)) {
                 const option = document.createElement('option');
-                option.value = pdfName;
-                option.textContent = pdfName;
+                option.value = id;
+                option.textContent = doc.name;
                 select.appendChild(option);
             }
             
-            select.onchange = (e) => {
-                currentPdf = e.target.value;
-                currentPageKey = null;
-                currentModelFilter = '';
-                document.getElementById('model-filter').value = '';
-                populateModelFilter();
-                populatePageSelect();
-                renderComparison();
-            };
-            
-            // Auto-select first PDF if only one
-            if (pdfNames.length === 1) {
-                currentPdf = pdfNames[0];
-                select.value = currentPdf;
-                populateModelFilter();
-                populatePageSelect();
-                renderComparison();
-            }
-        }
-        
-        function populateModelFilter() {
-            const select = document.getElementById('model-filter');
-            select.innerHTML = '<option value="">-- All Models --</option>';
-            
-            if (!currentPdf || !comparisonData.pdfs[currentPdf]) return;
-            
-            const pages = comparisonData.pdfs[currentPdf].pages;
-            const models = new Set();
-            
-            for (const pageKey in pages) {
-                const modelDisplay = pages[pageKey].multimodal?.model_display;
-                if (modelDisplay) {
-                    models.add(modelDisplay);
-                }
-            }
-            
-            for (const model of Array.from(models).sort()) {
-                const option = document.createElement('option');
-                option.value = model;
-                option.textContent = model;
-                select.appendChild(option);
-            }
-            
-            select.onchange = (e) => {
-                currentModelFilter = e.target.value;
-                currentPageKey = null;  // Reset page selection
-                populatePageSelect();
-                renderComparison();
-            };
-        }
-        
-        function getFilteredPages(pages) {
-            const pageKeys = sortPageKeys(Object.keys(pages));
-            if (!currentModelFilter) {
-                return pageKeys;
-            }
-            return pageKeys.filter(key => {
-                const modelDisplay = pages[key].multimodal?.model_display;
-                return modelDisplay === currentModelFilter;
-            });
+            select.onchange = (e) => loadDocument(e.target.value);
         }
         
         function populatePageSelect() {
             const select = document.getElementById('page-select');
             select.innerHTML = '<option value="">-- Select Page --</option>';
             
-            if (!currentPdf || !comparisonData.pdfs[currentPdf]) return;
+            if (!docData || !docData.pages) return;
             
-            const pages = comparisonData.pdfs[currentPdf].pages;
-            const filteredKeys = getFilteredPages(pages);
-            
-            for (const pageKey of filteredKeys) {
-                const pageData = pages[pageKey];
-                const pageNum = pageData.page_number || getPageNum(pageKey);
-                const modelName = pageData.multimodal?.model_display || '';
+            docData.pages.forEach((page, idx) => {
                 const option = document.createElement('option');
-                option.value = pageKey;
-                option.textContent = modelName ? `Page ${pageNum} (${modelName})` : `Page ${pageNum}`;
+                option.value = idx;
+                option.textContent = `Page ${page.page_number}`;
                 select.appendChild(option);
-            }
+            });
             
+            select.value = currentPageIdx;
             select.onchange = (e) => {
-                currentPageKey = e.target.value;
-                renderComparison();
+                currentPageIdx = parseInt(e.target.value);
+                renderPage();
             };
-            
-            // Select first page
-            if (filteredKeys.length > 0) {
-                currentPageKey = filteredKeys[0];
-                select.value = currentPageKey;
-            }
         }
         
         function prevPage() {
-            if (!currentPdf || !comparisonData.pdfs[currentPdf]) return;
-            const pages = comparisonData.pdfs[currentPdf].pages;
-            const keys = sortPageKeys(getFilteredPages(pages));
-            const idx = keys.indexOf(currentPageKey);
-            if (idx > 0) {
-                currentPageKey = keys[idx - 1];
-                document.getElementById('page-select').value = currentPageKey;
-                renderComparison();
+            if (currentPageIdx > 0) {
+                currentPageIdx--;
+                document.getElementById('page-select').value = currentPageIdx;
+                renderPage();
             }
         }
         
         function nextPage() {
-            if (!currentPdf || !comparisonData.pdfs[currentPdf]) return;
-            const pages = comparisonData.pdfs[currentPdf].pages;
-            const keys = sortPageKeys(getFilteredPages(pages));
-            const idx = keys.indexOf(currentPageKey);
-            if (idx < keys.length - 1) {
-                currentPageKey = keys[idx + 1];
-                document.getElementById('page-select').value = currentPageKey;
-                renderComparison();
+            if (docData && currentPageIdx < docData.pages.length - 1) {
+                currentPageIdx++;
+                document.getElementById('page-select').value = currentPageIdx;
+                renderPage();
             }
         }
         
-        function renderComparison() {
-            if (!currentPdf || !currentPageKey) {
+        function renderPage() {
+            if (!docData || !docData.pages[currentPageIdx]) {
+                document.getElementById('original-panel').innerHTML = '<div class="no-data">No page data</div>';
+                document.getElementById('annotated-panel').innerHTML = '<div class="no-data">No page data</div>';
+                document.getElementById('elements-panel').innerHTML = '<div class="no-data">No page data</div>';
                 return;
             }
             
-            const pdfData = comparisonData.pdfs[currentPdf];
-            const pageData = pdfData.pages[currentPageKey];
+            const page = docData.pages[currentPageIdx];
+            const basePath = DOCUMENTS[currentDoc].path;
             
-            if (!pageData) {
-                document.getElementById('original-panel').innerHTML = '<div class="no-data">No data for this page</div>';
-                document.getElementById('traditional-panel').innerHTML = '<div class="no-data">No data for this page</div>';
-                document.getElementById('multimodal-panel').innerHTML = '<div class="no-data">No data for this page</div>';
-                return;
-            }
+            // Original page
+            const timingInfo = page.extraction_time_seconds 
+                ? `<p><strong>Detection time:</strong> ${page.extraction_time_seconds}s</p>`
+                : '';
             
-            const pageNum = pageData.page_number || getPageNum(currentPageKey);
+            document.getElementById('original-panel').innerHTML = `
+                <div class="doc-info">
+                    <h3>${docData.document}</h3>
+                    <p><strong>Page:</strong> ${page.page_number}</p>
+                    <p><strong>Size:</strong> ${page.width} x ${page.height} px</p>
+                    <p><strong>Text:</strong> ${page.text_length} characters</p>
+                    <p><strong>Elements:</strong> ${page.elements.length} detected</p>
+                    ${timingInfo}
+                </div>
+                <img class="page-image" src="${basePath}/${page.image}" alt="Page ${page.page_number}"
+                     onclick="showModal('${basePath}/${page.image}')">
+                <div style="margin-top: 15px">
+                    <strong>Text Preview:</strong>
+                    <div class="text-preview">${escapeHtml(page.text.substring(0, 1000))}${page.text.length > 1000 ? '...' : ''}</div>
+                </div>
+            `;
             
-            // Render original page image
-            if (pageData.image) {
-                document.getElementById('original-panel').innerHTML = 
-                    `<img class="page-image" src="data/${pageData.image}" alt="Page ${pageNum}">`;
+            // Annotated page
+            if (page.annotated_image) {
+                document.getElementById('annotated-panel').innerHTML = `
+                    <img class="page-image" src="${basePath}/${page.annotated_image}" alt="Annotated Page ${page.page_number}"
+                         onclick="showModal('${basePath}/${page.annotated_image}')">
+                    <p style="text-align:center;color:#666;margin-top:10px">
+                        <span style="color:red">Red = Figure</span> | 
+                        <span style="color:blue">Blue = Table</span> | 
+                        <span style="color:green">Green = Diagram</span>
+                    </p>
+                `;
             } else {
-                document.getElementById('original-panel').innerHTML = '<div class="no-data">No image available</div>';
+                document.getElementById('annotated-panel').innerHTML = '<div class="no-data">No elements detected on this page</div>';
             }
             
-            // Render traditional extraction
-            renderTraditional(pageData.traditional);
-            
-            // Render multimodal extraction
-            renderMultimodal(pageData.multimodal);
-        }
-        
-        function renderTraditional(data) {
-            if (!data) {
-                document.getElementById('traditional-panel').innerHTML = '<div class="no-data">No traditional extraction data</div>';
-                return;
-            }
-            
-            let html = `
-                <div class="stats">
-                    <div class="stat-box">
-                        <div class="stat-value">${data.text_length || 0}</div>
-                        <div class="stat-label">Characters</div>
-                    </div>
-                    <div class="stat-box">
-                        <div class="stat-value">${data.image_count || 0}</div>
-                        <div class="stat-label">Images in PDF</div>
-                    </div>
-                    <div class="stat-box">
-                        <div class="stat-value">${data.extracted_images?.length || 0}</div>
-                        <div class="stat-label">Figures Extracted</div>
-                    </div>
-                </div>
-            `;
-            
-            // Show extracted images
-            if (data.extracted_images && data.extracted_images.length > 0) {
-                html += `
-                    <div class="section">
-                        <div class="section-title">Extracted Figures (${data.extracted_images.length})</div>
-                        <div class="extracted-images">
-                            ${data.extracted_images.map(img => `
-                                <div class="extracted-image-item">
-                                    <img src="data/images/${img.filename}" alt="${escapeHtml(img.filename)}" 
-                                         onerror="this.style.display='none'; this.nextElementSibling.style.display='block'">
-                                    <div style="display:none;color:#999;font-size:10px">Image not found</div>
-                                    <div class="img-info">
-                                        ${img.width}x${img.height} ${img.format}<br>
-                                        ${(img.size_bytes / 1024).toFixed(1)} KB
-                                    </div>
-                                </div>
-                            `).join('')}
-                        </div>
-                    </div>
-                `;
-            }
-            
-            // Show extracted text
-            html += `
-                <div class="section">
-                    <div class="section-title">Extracted Text</div>
-                    <div class="extraction-text">${escapeHtml(data.text || 'No text extracted')}</div>
-                </div>
-            `;
-            
-            document.getElementById('traditional-panel').innerHTML = html;
-        }
-        
-        function getModelBadgeClass(modelDisplay) {
-            if (!modelDisplay) return '';
-            const lower = modelDisplay.toLowerCase();
-            if (lower.includes('claude')) return 'claude';
-            if (lower.includes('gemini')) return 'gemini';
-            if (lower.includes('gemma')) return 'gemma';
-            if (lower.includes('mistral')) return 'mistral';
-            if (lower.includes('nemotron')) return 'nemotron';
-            if (lower.includes('nova')) return 'nova';
-            return '';
-        }
-        
-        function renderMultimodal(data) {
-            if (!data) {
-                document.getElementById('multimodal-panel').innerHTML = '<div class="no-data">No multimodal extraction data</div>';
-                document.getElementById('multimodal-header').textContent = 'Multimodal Extraction';
-                return;
-            }
-            
-            // Update header with model name
-            const modelDisplay = data.model_display || 'Unknown Model';
-            document.getElementById('multimodal-header').textContent = `Multimodal (${modelDisplay})`;
-            
-            if (data.error) {
-                const badgeClass = getModelBadgeClass(modelDisplay);
-                document.getElementById('multimodal-panel').innerHTML = `
-                    <div class="model-badge error ${badgeClass}">${escapeHtml(modelDisplay)} - ERROR</div>
-                    <div class="no-data">Error: ${escapeHtml(data.message || 'Unknown error')}</div>
-                `;
-                return;
-            }
-            
-            let html = '';
-            
-            // Model badge - prominent at top
-            const badgeClass = getModelBadgeClass(modelDisplay);
-            html += `<div class="model-badge ${badgeClass}">${escapeHtml(modelDisplay)}</div>`;
-            
-            // Page type
-            if (data.page_type) {
-                html += `<div class="section"><strong>Page Type:</strong> ${escapeHtml(data.page_type)}</div>`;
-            }
-            
-            // Key concepts
-            if (data.key_concepts && data.key_concepts.length > 0) {
-                html += `
-                    <div class="section">
-                        <div class="section-title">Key Concepts</div>
-                        <div class="key-concepts">
-                            ${data.key_concepts.map(c => `<span class="concept-tag">${escapeHtml(c)}</span>`).join('')}
-                        </div>
-                    </div>
-                `;
-            }
-            
-            // Methods mentioned
-            if (data.methods_mentioned && data.methods_mentioned.length > 0) {
-                html += `
-                    <div class="section">
-                        <div class="section-title">Methods/Models</div>
-                        <div class="key-concepts">
-                            ${data.methods_mentioned.map(m => `<span class="concept-tag" style="background:#8e44ad">${escapeHtml(m)}</span>`).join('')}
-                        </div>
-                    </div>
-                `;
-            }
-            
-            // Datasets mentioned
-            if (data.datasets_mentioned && data.datasets_mentioned.length > 0) {
-                html += `
-                    <div class="section">
-                        <div class="section-title">Datasets</div>
-                        <div class="key-concepts">
-                            ${data.datasets_mentioned.map(d => `<span class="concept-tag" style="background:#16a085">${escapeHtml(d)}</span>`).join('')}
-                        </div>
-                    </div>
-                `;
-            }
-            
-            // Metrics reported
-            if (data.metrics_reported && data.metrics_reported.length > 0) {
-                html += `
-                    <div class="section">
-                        <div class="section-title">Metrics Reported</div>
-                        <div class="metrics-grid">
-                            ${data.metrics_reported.map(m => `
-                                <div class="metric-item">
-                                    <span class="metric-name">${escapeHtml(m.metric || '')}:</span>
-                                    <span class="metric-value">${escapeHtml(m.value || '')}</span>
-                                    ${m.context ? `<br><small>${escapeHtml(m.context)}</small>` : ''}
-                                </div>
-                            `).join('')}
-                        </div>
-                    </div>
-                `;
-            }
-            
-            // Citations
-            if (data.citations_mentioned && data.citations_mentioned.length > 0) {
-                html += `
-                    <div class="section">
-                        <div class="section-title">Citations Mentioned</div>
-                        <div class="key-concepts">
-                            ${data.citations_mentioned.map(c => `<span class="citation-tag">${escapeHtml(c)}</span>`).join('')}
-                        </div>
-                    </div>
-                `;
-            }
-            
-            // Visual Elements (new format)
-            if (data.visual_elements && data.visual_elements.length > 0) {
-                html += `
-                    <div class="section">
-                        <div class="section-title">Visual Elements (${data.visual_elements.length})</div>
-                        ${data.visual_elements.map(v => `
-                            <div class="visual-element ${v.type || ''}">
-                                <span class="type-tag">${escapeHtml(v.type || 'unknown')}</span>
-                                ${v.number ? `<strong>${escapeHtml(v.number)}</strong>` : ''}
-                                ${v.caption ? `<div class="caption">${escapeHtml(v.caption)}</div>` : ''}
-                                <div class="description">${escapeHtml(v.description || 'No description')}</div>
-                                ${v.components && v.components.length > 0 ? `
-                                    <div style="margin-top:5px;font-size:11px">
-                                        <strong>Components:</strong> ${v.components.map(c => escapeHtml(c)).join(', ')}
-                                    </div>
+            // Elements
+            if (page.elements.length === 0) {
+                document.getElementById('elements-panel').innerHTML = '<div class="no-data">No visual elements detected on this page</div>';
+            } else {
+                let html = '';
+                page.elements.forEach((elem, idx) => {
+                    const bbox = elem.bbox_1000 || [];
+                    const position = bbox.length >= 4 ? `${Math.round(bbox[1]/10)}% - ${Math.round(bbox[3]/10)}% from top` : 'N/A';
+                    
+                    html += `
+                        <div class="element-card ${elem.type}">
+                            <div class="element-header">
+                                <span>${elem.label || elem.type}</span>
+                                <span class="element-type ${elem.type}">${elem.type.toUpperCase()}</span>
+                            </div>
+                            <div class="element-body">
+                                ${elem.crop_path ? `
+                                    <img class="element-image" src="${basePath}/${elem.crop_path}" 
+                                         alt="${elem.label}"
+                                         onclick="showModal('${basePath}/${elem.crop_path}')">
                                 ` : ''}
-                                ${v.data_summary ? `
-                                    <div style="margin-top:5px;font-size:11px">
-                                        <strong>Data:</strong> ${escapeHtml(v.data_summary)}
-                                    </div>
+                                ${elem.description ? `
+                                    <div class="element-description">${escapeHtml(elem.description)}</div>
                                 ` : ''}
-                            </div>
-                        `).join('')}
-                    </div>
-                `;
-            }
-            
-            // Legacy figures format (backward compatibility)
-            if (data.figures && data.figures.length > 0) {
-                html += `
-                    <div class="section">
-                        <div class="section-title">Figures (${data.figures.length})</div>
-                        ${data.figures.map(f => `
-                            <div class="figure-item">
-                                <div class="caption">Figure ${f.number}: ${escapeHtml(f.caption || '')}</div>
-                                <div class="description">${escapeHtml(f.description || 'No description')}</div>
-                            </div>
-                        `).join('')}
-                    </div>
-                `;
-            }
-            
-            // Structured tables
-            if (data.tables_structured && data.tables_structured.length > 0) {
-                html += `
-                    <div class="section">
-                        <div class="section-title">Tables (${data.tables_structured.length})</div>
-                        ${data.tables_structured.map(t => `
-                            <div class="figure-item">
-                                <div class="caption">${escapeHtml(t.number || 'Table')}: ${escapeHtml(t.caption || '')}</div>
-                                ${t.headers ? `<div style="font-size:11px;margin-top:5px"><strong>Headers:</strong> ${t.headers.map(h => escapeHtml(h)).join(' | ')}</div>` : ''}
-                                ${t.key_findings ? `<div style="font-size:11px;margin-top:5px"><strong>Key findings:</strong> ${escapeHtml(t.key_findings)}</div>` : ''}
-                            </div>
-                        `).join('')}
-                    </div>
-                `;
-            }
-            
-            // Legacy tables format (backward compatibility)
-            if (data.tables && data.tables.length > 0 && !data.tables_structured) {
-                html += `
-                    <div class="section">
-                        <div class="section-title">Tables (${data.tables.length})</div>
-                        ${data.tables.map(t => `
-                            <div class="figure-item">
-                                <div class="caption">Table ${t.number}: ${escapeHtml(t.caption || '')}</div>
-                            </div>
-                        `).join('')}
-                    </div>
-                `;
-            }
-            
-            // Equations
-            if (data.equations && data.equations.length > 0) {
-                html += `
-                    <div class="section">
-                        <div class="section-title">Equations (${data.equations.length})</div>
-                        ${data.equations.map(e => `
-                            <div class="figure-item">
-                                ${e.latex ? `<code style="background:#f0f0f0;padding:2px 5px">${escapeHtml(e.latex)}</code>` : ''}
-                                <div class="description">${escapeHtml(e.description || '')}</div>
-                            </div>
-                        `).join('')}
-                    </div>
-                `;
-            }
-            
-            // Extracted images from PDF
-            if (data.extracted_images && data.extracted_images.length > 0) {
-                html += `
-                    <div class="section">
-                        <div class="section-title">Extracted Images (${data.extracted_images.length})</div>
-                        <div class="extracted-images">
-                            ${data.extracted_images.map(img => `
-                                <div class="extracted-image-item">
-                                    <img src="data/images/${img.filename}" alt="${escapeHtml(img.filename)}" 
-                                         onerror="this.style.display='none'; this.nextElementSibling.style.display='block'">
-                                    <div style="display:none;color:#999;font-size:10px">Image not found</div>
-                                    <div class="img-info">
-                                        ${img.width}x${img.height} ${img.format}<br>
-                                        ${(img.size_bytes / 1024).toFixed(1)} KB
-                                    </div>
+                                <div class="element-meta">
+                                    <strong>Position:</strong> ${position}<br>
+                                    <strong>Bbox (0-1000):</strong> [${bbox.join(', ')}]
                                 </div>
-                            `).join('')}
+                            </div>
                         </div>
-                    </div>
-                `;
+                    `;
+                });
+                document.getElementById('elements-panel').innerHTML = html;
             }
-            
-            // Text content
-            if (data.text_content) {
-                html += `
-                    <div class="section">
-                        <div class="section-title">Extracted Text</div>
-                        <div class="extraction-text">${escapeHtml(data.text_content)}</div>
-                    </div>
-                `;
-            }
-            
-            if (!html) {
-                html = '<div class="no-data">No structured data extracted</div>';
-            }
-            
-            document.getElementById('multimodal-panel').innerHTML = html;
         }
+        
+        function showModal(src) {
+            document.getElementById('modal-image').src = src;
+            document.getElementById('image-modal').classList.add('active');
+        }
+        
+        function closeModal() {
+            document.getElementById('image-modal').classList.remove('active');
+        }
+        
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') closeModal();
+            if (e.key === 'ArrowLeft') prevPage();
+            if (e.key === 'ArrowRight') nextPage();
+        });
         
         function escapeHtml(text) {
             if (!text) return '';
@@ -792,8 +421,8 @@
             return div.innerHTML;
         }
         
-        // Load data on page load
-        loadData();
+        // Initialize
+        populateDocSelect();
     </script>
 </body>
 </html>

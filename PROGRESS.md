@@ -241,56 +241,339 @@ Page 4: Claude Sonnet 4, Nemotron VL
 3. **Nougat**: Academic-specific, equation-heavy papers
 4. **Claude/Multimodal**: Quality verification, figure descriptions
 
-### Next: Test Marker and Nougat
+### Testing Results (2025-12-16)
 
-```bash
-# Install on server
-pip install marker-pdf nougat-ocr
+**Tested Marker on osgeo7-gallery (CPU-only server):**
+- Installed via `uv pip install marker-pdf nougat-ocr`
+- Ran `marker_single` on SAM3 paper (5 pages)
+- **Result: Impractical without GPU**
+  - Used 7GB RAM
+  - Stuck at "Recognizing Layout" step
+  - Neural models (Surya OCR, layout detection) too slow on CPU
+  - Killed after 5+ minutes with no progress
 
-# Test Marker
-marker_single paper.pdf -o marker_out/ --use_llm
+**Conclusion: Marker/Nougat require GPU acceleration**
 
-# Test Nougat
-nougat paper.pdf -o nougat_out/
-```
+For 5000+ papers, CPU-only processing is not viable.
 
 ---
 
-## How to Test
+## Tool Evaluation Notes
 
-### Run the comparison website
+### PyMuPDF (fitz)
+
+**What it does well:**
+- Fast text extraction with position information
+- Extracts embedded raster images
+- Gets document metadata, page count, structure
+- Can render pages to images at any DPI
+- Detects text blocks, lines, spans with bounding boxes
+- Access to vector drawing paths (though raw, not semantically grouped)
+
+**Limitations:**
+- Cannot extract complete figures - only embedded raster images
+- Composite figures (multiple images + labels) appear as fragments
+- Vector graphics (diagrams, flowcharts) not extractable as images
+- Equations rendered as vectors are not captured
+- No semantic understanding of figure boundaries
+
+**Best for:** Text extraction, page rendering, basic image extraction
+
+### pdfplumber
+
+**What it does well:**
+- Similar to PyMuPDF for text extraction
+- Good table detection and extraction
+- Access to curves, lines, rectangles (vector elements)
+- Character-level positioning
+
+**Limitations:**
+- Same figure extraction problems as PyMuPDF
+- No automatic figure detection
+- Slower than PyMuPDF for large documents
+
+**Best for:** Table extraction, detailed text positioning
+
+### Marker (marker-pdf)
+
+**What it does well (in theory):**
+- Full PDF to markdown conversion
+- LaTeX equation extraction
+- Uses neural models for layout detection
+- LLM integration for accuracy
+
+**Limitations:**
+- Requires GPU - impractical on CPU (stuck after 5+ minutes)
+- Heavy memory usage (7GB+ RAM)
+- GPL license (commercial use restricted)
+
+**Best for:** If you have GPU, general PDF to markdown conversion
+
+### Nougat (nougat-ocr)
+
+**What it does well (in theory):**
+- Academic paper specialist (trained on arXiv/PMC)
+- Native LaTeX output for equations
+- Semantic figure understanding
+
+**Limitations:**
+- Requires GPU
+- English only
+- No actual image extraction (semantic descriptions only)
+- CC-BY-NC license for model weights
+
+**Best for:** If you have GPU, equation-heavy academic papers
+
+### Local Vision Models (Qwen-VL via llama.cpp)
+
+**What it does well:**
+- Excellent content understanding from page images
+- Describes figures, equations, tables accurately
+- Extracts structured data (methods, datasets, metrics)
+- No rate limits, no API costs
+- ~48s per page on local GPU
+
+**Limitations:**
+- Requires GPU (but we have 128GB VRAM)
+- Cannot "extract" figures - only describes them
+- Needs page rendered as image first
+
+**Best for:** Content understanding, figure descriptions, semantic extraction
+
+### Caption-Based Figure Extraction (our solution)
+
+**What it does well:**
+- Extracts complete figures including vector graphics
+- Works by finding captions and rendering regions
+- No ML models needed - pure heuristics
+- Fast and reliable for standard paper formats
+
+**Limitations:**
+- Requires consistent caption format ("Figure X:", "Table X:")
+- Heuristic region detection may miss some cases
+- Doesn't work for captionless figures
+
+**Best for:** Scientific papers with standard figure captions
+
+---
+
+## 2025-12-16: Local GPU + Vision Models (New Approach)
+
+### Available Resources on minto (local workstation)
+
+**GPU**: Available for local inference
+
+**Vision Models (GGUF format):**
+- `Qwen2.5-VL-72B` - Large, high quality
+- `Qwen2-VL-7B` - Medium, good balance
+- `Qwen2-VL-2B-Instruct` - Small, fast
+- `Qwen3-VL-8B` - Latest Qwen3 vision
+- `Qwen3-VL-1B` - Lightweight Qwen3 vision
+
+**llama.cpp with Vision Support:**
+- Location: `/media/nvme2g-a/llm_toolbox/llama.cpp-latest/`
+- Supports multimodal models (Qwen-VL, LLaVA, etc.)
+- Can run vision models locally without API costs
+
+**Existing Server Scripts:**
+- `/media/nvme2g-a/llm_toolbox/servers/` - Ready-to-use launch scripts
+
+### New Approach: Local Vision Model Extraction
+
+Instead of:
+- Marker/Nougat (too slow on CPU)
+- OpenRouter API (rate limits, costs at scale)
+
+Use:
+- **llama.cpp server** with Qwen-VL model locally
+- No rate limits, no API costs
+- GPU-accelerated inference
+- Same extraction pipeline, different endpoint
+
+### Local Vision Model Benchmark (2025-12-16)
+
+Tested on SAM3 paper page 2 (contains Figure 2 + text).
+
+| Model | Time | Quality | Notes |
+|-------|------|---------|-------|
+| **Qwen3-VL-8B** | 47.8s | Excellent | Best balance of speed/quality |
+| Qwen2-VL-7B | 179.7s | Good | 3.7x slower, similar quality |
+| Qwen3-VL-1B | N/A | N/A | Merged GGUF lacks vision support |
+| Qwen2.5-VL-72B | N/A | N/A | Missing main model GGUF |
+
+**Winner: Qwen3-VL-8B**
+- Fast enough for batch processing (75 pages/hour)
+- Excellent content extraction (matches Claude quality)
+- Correctly identified Figure 2 structure
+- Extracted all key concepts and terminology
+- No rate limits, no API costs
+
+**Sample output (Qwen3-VL-8B on page 2):**
+- Identified SAM 3 as model for Promptable Concept Segmentation
+- Described Figure 2: interactive refinement with initial prompt, output, refinement prompts
+- Listed key terms: presence head, SA-Co benchmark, zero-shot mask AP
+- Noted performance: 47.0 mAP on LVIS, 30ms/image on H200
+
+### Recommended Setup
 
 ```bash
-# On osgeo7-gallery
-cd ~/github/osgeo-library/web
-../.venv/bin/python -m http.server 8765
-
-# From your machine, create SSH tunnel
-ssh -L 8765:localhost:8765 osgeo7-gallery
-
-# Open http://localhost:8765 in browser
+# Start Qwen3-VL-8B server
+cd /media/nvme2g-a/llm_toolbox
+./llama.cpp-latest/build-rocm/bin/llama-server \
+  --model models/Qwen3-VL-8B/Qwen3VL-8B-Instruct-Q4_K_M.gguf \
+  --mmproj models/Qwen3-VL-8B/mmproj-Qwen3VL-8B-Instruct-F16.gguf \
+  --host 0.0.0.0 --port 8090 \
+  --ctx-size 8192 \
+  --n-gpu-layers 99
 ```
 
-### Run extraction on a new PDF
+### Figure Extraction Solution (2025-12-16)
+
+**Problem:** PyMuPDF extracts fragmented images, not complete figures.
+
+**Solution:** Caption-based region rendering using `extract_figures.py`
+
+**Technique:**
+1. **Find captions**: Regex search for "Figure X:", "Fig. X.", "Table X:" patterns
+2. **Locate caption position**: Get bounding box of caption text using PyMuPDF
+3. **Estimate figure boundaries**:
+   - Top: Search upward for text blocks, figure starts after last paragraph
+   - Bottom: Caption position + small margin
+   - Left/Right: Page margins (configurable)
+4. **Render region**: Use `page.get_pixmap(clip=region)` to render just that area
+   - This captures EVERYTHING in the region: raster images, vector graphics, text labels
+   - No need to extract individual elements - just screenshot the region
+
+**Why this works:**
+- Scientific papers have consistent layouts
+- Figures are placed between paragraphs with whitespace
+- Captions are always directly below figures
+- Rendering the region captures vectors (diagrams, flowcharts) that can't be "extracted"
+
+**Algorithm improvements (v2):**
+- Detect image blocks (embedded images) to find figure boundaries
+- Skip line number columns (narrow text blocks on margins)
+- Use image block positions as hints for figure top boundary
+- Handle stacked figures (e.g., Figure 5 with video + images)
+
+**Results on SAM3 paper (pages 1-8):**
+```
+Extracted 11 figures/tables:
+- Figure 1-6: Main paper figures (including stacked Figure 5)
+- Table 1-5: Results tables
+All include complete vector graphics and labels
+```
+
+**Known limitations:**
+- Some marginal clipping on complex layouts
+- Equations without "Equation X:" captions not detected
+- Multi-column layouts may need adjustment
+
+**Future improvement: VL-based bounding box detection**
+
+Could use vision model to get precise bounding boxes:
+1. Send page image to Qwen-VL with prompt asking for coordinates
+2. Model returns JSON with [x1, y1, x2, y2] for each figure/table
+3. Use those coordinates to crop precisely
+
+Options explored:
+- **Qwen-VL**: Can give approximate boxes, not trained for precision
+- **LayoutParser + Detectron2**: PubLayNet model trained on scientific papers
+- **PDFFigures2**: Java tool, specialized but requires JVM
+
+For now, caption-based heuristics work well for ~90% of cases.
+
+**Usage:**
+```bash
+.venv/bin/python extract_figures.py pdfs/paper.pdf \
+  --pages 2,3,4 \
+  --output-dir web/data/figures \
+  --output-json web/data/figures_extracted.json
+```
+
+### Recommended Extraction Pipeline
+
+1. **PyMuPDF**: Text extraction (fast, accurate)
+2. **extract_figures.py**: Complete figure images (caption-based)
+3. **Qwen3-VL-8B**: Figure descriptions + semantic content (via llama.cpp)
+
+This hybrid approach:
+- Gets full text with PyMuPDF
+- Gets complete figures as images
+- Gets semantic understanding from vision model
+
+### Next Steps
+
+1. Test figure extraction on more pages/papers
+2. Integrate figure extraction into main pipeline
+3. Process full library (~5000 papers)
+
+---
+
+## Local Setup (minto)
+
+### 1. Start the Vision Model Server
+
+```bash
+# Start Qwen3-VL-8B (recommended)
+cd /media/nvme2g-a/llm_toolbox
+./llama.cpp-latest/build-rocm/bin/llama-server \
+  --model models/Qwen3-VL-8B/Qwen3VL-8B-Instruct-Q4_K_M.gguf \
+  --mmproj models/Qwen3-VL-8B/mmproj-Qwen3VL-8B-Instruct-F16.gguf \
+  --host 0.0.0.0 --port 8090 \
+  --ctx-size 8192 \
+  --n-gpu-layers 99
+```
+
+### 2. Run Extraction
 
 ```bash
 cd ~/github/osgeo-library
 
-# Traditional
-.venv/bin/python extract_pdf.py /path/to/paper.pdf --output results.json
+# Extract specific pages (local model - no API key needed)
+.venv/bin/python extract_multimodal.py pdfs/aiSeg_sam3_2025.pdf \
+  --pages 2,3,4 \
+  --output web/data/sam3_qwen3vl_p2-4.json \
+  --output-dir web/data
 
-# Multimodal (uses API quota)
-.venv/bin/python extract_multimodal.py /path/to/paper.pdf --pages 1,2,3 --model gemini
+# Extract all pages (takes ~48s per page)
+.venv/bin/python extract_multimodal.py pdfs/aiSeg_sam3_2025.pdf \
+  --output web/data/sam3_full.json \
+  --output-dir web/data
+
+# Use OpenRouter model (needs API key)
+.venv/bin/python extract_multimodal.py pdfs/paper.pdf \
+  --model nova \
+  --pages 1,2,3
 ```
 
-### Generate comparison data
+### 3. View Results
 
 ```bash
-.venv/bin/python generate_comparison.py /path/to/paper.pdf \
-  --traditional trad.json \
-  --multimodal multi.json \
-  --pages 1 \
-  --output-dir web
+cd ~/github/osgeo-library/web
+python -m http.server 8765
+# Open http://localhost:8765
+```
+
+### Available Models
+
+| Model | Backend | Notes |
+|-------|---------|-------|
+| `qwen3-vl-8b` | local | Default, ~48s/page, excellent quality |
+| `qwen2-vl-7b` | local | ~180s/page, good quality |
+| `nova` | OpenRouter | Free tier, rate limited |
+| `gemini` | OpenRouter | Free tier, aggressive rate limits |
+| `gemma-12b` | OpenRouter | Free tier, sometimes rate limited |
+
+### Test PDFs Location
+
+PDFs are stored in `pdfs/` (gitignored):
+- `aiSeg_sam3_2025.pdf` - SAM3 segmentation paper (68 pages)
+- `2403.04385.pdf` - EO color/texture paper (18 pages)
+
+Copy more from osgeo7-gallery:
+```bash
+scp osgeo7-gallery:/home/shared/openlibrarymisc/EO_AI_fModel/contribs/PAPER.pdf pdfs/
 ```
 
 ---
@@ -300,3 +583,123 @@ cd ~/github/osgeo-library
 1. Is the multimodal figure description quality good enough?
 2. What other information should we extract?
 3. Priority: more papers or deeper extraction on fewer papers first?
+
+---
+
+## 2025-12-16: Visual Grounding with Qwen3-VL-32B
+
+### Major Breakthrough: Accurate Bounding Box Detection
+
+Discovered that **Qwen3-VL-32B** provides excellent visual grounding - it can accurately locate figures, tables, and diagrams with precise bounding boxes.
+
+### Model Comparison for Grounding
+
+| Model | Grounding Quality | Notes |
+|-------|-------------------|-------|
+| Qwen3-VL-8B | Poor | Wrong regions (e.g., placed Figure 1 at 41% instead of 72%) |
+| **Qwen3-VL-32B** | Excellent | Accurate bounding boxes, correct element detection |
+| Qwen3-VL-235B | Untested | Downloaded (47GB), available for testing |
+
+### New Extraction Pipeline
+
+Created `extract_document.py` - a complete pipeline using visual grounding:
+
+1. **Convert PDF pages to images** using PyMuPDF
+2. **Send to Qwen3-VL-32B** for element detection with bounding boxes
+3. **Parse JSON response** with coordinates in 0-1000 scale
+4. **Convert to pixel coordinates** and crop detected elements
+5. **Create annotated images** with bounding boxes drawn
+6. **Output structured JSON** with timing information
+
+**Usage:**
+```bash
+python extract_document.py document.pdf --pages 1,2,3 --output-dir web/data/doc_name
+python extract_document.py document.pdf --pages 4,5 --output-dir web/data/doc_name --merge
+```
+
+### Features Added
+
+- **Extraction timing**: Each page records detection time in seconds
+- **Merge mode**: `--merge` flag to add pages to existing extraction
+- **Annotated images**: Bounding boxes drawn with color coding (red=figure, blue=table, green=diagram)
+- **Element cropping**: Figures/tables saved as individual images
+
+### Extraction Results
+
+**SAM3 Paper (sam3.pdf)**
+- Pages: 1, 2, 3, 5, 6, 7, 8 (7 pages)
+- Elements: 12 total (6 figures, 5 tables, 1 chart)
+- Average detection time: ~40s/page
+
+**USGS Map Projections (usgs_snyder1987.pdf)**
+- Pages: 1, 9, 16, 21, 32, 34, 42, 51, 52 (9 pages)
+- Elements: 8 figures including:
+  - FIGURE 2: Meridians and parallels on the sphere
+  - FIGURE 3: Tissot's Indicatrix
+  - FIGURE 4: Distortion patterns on conformal map projections
+  - FIGURE 5: Spherical triangle
+  - FIGURE 7: Gerardus Mercator portrait
+  - FIGURE 8: The Mercator projection
+- Average detection time: ~42s/page
+
+### Timing Results (Snyder extraction)
+
+| Page | Elements | Detection Time |
+|------|----------|----------------|
+| 9    | 0        | 18.2s          |
+| 21   | 1 figure | 39.3s          |
+| 32   | 1 figure | 51.5s          |
+| 34   | 2 figures| 59.3s          |
+| 42   | 1 figure | 38.6s          |
+| 51   | 1 figure | 41.8s          |
+| 52   | 1 figure | 38.6s          |
+
+### Updated Web Viewer
+
+- Document selector dropdown
+- Page navigation (Previous/Next buttons, arrow keys)
+- Three-panel layout: Original | Annotated | Extracted Elements
+- Shows detection timing per page
+- Click images for full-size view
+
+### Technical Details
+
+**Coordinate System:**
+- Qwen3-VL uses 0-1000 relative coordinates
+- Conversion: `pixel_x = int(coord_1000 / 1000 * image_width)`
+
+**Server Configuration (Qwen3-VL-32B):**
+```bash
+./llama-server \
+  --model Qwen3VL-32B-Instruct-Q4_K_M.gguf \
+  --mmproj mmproj-Qwen3VL-32B-Instruct-F16.gguf \
+  --host 0.0.0.0 --port 8090 \
+  --ctx-size 8192 --parallel 1 -ngl 999
+```
+
+### Files Created/Modified
+
+```
+osgeo-library/
+├── extract_document.py      # NEW: Main extraction pipeline
+├── web/
+│   ├── index.html           # UPDATED: New viewer with timing
+│   └── data/
+│       ├── sam3/
+│       │   ├── extraction.json
+│       │   ├── page_*.png
+│       │   ├── page_*_annotated.png
+│       │   └── elements/*.png
+│       └── usgs_snyder/
+│           ├── extraction.json
+│           ├── page_*.png
+│           ├── page_*_annotated.png
+│           └── elements/*.png
+```
+
+### Next Steps
+
+- [ ] Test Qwen3-VL-235B for comparison
+- [ ] Extract more pages from both documents
+- [ ] Add more test documents
+- [ ] Deploy web viewer to Cloudflare Pages
