@@ -23,14 +23,13 @@ Catalog of processed documents in `db/data/`.
 
 ### Processing Rate
 
-| Page Type | Time |
-|-----------|------|
-| No elements | ~30s |
-| 1-3 elements | ~60-90s |
-| 4-6 elements | ~120-150s |
-| 8-10 elements | ~200-220s |
-
-Average: ~50-60s/page (varies with element count)
+| Page Type | Pages | Avg Time |
+|-----------|-------|----------|
+| No elements | 92 | 47s |
+| 1-3 elements | 161 | 81s |
+| 4-6 elements | 42 | 173s |
+| 7+ elements | 44 | 268s |
+| **Total** | **339** | **107s** |
 
 ---
 
@@ -96,8 +95,10 @@ Assuming average 50 pages/PDF = 250,000 pages total.
 
 ### Processing Time
 
+At ~107s/page average (from actual measurements):
+
 | Setup | Time |
 |-------|------|
-| Single GPU (current) | ~3,500-4,000 hours (~5-6 months) |
-| 4 GPUs parallel | ~1,000 hours (~6 weeks) |
-| 8 GPUs parallel | ~500 hours (~3 weeks) |
+| Single GPU (current) | ~7,400 hours (~10 months) |
+| 4 GPUs parallel | ~1,850 hours (~2.5 months) |
+| 8 GPUs parallel | ~925 hours (~5 weeks) |
