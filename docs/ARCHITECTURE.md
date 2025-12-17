@@ -73,6 +73,3 @@ db/data/{document}/
     p04_equation_1_Equation_1_rendered.png  # Re-rendered from LaTeX
 ```
 
-## LaTeX Rendering
-
-For equations, the model extracts LaTeX notation in the description field. Since equation bounding boxes are less precise than other elements, we re-render equations from the extracted LaTeX using pdflatex + ImageMagick. Both the original crop and rendered version are stored.
