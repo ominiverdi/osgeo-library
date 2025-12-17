@@ -39,6 +39,10 @@ cd web && python -m http.server 8080
 
 **Model:** Qwen3-VL-235B via llama.cpp on localhost:8090
 
+## Author
+
+Lorenzo Becchi
+
 ## License
 
 MIT
