@@ -138,3 +138,52 @@ The crop (left) shows fuzzy edges and potential text bleeding from imprecise bbo
 **Why:** Academic paper submissions often have line numbers in margins for reviewer reference. These pollute extracted text and confuse semantic analysis.
 
 **Implementation:** Regex pattern matches 3-digit numbers at line starts, removes if consistent pattern detected.
+
+---
+
+## Embedding Model: BAAI/bge-m3
+
+**Decision:** Use BAAI/bge-m3 for semantic search embeddings.
+
+**Alternatives considered (Dec 2025):**
+
+| Model | Type | Size | Dimensions | Key Feature |
+|-------|------|------|------------|-------------|
+| **BAAI/bge-m3** | **Open** | **568M** | **1024** | **Battle-tested, multilingual, hybrid search** |
+| GritLM-7B | Open | 7B | 4096 | Trained on scientific corpora |
+| NV-Embed-v2 | Open | Large | 4096 | Top MTEB score, 32k context |
+| Alibaba gte-Qwen2-1.5B | Open | 1.5B | 1536 | Instruction-tuned, 32k context |
+| nomic-embed-text-v2-moe | Open | 475M | 768 | MoE architecture, efficient |
+| OpenAI text-embedding-3-large | API | - | 3072 | Excellent accuracy, 8k context |
+| Cohere Embed v3 | API | - | 1024 | Strong multilingual |
+
+**Domain-specific alternatives:**
+- **SciBERT**: Pre-trained on biomedical/scientific text
+- **SPECTER-v2**: Unsupervised retriever for scientific papers
+- **BioBERT**: Specialized for biomedical text
+
+**Why BGE-M3:**
+1. **Proven performance**: Widely used for RAG, battle-tested in production
+2. **Small and fast**: 568M params, 1.16GB GGUF, fast inference
+3. **Good for mixed content**: Handles technical text, equations (as text), tables
+4. **Multilingual**: Supports 100+ languages
+5. **Local inference**: No API costs, runs on llama.cpp
+
+**Trade-off:** GritLM-7B is specifically trained on scientific corpora and might perform better on domain-specific queries, but it's 12x larger (7B vs 568M). We start with BGE-M3 for efficiency; can upgrade if retrieval quality needs improvement.
+
+**Server configuration:**
+```bash
+# Port 8094 - embedding server
+llama-server \
+  --model models/bge-m3/bge-m3-F16.gguf \
+  --embedding \
+  --host 0.0.0.0 --port 8094 \
+  -c 8192 -ngl 999
+```
+
+**API usage:**
+```bash
+curl http://localhost:8094/embedding \
+  -H "Content-Type: application/json" \
+  -d '{"input": "Map projection equations"}'
+```
