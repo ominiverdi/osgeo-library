@@ -44,7 +44,7 @@ llama-server \
 | Approach | Result |
 |----------|--------|
 | OpenRouter (Gemini, Nova) | Rate limits, costs at scale |
-| Claude API | Excellent quality but $$$$ for 5000 PDFs |
+| Cloud vision APIs | Not tested for bounding box accuracy |
 | **Local llama.cpp** | **No limits, no cost, ~40s/page** |
 
 **Why:** Processing 5000+ PDFs with cloud APIs would be expensive and slow (rate limits). Local GPU inference is free and consistent.
