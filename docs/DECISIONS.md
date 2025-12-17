@@ -138,23 +138,3 @@ The crop (left) shows fuzzy edges and potential text bleeding from imprecise bbo
 **Why:** Academic paper submissions often have line numbers in margins for reviewer reference. These pollute extracted text and confuse semantic analysis.
 
 **Implementation:** Regex pattern matches 3-digit numbers at line starts, removes if consistent pattern detected.
-
----
-
-## Tools Not Used
-
-### Marker (marker-pdf)
-- Requires GPU, stuck on CPU after 5+ minutes
-- GPL license restricts commercial use
-- Would be good if we had dedicated GPU server
-
-### Nougat (nougat-ocr)
-- Requires GPU
-- English only
-- Semantic descriptions only, no actual image extraction
-- CC-BY-NC license for model weights
-
-### LayoutParser + Detectron2
-- Heavy dependencies
-- Would need separate model server
-- Qwen3-VL handles layout detection well enough
