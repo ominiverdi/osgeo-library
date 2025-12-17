@@ -89,9 +89,8 @@ Assuming average 50 pages/PDF = 250,000 pages total.
 | Annotated image | ~500-700 KB |
 | Element crops (avg 2/page) | ~50-200 KB each |
 | JSON metadata | ~2-5 KB |
-| **Total per page** | **~1.2-1.5 MB** |
-
-**Total: ~300-375 GB**
+| Total per page | ~1.2-1.5 MB |
+| **Total for 250,000 pages** | **~300-375 GB** |
 
 ### Processing Time
 
