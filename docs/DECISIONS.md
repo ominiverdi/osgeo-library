@@ -32,7 +32,7 @@ llama-server \
   ...
 ```
 
-**Coordinate system:** Qwen3-VL returns bounding boxes in a 0-1000 relative scale (not pixels). The model was trained with this scale, so requesting pixel coordinates directly results in worse accuracy. Conversion is simple: `pixel = coord * image_size / 1000`.
+**Coordinate system:** Qwen3-VL returns bounding boxes in a 0-1000 relative scale. Convert to pixels with: `pixel = coord * image_size / 1000`.
 
 ---
 
