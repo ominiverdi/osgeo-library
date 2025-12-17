@@ -187,3 +187,5 @@ curl http://localhost:8094/embedding \
   -H "Content-Type: application/json" \
   -d '{"input": "Map projection equations"}'
 ```
+
+**Future evaluation:** Compare retrieval quality across embedding models (BGE-M3 vs GritLM-7B vs domain-specific) using a test set of scientific queries. Metrics: precision@k, recall, MRR on manually labeled relevant chunks/elements.
