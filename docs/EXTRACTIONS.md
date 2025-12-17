@@ -38,9 +38,9 @@ Catalog of processed documents in `db/data/`.
 **File:** `sam3.pdf`  
 **Topic:** Segment Anything Model 3 - Promptable Concept Segmentation
 
-| Pages | Figures | Tables | Equations | Charts |
-|-------|---------|--------|-----------|--------|
-| 68 | 26 | 42 | 7 | 1 |
+| Pages | Figures | Tables | Equations | Charts | Avg Time |
+|-------|---------|--------|-----------|--------|----------|
+| 68 | 26 | 42 | 7 | 1 | 55s |
 
 ---
 
@@ -49,9 +49,9 @@ Catalog of processed documents in `db/data/`.
 **File:** `2511.00073v1.pdf`  
 **Topic:** Alpine habitat classification using deep learning
 
-| Pages | Figures | Tables | Equations |
-|-------|---------|--------|-----------|
-| 23 | 6 | 8 | 0 |
+| Pages | Figures | Tables | Equations | Avg Time |
+|-------|---------|--------|-----------|----------|
+| 23 | 6 | 8 | 0 | 59s |
 
 ---
 
@@ -60,9 +60,9 @@ Catalog of processed documents in `db/data/`.
 **File:** `usgs_snyder1987.pdf`  
 **Topic:** Map Projections - A Working Manual
 
-| Pages | Figures | Tables | Equations |
-|-------|---------|--------|-----------|
-| 397 | 53+ | 60+ | 675+ |
+| Pages | Figures | Tables | Equations | Avg Time |
+|-------|---------|--------|-----------|----------|
+| 397 | 53+ | 60+ | 675+ | 126s |
 
 *In progress (240/397 pages). This is a math-heavy reference book.*
 
