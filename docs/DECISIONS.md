@@ -44,8 +44,10 @@ llama-server \
 | Approach | Result |
 |----------|--------|
 | OpenRouter (Gemini, Nova) | Rate limits, costs at scale |
-| Cloud vision APIs | Not tested for bounding box accuracy |
-| **Local llama.cpp** | **No limits, no cost, ~40s/page** |
+| Claude API | Tested: faster (~13s) but less precise bounding boxes |
+| **Local llama.cpp** | **No limits, no cost, precise bboxes** |
+
+**Claude comparison (Dec 2024):** We tested Claude on 10 pages with 27 elements. While faster (~13s vs ~90s avg), Claude's bounding boxes are noticeably looser - it estimates rather than detects with trained precision. See `web/comparison.html` for side-by-side results. Qwen3-VL's visual grounding training makes it significantly more accurate for this task.
 
 **Why:** Processing 5000+ PDFs with cloud APIs would be expensive and slow (rate limits). Local GPU inference is free and consistent.
 
