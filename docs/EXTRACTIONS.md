@@ -134,7 +134,11 @@ Full element list will be generated when extraction completes.
 
 ---
 
-## Storage Estimates
+## Estimates for 5000 PDFs
+
+Assuming average 50 pages/PDF = 250,000 pages total.
+
+### Storage
 
 | Per Page | Size |
 |----------|------|
@@ -144,8 +148,12 @@ Full element list will be generated when extraction completes.
 | JSON metadata | ~2-5 KB |
 | **Total per page** | **~1.2-1.5 MB** |
 
-### Projection for 5000 PDFs
+**Total: ~300-375 GB**
 
-Assuming average 50 pages/PDF = 250,000 pages:
-- ~300-375 GB storage
-- ~3,500-4,000 hours processing (~5-6 months continuous)
+### Processing Time
+
+| Setup | Time |
+|-------|------|
+| Single GPU (current) | ~3,500-4,000 hours (~5-6 months) |
+| 4 GPUs parallel | ~1,000 hours (~6 weeks) |
+| 8 GPUs parallel | ~500 hours (~3 weeks) |
