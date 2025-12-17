@@ -1,0 +1,14 @@
+# Core dependencies
+PyMuPDF>=1.24.0          # PDF processing (fitz)
+Pillow>=10.0.0           # Image manipulation
+openai>=1.0.0            # LLM API client
+requests>=2.31.0         # HTTP requests
+
+# Database (for semantic search)
+psycopg2-binary>=2.9.0   # PostgreSQL driver
+
+# Optional (for plotting)
+matplotlib>=3.8.0
+
+# Optional TOML config (Python 3.11+ has tomllib built-in)
+# toml>=0.10.0           # Uncomment for Python < 3.11
