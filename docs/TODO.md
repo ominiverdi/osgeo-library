@@ -13,6 +13,7 @@ Build a PostgreSQL + pgvector knowledge base from extracted PDF content, with an
 ```sql
 -- Documents (papers)
 documents: id, slug, title, source_file, extraction_date, model, metadata
+-- title: cleaned from slug (remove underscores, .pdf, etc.)
 
 -- Pages
 pages: id, document_id, page_number, image_path, annotated_image_path, 
@@ -26,6 +27,10 @@ chunks: id, document_id, page_id, content, chunk_index, start_char, end_char,
 elements: id, document_id, page_id, element_type, label, description,
           search_text, latex, crop_path, rendered_path, bbox_pixels,
           embedding vector(1024), metadata
+-- description: original extraction output (visual description or LaTeX)
+-- search_text: enriched contextual description for retrieval (from Phase 2)
+-- latex: parsed from description for equations, NULL for other types
+-- embedding: vector of search_text, not description
 ```
 
 ### Indexes
@@ -34,31 +39,54 @@ elements: id, document_id, page_id, element_type, label, description,
 
 ---
 
-## Phase 2: Equation Enrichment
+## Phase 2: Element Enrichment (Second LLM Pass)
 
-Before ingestion, run a second LLM pass on equations to generate searchable descriptions.
+Before ingestion, run a second LLM pass on **all elements** to generate contextual, searchable descriptions. This enhances retrieval by connecting elements to their surrounding content.
 
-**Input:**
-- Equation label
-- LaTeX content
-- Full page text (for context)
+### Why Enrich All Elements?
 
-**Prompt:**
+| Element Type | `description` (from extraction) | `search_text` (enriched) |
+|--------------|--------------------------------|--------------------------|
+| **Equation** | Raw LaTeX notation | Semantic explanation: what it calculates, key terms, how it relates to the paper |
+| **Figure** | Visual description of what's shown | Contextual role: why this figure matters, what concepts it illustrates, research relevance |
+| **Table** | Column headers and data summary | Analytical context: what comparisons it enables, key findings, benchmark significance |
+| **Diagram** | Components and flow description | Methodological context: where it fits in the pipeline, what process it documents |
+
+### Enrichment Prompt
+
 ```
-Given this equation from a scientific paper:
+Given this {element_type} from a scientific paper:
 Label: {label}
-LaTeX: {latex}
+Original description: {description}
 
-And the page content where it appears:
+Page context:
 {page_text}
 
-Describe what this equation represents, what it calculates, and how it's used.
-Focus on making it searchable - include key terms a researcher might use.
+Describe how this element relates to the document's content.
+What concepts does it illustrate? What would a researcher search
+for when looking for this? Include key terms and relationships.
 ```
 
-**Output:** Rich description stored in `elements.search_text`
+### Example Enrichments
 
-**Estimate:** ~60 seconds per equation with Qwen3-VL-235B
+**Equation** (usgs_snyder):
+- `description`: `LaTeX: \sin \phi = \sin \alpha \sin \phi' + \cos \alpha \cos \phi' \cos (\lambda' - \beta)`
+- `search_text`: "Spherical trigonometry equation for calculating projected latitude in the Oblique Mercator projection. Transforms coordinates from oblique to standard coordinate system. Key terms: latitude, longitude, azimuth, map projection, coordinate transformation."
+
+**Figure** (alpine_change):
+- `description`: "Map of the study area showing Gesäuse National Park in Styria, Austria..."
+- `search_text`: "Study area map establishing geographic context for habitat classification research. Shows temporal coverage of HabitAlp datasets (2013, 2020) in Austrian Alps. Relevant for: ecological monitoring, national park boundaries, alpine habitat mapping, Austria remote sensing."
+
+**Table** (sam3):
+- `description`: "Evaluation metrics for image segmentation models across LVIS, COCO, SA-Co..."
+- `search_text`: "Benchmark comparison showing SAM 3 achieving state-of-the-art performance on open-vocabulary segmentation. Compares against OWLv2, DINO-X, Gemini 2.5. Key metrics: CGF1, AP, IoU. Useful for: model selection, segmentation baselines, computer vision benchmarks."
+
+### Processing
+
+- Script: `enrich_elements.py`
+- Input: Extracted JSON files from `db/data/{document}/`
+- Output: Updated JSON with `search_text` field populated
+- Estimate: ~60 seconds per element with Qwen3-VL-235B (or faster with lighter model for text-only enrichment)
 
 ---
 
@@ -67,20 +95,20 @@ Focus on making it searchable - include key terms a researcher might use.
 Script: `ingest_to_db.py`
 
 ```
-extraction.json -> Parse -> Chunk text -> Enrich equations -> Embed -> Insert
+db/data/{document}/ -> Parse -> Chunk text -> Embed -> Insert
 ```
 
 ### Steps:
-1. Read extraction.json
-2. Create document record
+1. Read document.json and page JSON files
+2. Create document record (title = cleaned slug)
 3. For each page:
    - Create page record
    - Chunk text (~800 tokens, 200 overlap)
    - Embed each chunk
    - Insert chunks
 4. For each element:
-   - If equation: generate enriched search_text (LLM call)
-   - Else: use existing description as search_text
+   - Parse `latex` from description (if equation)
+   - Use `search_text` for embedding (populated by Phase 2)
    - Embed search_text
    - Insert element
 
@@ -273,11 +301,12 @@ When user asks "where did you find that?":
 
 1. [ ] Create `db/schema.sql`
 2. [ ] Create `embeddings/embed.py` (local model setup)
-3. [ ] Create equation enrichment script (LLM second pass)
-4. [ ] Create `ingest_to_db.py`
-5. [ ] Test ingestion with sam3 extraction
-6. [ ] Create `search_service.py`
-7. [ ] Test search queries
-8. [ ] Create bot tools
-9. [ ] Create Matrix bot skeleton
-10. [ ] Integration testing
+3. [ ] Create `enrich_elements.py` (second LLM pass for all elements)
+4. [ ] Run enrichment on sam3, alpine_change (test)
+5. [ ] Create `ingest_to_db.py`
+6. [ ] Test ingestion with sam3 extraction
+7. [ ] Create `search_service.py`
+8. [ ] Test search queries
+9. [ ] Create bot tools
+10. [ ] Create Matrix bot skeleton
+11. [ ] Integration testing
