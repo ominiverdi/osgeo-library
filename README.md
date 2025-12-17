@@ -15,15 +15,6 @@ python extract_document.py paper.pdf --pages 1,2,3 --output-dir web/data/paper
 cd web && python -m http.server 8080
 ```
 
-## Current Stats
-
-| Document | Pages | Figures | Tables | Equations |
-|----------|-------|---------|--------|-----------|
-| SAM3 | 12 | 8 | 8 | 3 |
-| USGS Snyder | 13 | 8 | 0 | 23 |
-| Alpine Change | 9 | 6 | 8 | 0 |
-| **Total** | **34** | **22** | **16** | **26** |
-
 ## Documentation
 
 - [CHANGELOG](docs/CHANGELOG.md) - What changed when
@@ -37,7 +28,7 @@ cd web && python -m http.server 8080
 
 **System:** texlive (pdflatex), imagemagick
 
-**Model:** Qwen3-VL-235B via llama.cpp on localhost:8090
+**Model:** Qwen3-VL-235B via llama.cpp
 
 ## Author
 
