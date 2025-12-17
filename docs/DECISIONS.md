@@ -64,6 +64,16 @@ llama-server \
 
 PyMuPDF can only extract embedded raster images, which appear as fragments. Rendering the bounding box region captures everything as the user sees it.
 
+**Examples of extracted elements:**
+
+| Figure | Table |
+|--------|-------|
+| ![Figure example](images/example_figure.png) | ![Table example](images/example_table.png) |
+
+| Equation (crop from PDF) | Equation (LaTeX rendered) |
+|--------------------------|---------------------------|
+| ![Equation crop](images/example_equation_crop.png) | ![Equation rendered](images/example_equation_rendered.png) |
+
 ---
 
 ## Text Cleaning: Remove Line Numbers
