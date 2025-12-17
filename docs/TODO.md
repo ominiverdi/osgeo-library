@@ -297,16 +297,18 @@ When user asks "where did you find that?":
 
 ---
 
-## Next Session: Implementation Order
+## Implementation Progress
 
-1. [ ] Create `db/schema.sql`
-2. [ ] Create `embeddings/embed.py` (local model setup)
-3. [ ] Create `enrich_elements.py` (second LLM pass for all elements)
-4. [ ] Run enrichment on sam3, alpine_change (test)
-5. [ ] Create `ingest_to_db.py`
-6. [ ] Test ingestion with sam3 extraction
-7. [ ] Create `search_service.py`
-8. [ ] Test search queries
-9. [ ] Create bot tools
-10. [ ] Create Matrix bot skeleton
-11. [ ] Integration testing
+1. [x] Create `db/schema.sql` - PostgreSQL + pgvector schema
+2. [x] Create `embeddings/embed.py` - BGE-M3 via llama.cpp (port 8094)
+3. [x] Create `enrich_elements.py` - Qwen3-30B enrichment
+4. [x] Create `db/connection.py` - database helpers
+5. [x] Create `db/chunking.py` - text chunking with sentence breaks
+6. [x] Create `ingest_to_db.py` - full ingestion pipeline
+7. [ ] Run enrichment on all documents (in progress)
+8. [ ] Run ingestion to database
+9. [ ] Create `search_service.py`
+10. [ ] Test search queries
+11. [ ] Create bot tools
+12. [ ] Create Matrix bot skeleton
+13. [ ] Integration testing

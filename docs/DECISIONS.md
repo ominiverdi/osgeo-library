@@ -189,3 +189,39 @@ curl http://localhost:8094/embedding \
 ```
 
 **Future evaluation:** Compare retrieval quality across embedding models (BGE-M3 vs GritLM-7B vs domain-specific) using a test set of scientific queries. Metrics: precision@k, recall, MRR on manually labeled relevant chunks/elements.
+
+---
+
+## Element Enrichment: Qwen3-30B-A3B
+
+**Decision:** Use Qwen3-30B-A3B (MoE, ~3B active params) for generating search_text descriptions.
+
+**Alternatives tested (Dec 2025):**
+
+| Model | Avg Time | Quality |
+|-------|----------|---------|
+| **Qwen3-30B-A3B** | **2.5s** | Concise, domain-aware, correct technical terms |
+| Mistral-Small | 14.8s | More verbose, good but slower |
+
+**Why Qwen3-30B:**
+1. **6x faster** than Mistral-Small (vulkan vs rocm on this chipset)
+2. **Domain-aware** - correctly identified "IMW Modified Polyconic" projection from context
+3. **Concise output** - no filler phrases, direct search terms
+4. **MoE efficiency** - 30B total params but only ~3B active, fast inference
+
+**Enrichment prompt:**
+```
+/no_think
+Page content:
+{page_text}
+
+Element: {element_type} "{label}"
+Extracted: {description}
+
+What does this element explain in this context? List key search terms. 2-3 sentences, no filler.
+```
+
+**Example output (equation):**
+> "This element explains the forward projection formulas for the IMW Modified Polyconic map projection, calculating coordinates (Xb, Yb, Xc, Yc) based on latitude and longitude parameters. Key search terms: Modified Polyconic, map projection, forward formulas, latitude longitude, coordinate calculation."
+
+**Processing time:** ~47 minutes for 1131 elements (all three documents)

@@ -4,11 +4,12 @@ Catalog of processed documents in `db/data/`.
 
 ## Summary
 
-| Document | Pages | Figures | Tables | Equations | Size | Status |
-|----------|-------|---------|--------|-----------|------|--------|
-| SAM3 | 68 | 26 | 42 | 7 | 78 MB | complete |
-| Alpine Change | 23 | 6 | 8 | 0 | 14 MB | complete |
-| USGS Snyder | 397 | 53+ | 60+ | 675+ | 193 MB+ | in progress (240/397) |
+| Document | Pages | Figures | Tables | Equations | Total Elements | Status |
+|----------|-------|---------|--------|-----------|----------------|--------|
+| SAM3 | 68 | 26 | 42 | 7 | 76 | complete |
+| Alpine Change | 23 | 6 | 8 | 0 | 14 | complete |
+| USGS Snyder | 397 | 63 | 69 | 909 | 1041 | complete |
+| **Total** | **488** | **95** | **119** | **916** | **1131** | |
 
 ---
 
@@ -19,7 +20,7 @@ Catalog of processed documents in `db/data/`.
 - **Started:** Tue Dec 16 23:44 CET
 - **sam3 finished:** Wed Dec 17 00:41 CET (~57 min for 52 pages)
 - **alpine_change finished:** Wed Dec 17 00:53 CET (~12 min for 14 pages)
-- **usgs_snyder:** in progress, estimated completion ~13:00 CET
+- **usgs_snyder finished:** Wed Dec 17 12:46 CET (~11.9 hours for 384 pages)
 
 ### Processing Rate
 
@@ -60,11 +61,11 @@ Catalog of processed documents in `db/data/`.
 **File:** `usgs_snyder1987.pdf`  
 **Topic:** Map Projections - A Working Manual
 
-| Pages | Figures | Tables | Equations | Avg Time |
-|-------|---------|--------|-----------|----------|
-| 397 | 53+ | 60+ | 675+ | 126s |
+| Pages | Figures | Tables | Equations | Total | Avg Time |
+|-------|---------|--------|-----------|-------|----------|
+| 397 | 63 | 69 | 909 | 1041 | 111s |
 
-*In progress (240/397 pages). This is a math-heavy reference book.*
+*Extraction complete. 10 blank pages (cover, section dividers). Math-heavy reference book with 909 equations.*
 
 ---
 
