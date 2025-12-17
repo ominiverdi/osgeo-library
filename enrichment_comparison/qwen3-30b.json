@@ -1,0 +1,35 @@
+{
+  "model": "qwen3-30b",
+  "timestamp": "2025-12-17 15:36:22",
+  "samples": [
+    {
+      "doc": "usgs_snyder",
+      "page": 147,
+      "label": "Equation 18-37 to 18-40",
+      "type": "equation",
+      "original_description": "LaTeX: \\begin{align*}\nx_b &= R_2 \\sin \\left[ (\\lambda - \\lambda_0) \\sin \\phi_2 \\right] \\quad (18-37) \\\\\n y_b &= C_2 + R_2 \\left[ 1 - \\cos \\left[ (\\lambda - \\lambda_0) \\sin \\phi_2 \\right] \\right] \\quad",
+      "enriched": "This element explains the forward projection formulas for the IMW Modified Polyconic map projection, calculating coordinates (Xb, Yb, Xc, Yc) based on latitude and longitude parameters.  \nKey search terms: Modified Polyconic, map projection, forward formulas, latitude longitude, coordinate calculation.",
+      "time_seconds": 2.7217159271240234
+    },
+    {
+      "doc": "alpine_change",
+      "page": 6,
+      "label": "Figure 1",
+      "type": "figure",
+      "original_description": "Map of the study area showing the Ges\u00e4use National Park in Styria, Austria, with overlays indicating the HabitAlp Dataset 2013 (blue), Cross-Temporal Dataset 2020 (orange), and the study area (red). T",
+      "enriched": "This element explains the spatial extent of the study area, including key geographical features and dataset overlays.  \nKey search terms: Ges\u00e4use National Park, HabitAlp Dataset, Cross-Temporal Dataset, study area map, Austria.",
+      "time_seconds": 1.6499218940734863
+    },
+    {
+      "doc": "sam3",
+      "page": 7,
+      "label": "Table 1",
+      "type": "table",
+      "original_description": "Table 1: Evaluation on image segmentation with text. Contains performance metrics (CGF1, AP, Gold, Silver, Bronze, Bio, etc.) for various models (Human_min, Human_max, OWLv2, OWLv2*, gDino-T, LLMdet-L",
+      "enriched": "This table explains performance metrics for image segmentation models using text prompts. Key search terms include: image segmentation, text prompts, model evaluation, COCO, LVIS, SA-Co, AP, CGF1, human performance, zero-shot.",
+      "time_seconds": 3.17936110496521
+    }
+  ],
+  "total_time": 7.55099892616272,
+  "avg_time": 2.5169996420542398
+}

@@ -1,0 +1,35 @@
+{
+  "model": "mistral-small",
+  "timestamp": "2025-12-17 15:37:49",
+  "samples": [
+    {
+      "doc": "usgs_snyder",
+      "page": 147,
+      "label": "Equation 18-37 to 18-40",
+      "type": "equation",
+      "original_description": "LaTeX: \\begin{align*}\nx_b &= R_2 \\sin \\left[ (\\lambda - \\lambda_0) \\sin \\phi_2 \\right] \\quad (18-37) \\\\\n y_b &= C_2 + R_2 \\left[ 1 - \\cos \\left[ (\\lambda - \\lambda_0) \\sin \\phi_2 \\right] \\right] \\quad",
+      "enriched": "This element provides the formulas for calculating the coordinates \\( (x_b, y_b) \\) and \\( (x_c, y_c) \\) on a polyconic projection, given the parameters \\( R_1 \\), \\( R_2 \\), \\( \\phi_1 \\), \\( \\phi_2 \\), \\( \\lambda_0 \\), and \\( \\lambda \\). Key search terms include \"polyconic projection,\" \"coordinate calculation,\" \"R1,\" \"R2,\" \"phi1,\" \"phi2,\" \"lambda0,\" and \"lambda.\"",
+      "time_seconds": 15.172866821289062
+    },
+    {
+      "doc": "alpine_change",
+      "page": 6,
+      "label": "Figure 1",
+      "type": "figure",
+      "original_description": "Map of the study area showing the Ges\u00e4use National Park in Styria, Austria, with overlays indicating the HabitAlp Dataset 2013 (blue), Cross-Temporal Dataset 2020 (orange), and the study area (red). T",
+      "enriched": "This element provides a visual representation of the study area, which includes the Ges\u00e4use National Park in Styria, Austria, and surrounding protected areas. It highlights the datasets used in the study, namely the HabitAlp Dataset 2013 and the Cross-Temporal Dataset 2020. Key search terms include: Ges\u00e4use National Park, Styria, Austria, HabitAlp Dataset, Cross-Temporal Dataset, study area.",
+      "time_seconds": 10.544256210327148
+    },
+    {
+      "doc": "sam3",
+      "page": 7,
+      "label": "Table 1",
+      "type": "table",
+      "original_description": "Table 1: Evaluation on image segmentation with text. Contains performance metrics (CGF1, AP, Gold, Silver, Bronze, Bio, etc.) for various models (Human_min, Human_max, OWLv2, OWLv2*, gDino-T, LLMdet-L",
+      "enriched": "This element explains the performance of various models, including SAM 3, in image segmentation tasks with text. Key search terms include \"image segmentation,\" \"text,\" \"SAM 3,\" \"LVIS,\" \"COCO,\" \"SA-Co,\" \"ADE-847,\" \"PascalConcept-59,\" \"Cityscapes,\" \"CGF1,\" \"AP,\" \"Gold,\" \"Silver,\" \"Bronze,\" \"Bio,\" \"OWLv2,\" \"gDino-T,\" \"LLMdet-L,\" \"APE-D,\" \"DINO-X,\" \"Gemini 2.5.\"",
+      "time_seconds": 18.71840476989746
+    }
+  ],
+  "total_time": 44.43552780151367,
+  "avg_time": 14.811842600504557
+}

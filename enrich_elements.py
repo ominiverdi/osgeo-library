@@ -21,24 +21,27 @@ import time
 from pathlib import Path
 from openai import OpenAI
 
-# LLM server for enrichment
-# Can use Qwen3-VL (8090) or a smaller text model (8086) if available
-LLM_URL = os.environ.get("LLM_URL", "http://localhost:8090/v1")
-LLM_MODEL = os.environ.get("LLM_MODEL", "qwen3-vl")
+# LLM server for enrichment - qwen3-30b on port 8080 (vulkan, fast)
+LLM_URL = os.environ.get("LLM_URL", "http://localhost:8080/v1")
+LLM_MODEL = os.environ.get("LLM_MODEL", "qwen3-30b")
 
 DB_DATA_DIR = Path("db/data")
 
-ENRICHMENT_PROMPT = """Given this {element_type} from a scientific paper:
-Label: {label}
-Original description: {description}
-
-Page context:
+ENRICHMENT_PROMPT = """/no_think
+Page content:
 {page_text}
 
-Describe how this element relates to the document's content in 2-3 sentences.
-What concepts does it illustrate? What would a researcher search for when looking for this?
-Include key technical terms, relationships to other concepts, and research relevance.
-Be specific and factual based on the context provided."""
+Element: {element_type} "{label}"
+Extracted: {description}
+
+What does this element explain in this context? List key search terms. 2-3 sentences, no filler."""
+
+
+def strip_think_tags(text: str) -> str:
+    """Remove <think>...</think> tags from output."""
+    import re
+
+    return re.sub(r"<think>.*?</think>\s*", "", text, flags=re.DOTALL).strip()
 
 
 def get_llm_client():
@@ -49,7 +52,6 @@ def get_llm_client():
 def enrich_element(client, element: dict, page_text: str) -> str | None:
     """Generate search_text for an element using LLM."""
 
-    # For equations, include LaTeX in description
     description = element.get("description", "")
 
     prompt = ENRICHMENT_PROMPT.format(
@@ -63,10 +65,11 @@ def enrich_element(client, element: dict, page_text: str) -> str | None:
         response = client.chat.completions.create(
             model=LLM_MODEL,
             messages=[{"role": "user", "content": prompt}],
-            max_tokens=300,
+            max_tokens=200,
             temperature=0.3,
         )
-        return response.choices[0].message.content.strip()
+        result = response.choices[0].message.content.strip()
+        return strip_think_tags(result)
     except Exception as e:
         print(f"  ERROR generating enrichment: {e}")
         return None
