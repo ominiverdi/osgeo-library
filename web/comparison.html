@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Qwen vs Claude - Visual Grounding Comparison</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #1a1a2e;
+            color: #eee;
+            min-height: 100vh;
+        }
+        header {
+            background: #16213e;
+            padding: 1rem 2rem;
+            border-bottom: 1px solid #333;
+        }
+        h1 {
+            font-size: 1.5rem;
+            font-weight: 500;
+        }
+        .subtitle {
+            color: #888;
+            font-size: 0.9rem;
+            margin-top: 0.25rem;
+        }
+        .container {
+            max-width: 1800px;
+            margin: 0 auto;
+            padding: 1rem;
+        }
+        .comparison {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+        .panel {
+            background: #16213e;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        .panel-header {
+            padding: 0.75rem 1rem;
+            background: #0f3460;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .panel-header h2 {
+            font-size: 1rem;
+            font-weight: 500;
+        }
+        .panel-header .time {
+            font-size: 0.85rem;
+            color: #4ecca3;
+        }
+        .panel img {
+            width: 100%;
+            height: auto;
+            display: block;
+        }
+        .nav {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 1rem;
+            padding: 1rem;
+            background: #16213e;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+        }
+        .nav button {
+            background: #0f3460;
+            color: #eee;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: background 0.2s;
+        }
+        .nav button:hover {
+            background: #1a5276;
+        }
+        .nav button:disabled {
+            background: #333;
+            color: #666;
+            cursor: not-allowed;
+        }
+        .nav .page-info {
+            font-size: 1rem;
+            min-width: 200px;
+            text-align: center;
+        }
+        .nav .page-name {
+            color: #4ecca3;
+            font-weight: 500;
+        }
+        .stats {
+            background: #16213e;
+            border-radius: 8px;
+            padding: 1rem;
+            margin-bottom: 1rem;
+        }
+        .stats h3 {
+            font-size: 1rem;
+            margin-bottom: 0.75rem;
+            color: #4ecca3;
+        }
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+        }
+        .stat-item {
+            background: #0f3460;
+            padding: 0.75rem;
+            border-radius: 4px;
+        }
+        .stat-label {
+            font-size: 0.8rem;
+            color: #888;
+        }
+        .stat-value {
+            font-size: 1.25rem;
+            font-weight: 500;
+        }
+        .legend {
+            display: flex;
+            gap: 1.5rem;
+            padding: 0.75rem 1rem;
+            background: #0f3460;
+            border-radius: 4px;
+            margin-bottom: 1rem;
+            flex-wrap: wrap;
+        }
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.85rem;
+        }
+        .legend-color {
+            width: 20px;
+            height: 3px;
+        }
+        .legend-color.figure { background: red; }
+        .legend-color.table { background: blue; }
+        .legend-color.equation { background: purple; }
+        .legend-color.chart { background: orange; }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Qwen3-VL-235B vs Claude - Visual Grounding Comparison</h1>
+        <div class="subtitle">Bounding box detection accuracy on scientific documents</div>
+    </header>
+    
+    <div class="container">
+        <div class="stats">
+            <h3>Timing Summary</h3>
+            <div class="stats-grid">
+                <div class="stat-item">
+                    <div class="stat-label">Qwen3-VL-235B (local GPU)</div>
+                    <div class="stat-value">~107s avg</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-label">Claude (cloud API)</div>
+                    <div class="stat-value">~13s avg</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-label">Test Pages</div>
+                    <div class="stat-value">10</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-label">Total Elements</div>
+                    <div class="stat-value">27</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="legend">
+            <div class="legend-item"><div class="legend-color figure"></div> Figure</div>
+            <div class="legend-item"><div class="legend-color table"></div> Table</div>
+            <div class="legend-item"><div class="legend-color equation"></div> Equation</div>
+            <div class="legend-item"><div class="legend-color chart"></div> Chart</div>
+        </div>
+
+        <div class="nav">
+            <button id="prevBtn" onclick="prevPage()">Previous</button>
+            <div class="page-info">
+                <span id="pageNum">1</span> / <span id="totalPages">10</span>
+                <div class="page-name" id="pageName"></div>
+            </div>
+            <button id="nextBtn" onclick="nextPage()">Next</button>
+        </div>
+
+        <div class="comparison">
+            <div class="panel">
+                <div class="panel-header">
+                    <h2>Qwen3-VL-235B</h2>
+                    <span class="time" id="qwenTime"></span>
+                </div>
+                <img id="qwenImg" src="" alt="Qwen detection">
+            </div>
+            <div class="panel">
+                <div class="panel-header">
+                    <h2>Claude</h2>
+                    <span class="time" id="claudeTime"></span>
+                </div>
+                <img id="claudeImg" src="" alt="Claude detection">
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const pages = [
+            { name: "sam3/page_001", elements: 1, qwenTime: "~55s", claudeTime: "10.4s" },
+            { name: "sam3/page_004", elements: 1, qwenTime: "66.1s", claudeTime: "10.8s" },
+            { name: "sam3/page_007", elements: 3, qwenTime: "~55s", claudeTime: "12.1s" },
+            { name: "sam3/page_008", elements: 3, qwenTime: "~55s", claudeTime: "13.5s" },
+            { name: "sam3/page_030", elements: 3, qwenTime: "133.3s", claudeTime: "15.1s" },
+            { name: "alpine_change/page_006", elements: 1, qwenTime: "49.3s", claudeTime: "11.5s" },
+            { name: "alpine_change/page_013", elements: 2, qwenTime: "82.3s", claudeTime: "12.7s" },
+            { name: "alpine_change/page_014", elements: 2, qwenTime: "73.3s", claudeTime: "13.7s" },
+            { name: "usgs_snyder/page_035", elements: 4, qwenTime: "116.7s", claudeTime: "13.9s" },
+            { name: "usgs_snyder/page_044", elements: 7, qwenTime: "221.7s", claudeTime: "17.6s" }
+        ];
+
+        let currentPage = 0;
+
+        function updateDisplay() {
+            const page = pages[currentPage];
+            const baseName = page.name.replace("/", "_");
+            
+            document.getElementById("qwenImg").src = `comparison/${baseName}_qwen.png`;
+            document.getElementById("claudeImg").src = `comparison/${baseName}_claude.png`;
+            document.getElementById("pageNum").textContent = currentPage + 1;
+            document.getElementById("totalPages").textContent = pages.length;
+            document.getElementById("pageName").textContent = page.name + ` (${page.elements} elements)`;
+            document.getElementById("qwenTime").textContent = page.qwenTime;
+            document.getElementById("claudeTime").textContent = page.claudeTime;
+            
+            document.getElementById("prevBtn").disabled = currentPage === 0;
+            document.getElementById("nextBtn").disabled = currentPage === pages.length - 1;
+        }
+
+        function nextPage() {
+            if (currentPage < pages.length - 1) {
+                currentPage++;
+                updateDisplay();
+            }
+        }
+
+        function prevPage() {
+            if (currentPage > 0) {
+                currentPage--;
+                updateDisplay();
+            }
+        }
+
+        document.addEventListener("keydown", (e) => {
+            if (e.key === "ArrowRight") nextPage();
+            if (e.key === "ArrowLeft") prevPage();
+        });
+
+        updateDisplay();
+    </script>
+</body>
+</html>
