@@ -19,6 +19,19 @@ Why we chose X over Y.
 
 **Why:** The 235B model provides ~98% accurate bounding boxes and reliably extracts LaTeX from equations. The 32B model works but occasionally misses equation boundaries.
 
+**Model files required:**
+- `Qwen3-VL-235B-A22B-Instruct-UD-TQ1_0.gguf` - Main language model (quantized)
+- `mmproj-F16.gguf` - Multimodal projector (vision encoder bridge)
+
+The mmproj (multimodal projector) is essential - it bridges the vision encoder to the language model, enabling image understanding. Without it, the model cannot process images. Both files must be passed to llama-server:
+
+```bash
+llama-server \
+  --model models/Qwen3-VL-235B/Qwen3-VL-235B-A22B-Instruct-UD-TQ1_0.gguf \
+  --mmproj models/Qwen3-VL-235B/mmproj-F16.gguf \
+  ...
+```
+
 ---
 
 ## LaTeX Rendering: pdflatex + ImageMagick
