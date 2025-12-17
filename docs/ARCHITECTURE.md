@@ -122,6 +122,111 @@ Query -> Embed (BGE-M3) -> Vector similarity (pgvector)
 | Text (enrichment) | 8080 | Qwen3-30B-A3B |
 | Embedding | 8094 | BGE-M3 |
 
+## Configuration
+
+All settings are managed through `config.py` which loads from multiple sources in order of priority:
+
+1. Environment variables (`OSGEO_*`)
+2. `config.local.toml` (gitignored, for local overrides)
+3. `config.toml` (gitignored)
+4. `~/.config/osgeo-library/config.toml`
+5. Built-in defaults
+
+### Quick Setup
+
+```bash
+# Copy the example config
+cp config.example.toml config.toml
+
+# Edit for your environment
+nano config.toml
+```
+
+### Configuration Sections
+
+```toml
+[llm]
+url = "http://localhost:8080/v1/chat/completions"
+model = "qwen3-30b"
+api_key = ""  # Empty for local, set for OpenRouter
+temperature = 0.3
+max_tokens = 1024
+
+[embedding]
+url = "http://localhost:8094/embedding"
+dimensions = 1024
+
+[database]
+name = "osgeo_library"
+host = ""      # Empty = Unix socket (peer auth)
+port = 5432
+user = ""      # Empty = current Unix user
+password = ""  # Empty = peer auth or ~/.pgpass
+
+[paths]
+data_dir = "db/data"  # Relative or absolute path
+
+[display]
+chafa_size = "60x25"
+```
+
+### Environment Variables
+
+All config values can be overridden with environment variables:
+
+| Variable | Config Key | Description |
+|----------|------------|-------------|
+| `OSGEO_LLM_URL` | llm.url | LLM API endpoint |
+| `OSGEO_LLM_MODEL` | llm.model | Model name |
+| `OSGEO_LLM_API_KEY` | llm.api_key | API key for remote services |
+| `OSGEO_EMBED_URL` | embedding.url | Embedding server endpoint |
+| `OSGEO_EMBED_DIM` | embedding.dimensions | Embedding dimensions |
+| `OSGEO_DB_NAME` | database.name | PostgreSQL database |
+| `OSGEO_DB_HOST` | database.host | Database host |
+| `OSGEO_DB_PORT` | database.port | Database port |
+| `OSGEO_DB_USER` | database.user | Database user |
+| `OSGEO_DATA_DIR` | paths.data_dir | Path to extracted data |
+| `OSGEO_CHAFA_SIZE` | display.chafa_size | Terminal image size |
+
+### Database Authentication
+
+The config supports multiple PostgreSQL authentication methods:
+
+- **Peer auth (default):** Leave `host`, `user`, and `password` empty. Uses Unix socket with current user.
+- **Password auth:** Set all fields. Password can also be stored in `~/.pgpass`.
+- **Remote connection:** Set `host` to the server address.
+
+### Example Configurations
+
+**Local development (minto):**
+```toml
+[llm]
+url = "http://localhost:8080/v1/chat/completions"
+model = "qwen3-30b"
+
+[paths]
+data_dir = "db/data"
+```
+
+**Remote server with OpenRouter:**
+```toml
+[llm]
+url = "https://openrouter.ai/api/v1/chat/completions"
+model = "qwen/qwen3-30b-a3b"
+api_key = "sk-or-v1-..."
+
+[paths]
+data_dir = "/home/user/data/osgeo-library"
+```
+
+### Verify Configuration
+
+```bash
+python config.py
+```
+
+This displays the current configuration and its source.
+
 ## Deployment
 
 ### Requirements
@@ -136,7 +241,6 @@ Query -> Embed (BGE-M3) -> Vector similarity (pgvector)
 ```
 ~/
 ├── github/osgeo-library/           # Code (git repo)
-│   └── db/data -> ~/data/osgeo-library  # Symlink to data
 ├── data/osgeo-library/
 │   ├── alpine_change/elements/     # Element images
 │   ├── sam3/elements/
@@ -149,13 +253,26 @@ Query -> Embed (BGE-M3) -> Vector similarity (pgvector)
 
 ### Setup Steps
 
-1. **Clone repo and create symlink:**
+1. **Clone repo and configure:**
 ```bash
 cd ~/github
 git clone https://github.com/ominiverdi/osgeo-library.git
 cd osgeo-library
-mkdir -p db
-ln -sf ~/data/osgeo-library db/data
+cp config.example.toml config.toml
+
+# Edit config.toml to set paths and LLM settings
+nano config.toml
+```
+
+Example `config.toml` for remote server:
+```toml
+[llm]
+url = "https://openrouter.ai/api/v1/chat/completions"
+model = "qwen/qwen3-30b-a3b"
+api_key = "sk-or-v1-your-key-here"
+
+[paths]
+data_dir = "/home/user/data/osgeo-library"
 ```
 
 2. **Start embedding server:**
