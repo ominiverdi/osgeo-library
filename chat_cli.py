@@ -36,12 +36,7 @@ from search_service import (
     SearchResult,
     check_server as check_embed_server,
 )
-
-
-# Configuration
-LLM_URL = "http://localhost:8080/v1/chat/completions"
-LLM_MODEL = "qwen3-30b"
-CHAFA_SIZE = "60x25"
+from config import config
 
 # System prompt for the assistant
 SYSTEM_PROMPT = """You are a helpful research assistant with access to a library of scientific documents about:
@@ -50,12 +45,18 @@ SYSTEM_PROMPT = """You are a helpful research assistant with access to a library
 - Alpine habitat monitoring and change detection
 
 When answering questions:
-1. Base your answers on the provided context from the documents
+1. Base your answers ONLY on the provided context
 2. Be concise but accurate
-3. Mention specific figures, tables, or equations when relevant
+3. ALWAYS cite sources using the exact tags from the context:
+   - [f:N] for figures
+   - [tb:N] for tables  
+   - [eq:N] for equations
+   - [t:N] for text passages
 4. If the context doesn't contain enough information, say so
 
-Do not make up information. Cite the source document when possible."""
+Example: "The Transverse Mercator projection [f:2] shows the cylinder tangent to a meridian [t:1]."
+
+Do not make up information. Always include citation tags in your response."""
 
 
 @dataclass
@@ -87,25 +88,32 @@ class ChatContext:
 def check_llm_server() -> bool:
     """Check if LLM server is running."""
     try:
-        response = requests.get(
-            LLM_URL.replace("/v1/chat/completions", "/health"), timeout=5
-        )
+        health_url = config.llm_url.replace("/v1/chat/completions", "/health")
+        response = requests.get(health_url, timeout=5)
         return response.status_code == 200
     except requests.exceptions.RequestException:
         return False
 
 
-def query_llm(messages: List[Dict[str, str]], model: str = LLM_MODEL) -> str:
+def query_llm(messages: List[Dict[str, str]], model: str = "") -> str:
     """Send messages to LLM and get response."""
+    if not model:
+        model = config.llm_model
+
     try:
+        headers = {"Content-Type": "application/json"}
+        if config.llm_api_key:
+            headers["Authorization"] = f"Bearer {config.llm_api_key}"
+
         response = requests.post(
-            LLM_URL,
+            config.llm_url,
             json={
                 "model": model,
                 "messages": messages,
-                "temperature": 0.3,
-                "max_tokens": 1024,
+                "temperature": config.llm_temperature,
+                "max_tokens": config.llm_max_tokens,
             },
+            headers=headers,
             timeout=120,
         )
         response.raise_for_status()
@@ -179,7 +187,58 @@ def format_sources(results: List[SearchResult]) -> str:
     return "\n".join(lines)
 
 
-def show_image(path: str) -> bool:
+def has_display() -> bool:
+    """Check if graphical display (X11 or Wayland) is available."""
+    return bool(os.environ.get("DISPLAY") or os.environ.get("WAYLAND_DISPLAY"))
+
+
+def open_in_viewer(path: str) -> bool:
+    """Open image in system GUI viewer."""
+    if not path:
+        print("No image path available.")
+        return False
+
+    # Resolve relative path from script directory
+    if not os.path.isabs(path):
+        path = os.path.join(os.path.dirname(__file__) or ".", path)
+
+    if not os.path.exists(path):
+        print(f"Image not found: {path}")
+        return False
+
+    if not has_display():
+        print("No display available (X11/Wayland not detected)")
+        print("Use 'show N' for terminal preview instead")
+        return False
+
+    # Try xdg-open first (works on most Linux systems)
+    if shutil.which("xdg-open"):
+        subprocess.Popen(
+            ["xdg-open", path],
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+        )
+        print(f"Opened: {path}")
+        return True
+
+    # Fallback to common image viewers
+    viewers = ["feh", "eog", "gwenview", "sxiv", "imv"]
+    for viewer in viewers:
+        if shutil.which(viewer):
+            subprocess.Popen(
+                [viewer, path],
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+            )
+            print(f"Opened with {viewer}: {path}")
+            return True
+
+    print("No image viewer found")
+    print("Install one of: xdg-utils, feh, eog, gwenview, sxiv, imv")
+    return False
+
+
+def show_image(path: str, size: str = "") -> bool:
     """Display image using chafa if available."""
     if not path:
         print("No image path available.")
@@ -193,23 +252,32 @@ def show_image(path: str) -> bool:
         print(f"Image not found: {path}")
         return False
 
+    # Use provided size or default from config
+    display_size = size or config.chafa_size
+
     # Check for chafa
     if shutil.which("chafa"):
         try:
-            subprocess.run(["chafa", path, "--size", CHAFA_SIZE], check=True)
+            subprocess.run(["chafa", path, "--size", display_size], check=True)
             print(f"\nPath: {path}")
+            if has_display():
+                print("(Use 'open N' to view in GUI)")
             return True
         except subprocess.CalledProcessError:
             pass
 
-    # Fallback: just show path
+    # Fallback: no chafa available
     print(f"Image: {path}")
-    print("(Install chafa for inline preview: sudo apt install chafa)")
+    print("(Install chafa for terminal preview: sudo apt install chafa)")
+    if has_display():
+        print("(Use 'open N' to view in GUI)")
     return True
 
 
 def handle_show_command(ctx: ChatContext, arg: str) -> bool:
     """Handle 'show N' or 'show 1,2,3' command to display elements."""
+    from search_service import get_element_by_id
+
     if not ctx.last_results:
         print("No results to show. Ask a question first.")
         return True
@@ -233,19 +301,93 @@ def handle_show_command(ctx: ChatContext, arg: str) -> bool:
         if 0 <= idx < len(ctx.last_results):
             result = ctx.last_results[idx]
             if result.source_type == "element" and result.crop_path:
-                # Build the full path: db/data/{doc_slug}/{crop_path}
-                # crop_path is like "elements/filename.png"
                 doc_slug = result.document_slug
-                full_path = os.path.join("db/data", doc_slug, result.crop_path)
                 print(f"\n{result.element_type.upper()}: {result.element_label}")
                 print(f"From: {result.document_title}, page {result.page_number}\n")
-                show_image(full_path)
+
+                # Get full element data for rendered_path
+                element_data = get_element_by_id(result.id)
+
+                # Choose the best image path and size based on element type
+                if result.element_type == "equation":
+                    # Prefer rendered image for equations (cleaner LaTeX rendering)
+                    if element_data and element_data.get("rendered_path"):
+                        image_path = element_data["rendered_path"]
+                    else:
+                        image_path = result.crop_path
+                    full_path = os.path.join(config.data_dir, doc_slug, image_path)
+                    show_image(full_path, size=config.chafa_size_equation)
+                elif result.element_type == "table":
+                    full_path = os.path.join(
+                        config.data_dir, doc_slug, result.crop_path
+                    )
+                    show_image(full_path, size=config.chafa_size_table)
+                else:
+                    # Figures, charts, diagrams
+                    full_path = os.path.join(
+                        config.data_dir, doc_slug, result.crop_path
+                    )
+                    show_image(full_path, size=config.chafa_size)
             else:
                 print(f"\n[{idx + 1}] is a text chunk, no image available.")
                 print(f"Content: {result.content[:300]}...")
         else:
             print(f"Invalid index [{idx + 1}]. Use 1-{len(ctx.last_results)}")
 
+    return True
+
+
+def handle_open_command(ctx: ChatContext, arg: str) -> bool:
+    """Handle 'open N' command to open element in GUI viewer."""
+    from search_service import get_element_by_id
+
+    if not ctx.last_results:
+        print("No results to open. Ask a question first.")
+        return True
+
+    # Parse index
+    try:
+        idx = int(arg.strip()) - 1
+    except ValueError:
+        print(f"Invalid number: {arg}")
+        return True
+
+    if not (0 <= idx < len(ctx.last_results)):
+        print(f"Invalid index [{idx + 1}]. Use 1-{len(ctx.last_results)}")
+        return True
+
+    result = ctx.last_results[idx]
+
+    # Check if it's an element with an image
+    if result.source_type != "element" or not result.crop_path:
+        print(f"[{idx + 1}] is a text chunk, not an image.")
+        print("Use 'show N' to view text content.")
+        return True
+
+    # Get the image path
+    doc_slug = result.document_slug
+    element_data = get_element_by_id(result.id)
+
+    # For equations, prefer rendered image
+    if (
+        result.element_type == "equation"
+        and element_data
+        and element_data.get("rendered_path")
+    ):
+        image_path = element_data["rendered_path"]
+    else:
+        image_path = result.crop_path
+
+    full_path = os.path.join(config.data_dir, doc_slug, image_path)
+
+    # Resolve relative path
+    if not os.path.isabs(full_path):
+        full_path = os.path.join(os.path.dirname(__file__) or ".", full_path)
+
+    print(f"\n{result.element_type.upper()}: {result.element_label}")
+    print(f"From: {result.document_title}, page {result.page_number}\n")
+
+    open_in_viewer(full_path)
     return True
 
 
@@ -268,15 +410,34 @@ def handle_command(ctx: ChatContext, user_input: str) -> Optional[bool]:
         print("\n" + format_sources(ctx.last_results))
         return True
 
-    if cmd.startswith("show "):
+    # Handle "show N" command (terminal preview)
+    if cmd == "show" or cmd.startswith("show "):
+        if cmd == "show":
+            print("Usage: show <number> or show 1,2,3")
+            return True
         arg = cmd[5:].strip()
-        return handle_show_command(ctx, arg)
+        if arg:
+            return handle_show_command(ctx, arg)
+        print("Usage: show <number> or show 1,2,3")
+        return True
+
+    # Handle "open N" command (GUI viewer)
+    if cmd == "open" or cmd.startswith("open "):
+        if cmd == "open":
+            print("Usage: open <number>")
+            return True
+        arg = cmd[5:].strip()
+        if arg:
+            return handle_open_command(ctx, arg)
+        print("Usage: open <number>")
+        return True
 
     if cmd in ("help", "-h", "--help", "?"):
         print("""
 Commands:
-  show <n>     - Display element n (e.g., 'show 1' or 'show 1,2,3')
-  sources      - Show sources from last answer  
+  show <n>     - Display element in terminal (e.g., 'show 1' or 'show 1,2,3')
+  open <n>     - Open element in GUI viewer (requires X11/Wayland)
+  sources      - Show sources from last answer
   clear        - Clear conversation history
   help         - Show this help
   quit / exit  - Exit
@@ -286,37 +447,120 @@ Commands:
     return False  # Not a command, process as question
 
 
-def detect_image_request(question: str) -> bool:
-    """Detect if user is asking specifically for images/figures/visuals."""
-    patterns = [
-        r"\b(show|display|see|view)\b.*\b(image|figure|diagram|chart|table|equation|picture|visual)",
-        r"\b(image|figure|diagram|chart|table|equation|picture|visual)s?\b.*\b(of|about|related|for)\b",
-        r"\bare there\b.*\b(image|figure|diagram|chart|picture|visual)s?\b",
-        r"\bwhat\b.*\b(figure|diagram|chart|table)s?\b",
-    ]
+def detect_element_request(question: str) -> bool:
+    """Detect if user is asking for elements (figures, tables, equations, etc.)."""
     q_lower = question.lower()
-    return any(re.search(p, q_lower) for p in patterns)
+
+    # Direct element type mentions
+    element_keywords = [
+        r"\b(formula|formulas|equation|equations)\b",
+        r"\b(figure|figures|diagram|diagrams|chart|charts)\b",
+        r"\b(table|tables)\b",
+        r"\b(image|images|picture|pictures|visual|visuals)\b",
+    ]
+
+    # Contextual patterns
+    contextual_patterns = [
+        r"\b(show|display|see|view)\b.*\b(image|figure|diagram|chart|table|equation|picture|visual|formula)",
+        r"\b(image|figure|diagram|chart|table|equation|picture|visual|formula)s?\b.*\b(of|about|related|for)\b",
+        r"\bare there\b.*\b(image|figure|diagram|chart|picture|visual|formula|equation)s?\b",
+        r"\bwhat\b.*\b(figure|diagram|chart|table|formula|equation)s?\b",
+    ]
+
+    # Check for element keywords
+    for pattern in element_keywords:
+        if re.search(pattern, q_lower):
+            return True
+
+    # Check contextual patterns
+    for pattern in contextual_patterns:
+        if re.search(pattern, q_lower):
+            return True
+
+    return False
+
+
+def expand_followup_query(question: str, last_query: str) -> str:
+    """Expand follow-up queries by combining with previous query context."""
+    if not last_query:
+        return question
+
+    q_lower = question.lower().strip()
+
+    # Patterns that indicate a follow-up/clarification (at start of query)
+    prefix_followup_patterns = [
+        r"^i mean[t]?\b",
+        r"^actually\b",
+        r"^no[,.]?\s",
+        r"^not that[,.]?\s",
+        r"^what about\b",
+        r"^how about\b",
+        r"^and\b",
+        r"^or\b",
+        r"^but\b",
+    ]
+
+    # Patterns with referential pronouns (this, that, it, these, those)
+    # These indicate the query refers to a previous topic
+    referential_patterns = [
+        r"\b(related to|about|for|of|on)\s+(this|that|it|these|those)\b",
+        r"\b(this|that)\s+(topic|subject|projection|method)\b",
+        r"\bany\b.*\b(related|about|for)\b.*\b(this|that|it)\b",
+        r"^(any|are there|show me|what)\b.*\b(this|that|it)\s*\??$",
+    ]
+
+    is_prefix_followup = any(re.match(p, q_lower) for p in prefix_followup_patterns)
+    is_referential = any(re.search(p, q_lower) for p in referential_patterns)
+
+    if is_prefix_followup:
+        # Remove the follow-up prefix to get the clarification
+        cleaned = re.sub(
+            r"^(i mean[t]?|actually|no[,.]?|not that[,.]?|what about|how about|and|or|but)\s*",
+            "",
+            q_lower,
+        ).strip()
+        if cleaned:
+            return f"{cleaned} {last_query}"
+
+    elif is_referential:
+        # Replace referential pronouns with the last query topic
+        # Remove the referential phrase and combine with last query
+        cleaned = re.sub(
+            r"\b(related to|about|for|of|on)\s+(this|that|it|these|those)\b",
+            "",
+            q_lower,
+        ).strip()
+        # Clean up punctuation and extra spaces
+        cleaned = re.sub(r"[?\s]+", " ", cleaned).strip()
+        return f"{cleaned} {last_query}"
+
+    return question
 
 
 def process_question(ctx: ChatContext, question: str, model: str) -> str:
     """Process a user question: search, build context, query LLM."""
-    # Detect if user wants images specifically
-    wants_images = detect_image_request(question)
+    # Detect if user wants elements (figures, equations, tables, etc.)
+    wants_elements = detect_element_request(question)
+
+    # Expand follow-up queries with previous context
+    search_query = expand_followup_query(question, ctx.last_query)
+    if search_query != question:
+        print(f"(Expanded query: {search_query})")
 
     # Search for relevant content
     print("Searching...", end=" ", flush=True)
     try:
-        if wants_images:
-            # Prioritize elements when user asks for images
-            results = search_elements(question, limit=8)
+        if wants_elements:
+            # Prioritize elements when user asks for figures/equations/tables
+            results = search_elements(search_query, limit=8)
             if len(results) < 4:
                 # Add some text chunks for context
-                all_results = search(question, limit=8)
+                all_results = search(search_query, limit=8)
                 results = (
                     results + [r for r in all_results if r.source_type == "chunk"][:4]
                 )
         else:
-            results = search(question, limit=8)
+            results = search(search_query, limit=8)
         ctx.last_results = results
         ctx.last_query = question
         element_count = sum(1 for r in results if r.source_type == "element")
@@ -329,13 +573,13 @@ def process_question(ctx: ChatContext, question: str, model: str) -> str:
     context = format_context(results)
 
     # Create the augmented prompt
-    augmented_question = f"""Based on these documents:
+    augmented_question = f"""Context (cite using the tags shown):
 
 {context}
 
 Question: {question}
 
-Answer the question using the provided context. Reference sources using their tags like [t:1] for text, [f:2] for figures, [eq:3] for equations, [tb:4] for tables."""
+IMPORTANT: Include citation tags like [f:1], [t:2], [eq:3], [tb:4] in your answer to reference the sources above."""
 
     # Add to conversation and query LLM
     ctx.add_user_message(augmented_question)
@@ -351,24 +595,27 @@ Answer the question using the provided context. Reference sources using their ta
 
 def main():
     parser = argparse.ArgumentParser(description="Chat with OSGeo Library")
-    parser.add_argument("--model", default=LLM_MODEL, help="LLM model to use")
+    parser.add_argument(
+        "--model", default=None, help="LLM model to use (default from config)"
+    )
     args = parser.parse_args()
+
+    # Use config default if not specified
+    model = args.model or config.llm_model
 
     # Check servers
     print("OSGeo Library Chat")
     print("=" * 40)
 
     if not check_embed_server():
-        print("ERROR: Embedding server not running on port 8094")
-        print("Start it with: /media/nvme2g-a/llm_toolbox/servers/bge-m3-embed-8094.sh")
+        print(f"ERROR: Embedding server not running at {config.embed_url}")
         sys.exit(1)
     print("Embedding server: OK")
 
     if not check_llm_server():
-        print("ERROR: LLM server not running on port 8080")
-        print("Start Qwen3-30B or another model on port 8080")
+        print(f"ERROR: LLM server not running at {config.llm_url}")
         sys.exit(1)
-    print(f"LLM server: OK (using {args.model})")
+    print(f"LLM server: OK (using {model})")
 
     print("\nType 'help' for commands, 'quit' to exit.\n")
 
@@ -393,7 +640,7 @@ def main():
             continue
 
         # Process as question
-        response = process_question(ctx, user_input, args.model)
+        response = process_question(ctx, user_input, model)
         print(f"Assistant: {response}\n")
 
         # Show available sources hint
