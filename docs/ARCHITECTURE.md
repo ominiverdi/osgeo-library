@@ -30,7 +30,24 @@ Parse + convert to pixel coordinates
 extraction.json + element images
     |
     v
-Database
+Enrichment (Qwen3-30B-A3B)
+    |
+    +---> Generate search_text for each element
+    |     (contextual descriptions for retrieval)
+    |
+    v
+Ingestion (ingest_to_db.py)
+    |
+    +---> Chunk text (~800 chars, 200 overlap)
+    +---> Embed chunks + elements (BGE-M3)
+    +---> Insert to PostgreSQL + pgvector
+    |
+    v
+Search Service (search_service.py)
+    |
+    +---> Embed query
+    +---> Vector similarity search
+    +---> Return ranked chunks + elements
 ```
 
 ## Scripts
@@ -72,4 +89,36 @@ db/data/{document}/
     p04_equation_1_Equation_1.png
     p04_equation_1_Equation_1_rendered.png  # Re-rendered from LaTeX
 ```
+
+## Database Schema
+
+PostgreSQL with pgvector extension.
+
+```
+documents: id, slug, title, source_file, extraction_date, model, metadata
+pages: id, document_id, page_number, image_path, full_text, width, height
+chunks: id, document_id, page_id, content, chunk_index, embedding vector(1024)
+elements: id, document_id, page_id, element_type, label, description,
+          search_text, latex, crop_path, embedding vector(1024)
+```
+
+## Search Flow
+
+```
+Query -> Embed (BGE-M3) -> Vector similarity (pgvector)
+                               |
+                               +---> chunks (text passages)
+                               +---> elements (figures, tables, equations)
+                               |
+                               v
+                          Ranked results with scores
+```
+
+## Servers
+
+| Service | Port | Model |
+|---------|------|-------|
+| Vision (extraction) | 8090 | Qwen3-VL-235B |
+| Text (enrichment) | 8080 | Qwen3-30B-A3B |
+| Embedding | 8094 | BGE-M3 |
 

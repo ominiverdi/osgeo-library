@@ -305,10 +305,10 @@ When user asks "where did you find that?":
 4. [x] Create `db/connection.py` - database helpers
 5. [x] Create `db/chunking.py` - text chunking with sentence breaks
 6. [x] Create `ingest_to_db.py` - full ingestion pipeline
-7. [ ] Run enrichment on all documents (in progress)
-8. [ ] Run ingestion to database
-9. [ ] Create `search_service.py`
-10. [ ] Test search queries
+7. [x] Run enrichment on all documents (1131 elements enriched)
+8. [x] Run ingestion to database (3 docs, 488 pages, 2195 chunks, 1131 elements)
+9. [x] Create `search_service.py` - semantic search with pgvector
+10. [x] Test search queries (working)
 11. [ ] Create bot tools
 12. [ ] Create Matrix bot skeleton
 13. [ ] Integration testing

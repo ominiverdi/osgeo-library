@@ -69,10 +69,28 @@ Catalog of processed documents in `db/data/`.
 
 ---
 
+## Database Ingestion - December 17, 2025
+
+All documents enriched and ingested to PostgreSQL with embeddings.
+
+| Metric | Count |
+|--------|-------|
+| Documents | 3 |
+| Pages | 488 |
+| Text chunks | 2,195 |
+| Elements | 1,131 |
+| Embeddings | 3,326 (chunks + elements) |
+
+**Enrichment:** ~47 minutes for 1131 elements (Qwen3-30B-A3B)  
+**Ingestion:** ~100 seconds for all documents (BGE-M3 embeddings)
+
+---
+
 ## Model Configuration
 
-- **Model:** Qwen3-VL-235B (A22B-Instruct-UD-TQ1_0)
-- **Server:** llama.cpp on localhost:8090
+- **Vision Model:** Qwen3-VL-235B (A22B-Instruct-UD-TQ1_0) - port 8090
+- **Enrichment Model:** Qwen3-30B-A3B - port 8080
+- **Embedding Model:** BGE-M3 (1024 dimensions) - port 8094
 - **Context:** 8192 tokens
 - **Page DPI:** 150
 
