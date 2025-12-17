@@ -309,6 +309,23 @@ When user asks "where did you find that?":
 8. [x] Run ingestion to database (3 docs, 488 pages, 2195 chunks, 1131 elements)
 9. [x] Create `search_service.py` - semantic search with pgvector
 10. [x] Test search queries (working)
-11. [ ] Create bot tools
-12. [ ] Create Matrix bot skeleton
-13. [ ] Integration testing
+11. [x] Create `chat_cli.py` - multi-turn RAG with LangChain
+12. [x] Create `servers/bge-m3-cpu.sh` - CPU deployment script
+13. [x] Quantize BGE-M3 to Q8_0 (1.1GB -> 606MB)
+14. [ ] Deploy to osgeo7-gallery (waiting for pgvector + chafa)
+15. [ ] Create bot tools
+16. [ ] Create Matrix bot skeleton
+17. [ ] Integration testing
+
+## Deployment Status (osgeo7-gallery)
+
+| Component | Status |
+|-----------|--------|
+| Git repo | Cloned and updated |
+| Embedding model | Copied (bge-m3-Q8_0.gguf) |
+| Embedding server | Running on port 8094 |
+| Element images | Copied (66MB) |
+| Database dump | Copied (45MB) |
+| pgvector extension | Waiting on admin |
+| chafa | Waiting on admin |
+| Python venv | Needs deps install |
