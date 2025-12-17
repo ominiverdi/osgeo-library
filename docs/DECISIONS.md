@@ -49,7 +49,7 @@ llama-server \
 
 **Claude comparison (Dec 2025):** We tested Claude on 10 pages with 27 elements. While faster (~13s vs ~90s avg), Claude's bounding boxes are noticeably looser - it estimates rather than detects with trained precision. See `web/comparison.html` for side-by-side results. Qwen3-VL's visual grounding training makes it significantly more accurate for this task.
 
-**Why:** Processing 5000+ PDFs with cloud APIs would be expensive and slow (rate limits). Local GPU inference is free and consistent.
+**Why:** Processing 5000+ PDFs with cloud APIs would be expensive and slow (rate limits). Local GPU inference avoids API costs and rate limits.
 
 ---
 
