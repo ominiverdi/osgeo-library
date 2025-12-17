@@ -18,9 +18,13 @@ Usage:
 import requests
 from typing import List, Optional
 import time
+import sys
+import os
 
-EMBED_URL = "http://localhost:8094/embedding"
-EMBED_DIMENSIONS = 1024
+# Add parent directory to path for config import
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from config import config
+
 MAX_RETRIES = 3
 RETRY_DELAY = 1.0
 
@@ -59,7 +63,7 @@ def get_embeddings(
     for attempt in range(MAX_RETRIES):
         try:
             response = requests.post(
-                EMBED_URL,
+                config.embed_url,
                 json={"input": texts},
                 headers={"Content-Type": "application/json"},
                 timeout=60,
@@ -118,7 +122,7 @@ def cosine_similarity(a: List[float], b: List[float]) -> float:
 def check_server() -> bool:
     """Check if embedding server is running."""
     try:
-        response = requests.get("http://localhost:8094/health", timeout=5)
+        response = requests.get(config.embed_health_url, timeout=5)
         return response.status_code == 200
     except requests.exceptions.RequestException:
         return False
@@ -142,8 +146,8 @@ if __name__ == "__main__":
     ]
 
     print("Testing BGE-M3 embeddings...")
-    print(f"Server: {EMBED_URL}")
-    print(f"Expected dimensions: {EMBED_DIMENSIONS}")
+    print(f"Server: {config.embed_url}")
+    print(f"Expected dimensions: {config.embed_dimensions}")
     print()
 
     start = time.time()

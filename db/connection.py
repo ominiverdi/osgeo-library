@@ -24,30 +24,28 @@ Usage:
 """
 
 import os
+import sys
 import psycopg2
 from psycopg2.extras import RealDictCursor
 from contextlib import contextmanager
 from typing import Any, List, Optional, Dict
 
-# Database configuration
-DB_NAME = os.environ.get("OSGEO_DB_NAME", "osgeo_library")
-DB_HOST = os.environ.get("OSGEO_DB_HOST", "")  # Empty = Unix socket (peer auth)
-DB_PORT = os.environ.get("OSGEO_DB_PORT", "5432")
-DB_USER = os.environ.get("OSGEO_DB_USER", "")  # Empty = current Unix user
-DB_PASSWORD = os.environ.get("OSGEO_DB_PASSWORD", "")
+# Add parent directory to path for config import
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from config import config
 
 
 def get_connection_string() -> str:
-    """Build connection string from environment."""
-    parts = [f"dbname={DB_NAME}"]
-    if DB_HOST:
-        parts.append(f"host={DB_HOST}")
-    if DB_PORT:
-        parts.append(f"port={DB_PORT}")
-    if DB_USER:
-        parts.append(f"user={DB_USER}")
-    if DB_PASSWORD:
-        parts.append(f"password={DB_PASSWORD}")
+    """Build connection string from config."""
+    parts = [f"dbname={config.db_name}"]
+    if config.db_host:
+        parts.append(f"host={config.db_host}")
+    if config.db_port:
+        parts.append(f"port={config.db_port}")
+    if config.db_user:
+        parts.append(f"user={config.db_user}")
+    if config.db_password:
+        parts.append(f"password={config.db_password}")
     return " ".join(parts)
 
 
