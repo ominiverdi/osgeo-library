@@ -32,29 +32,7 @@ llama-server \
   ...
 ```
 
----
-
-## LaTeX Rendering: pdflatex + ImageMagick
-
-**Decision:** Use pdflatex to compile LaTeX, ImageMagick to convert to PNG.
-
-**Alternatives considered:**
-| Approach | Result |
-|----------|--------|
-| matplotlib mathtext | Limited LaTeX support, fails on `align*`, `cases`, matrices |
-| KaTeX (JS) | Would require Node.js, adds complexity |
-| MathJax (JS) | Same as KaTeX |
-| **pdflatex + convert** | **Full LaTeX support, already installed on most systems** |
-
-**Why:** Scientific papers use complex LaTeX (multi-line equations, special environments). matplotlib's mathtext only handles simple formulas. pdflatex handles everything.
-
----
-
-## Coordinate System: 0-1000 Scale
-
-**Decision:** Use Qwen3-VL's native 0-1000 relative coordinate system.
-
-**Why:** The model was trained with this scale. Trying to get pixel coordinates directly results in worse accuracy. Simple conversion: `pixel = coord * image_size / 1000`.
+**Coordinate system:** Qwen3-VL returns bounding boxes in a 0-1000 relative scale (not pixels). The model was trained with this scale, so requesting pixel coordinates directly results in worse accuracy. Conversion is simple: `pixel = coord * image_size / 1000`.
 
 ---
 
