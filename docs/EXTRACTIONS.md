@@ -1,10 +1,8 @@
 # Extractions
 
-Catalog of processed documents.
+Catalog of processed documents in `db/data/`.
 
-## Full Extraction (db/data/) - December 17, 2025
-
-All pages extracted with LLM element detection to `db/data/` structure.
+## Summary
 
 | Document | Pages | Figures | Tables | Equations | Size | Status |
 |----------|-------|---------|--------|-----------|------|--------|
@@ -12,11 +10,15 @@ All pages extracted with LLM element detection to `db/data/` structure.
 | Alpine Change | 23 | 6 | 8 | 0 | 14 MB | complete |
 | USGS Snyder | 397 | 53+ | 60+ | 651+ | 193 MB+ | in progress (238/397) |
 
+---
+
+## Batch Extraction - December 17, 2025
+
 ### Timing
 
 - **Started:** Tue Dec 16 23:44 CET
-- **sam3 finished:** Wed Dec 17 00:41 CET (~57 min for 52 new pages)
-- **alpine_change finished:** Wed Dec 17 00:53 CET (~12 min for 14 new pages)
+- **sam3 finished:** Wed Dec 17 00:41 CET (~57 min for 52 pages)
+- **alpine_change finished:** Wed Dec 17 00:53 CET (~12 min for 14 pages)
 - **usgs_snyder:** in progress, estimated completion ~13:00 CET
 
 ### Processing Rate
@@ -28,20 +30,7 @@ All pages extracted with LLM element detection to `db/data/` structure.
 | 4-6 elements | ~120-150s |
 | 8-10 elements | ~200-220s |
 
-Average overall: ~50-60s/page (varies heavily with element count)
-
----
-
-## Demo Extraction (web/data/) - December 16, 2025
-
-Partial extraction for web viewer demo. Only pages with detected elements.
-
-| Document | Pages | Figures | Tables | Equations | Rendered |
-|----------|-------|---------|--------|-----------|----------|
-| SAM3 | 12 | 8 | 8 | 3 | 3 |
-| USGS Snyder | 13 | 8 | 0 | 23 | 23 |
-| Alpine Change | 9 | 6 | 8 | 0 | 0 |
-| **Total** | **34** | **22** | **16** | **26** | **26** |
+Average: ~50-60s/page (varies with element count)
 
 ---
 
@@ -49,16 +38,7 @@ Partial extraction for web viewer demo. Only pages with detected elements.
 
 **File:** `sam3.pdf`  
 **Topic:** Segment Anything Model 3 - Promptable Concept Segmentation  
-**Output:** `db/data/sam3/` (full), `web/data/sam3/` (demo)
-
-### Full Extraction Stats (68 pages)
-- 26 figures
-- 42 tables
-- 7 equations (with LaTeX rendered)
-- 1 chart
-- 78 MB total
-
-### Notable Pages
+**Pages:** 68 | **Elements:** 76 (26 figures, 42 tables, 7 equations, 1 chart)
 
 | Page | Elements | Notes |
 |------|----------|-------|
@@ -81,15 +61,9 @@ Partial extraction for web viewer demo. Only pages with detected elements.
 
 **File:** `usgs_snyder1987.pdf`  
 **Topic:** Map Projections - A Working Manual  
-**Output:** `db/data/usgs_snyder/` (full), `web/data/usgs_snyder/` (demo)
+**Pages:** 397 | **Elements:** 764+ so far (53 figures, 60 tables, 651 equations)
 
-### Full Extraction Stats (397 pages) - IN PROGRESS
-- 53+ figures (so far)
-- 60+ tables (so far)
-- 651+ equations (so far) - this is a math-heavy book!
-- 193 MB+ (so far)
-
-### Notable Pages
+This is a math-heavy reference book with extensive projection formulas.
 
 | Page | Elements | Notes |
 |------|----------|-------|
@@ -111,15 +85,7 @@ Partial extraction for web viewer demo. Only pages with detected elements.
 
 **File:** `2511.00073v1.pdf`  
 **Topic:** Alpine habitat classification using deep learning  
-**Output:** `db/data/alpine_change/` (full), `web/data/alpine_change/` (demo)
-
-### Full Extraction Stats (23 pages)
-- 6 figures
-- 8 tables
-- 0 equations
-- 14 MB total
-
-### Notable Pages
+**Pages:** 23 | **Elements:** 14 (6 figures, 8 tables)
 
 | Page | Elements | Notes |
 |------|----------|-------|
@@ -137,16 +103,14 @@ Partial extraction for web viewer demo. Only pages with detected elements.
 
 ## Model Configuration
 
-**Model:** Qwen3-VL-235B (A22B-Instruct-UD-TQ1_0)  
-**Server:** llama.cpp on localhost:8090  
-**Context:** 8192 tokens  
-**Page DPI:** 150
+- **Model:** Qwen3-VL-235B (A22B-Instruct-UD-TQ1_0)
+- **Server:** llama.cpp on localhost:8090
+- **Context:** 8192 tokens
+- **Page DPI:** 150
 
 ---
 
 ## Storage Estimates
-
-Based on current extractions:
 
 | Per Page | Size |
 |----------|------|
@@ -158,12 +122,6 @@ Based on current extractions:
 
 ### Projection for 5000 PDFs
 
-Assuming average 50 pages/PDF:
-- 250,000 pages total
+Assuming average 50 pages/PDF = 250,000 pages:
 - ~300-375 GB storage
-- ~3,500-4,000 hours processing time (~5-6 months continuous)
-
-For batch processing at scale, consider:
-- Multiple GPU instances in parallel
-- Lower DPI for initial pass
-- Selective extraction (only pages with detected elements)
+- ~3,500-4,000 hours processing (~5-6 months continuous)
