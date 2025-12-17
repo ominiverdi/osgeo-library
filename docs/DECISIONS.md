@@ -66,13 +66,68 @@ PyMuPDF can only extract embedded raster images, which appear as fragments. Rend
 
 **Examples of extracted elements:**
 
-| Figure | Table |
-|--------|-------|
-| ![Figure example](images/example_figure.png) | ![Table example](images/example_table.png) |
+### Figures
 
-| Equation (crop from PDF) | Equation (LaTeX rendered) |
-|--------------------------|---------------------------|
+Figures include maps, photographs, and composite images. The model generates rich semantic descriptions that capture spatial relationships, labels, legends, and visual elements.
+
+| Extracted Image | Description |
+|-----------------|-------------|
+| ![Figure example](images/example_figure.png) | **Figure 1** *(alpine_change)*: Map of the study area showing the Gesäuse National Park in Styria, Austria, with overlays indicating the HabitAlp Dataset 2013 (blue), Cross-Temporal Dataset 2020 (orange), and the study area (red). The map includes a small inset of Austria with a red dot marking the location of the study area, a north arrow, and a scale bar (0-4 km). |
+
+---
+
+### Tables
+
+Tables are detected with their structure preserved. Descriptions summarize column headers, data types, and key content.
+
+| Extracted Image | Description |
+|-----------------|-------------|
+| ![Table example](images/example_table.png) | **Table 1** *(sam3)*: Evaluation on image concept segmentation with text. Contains performance metrics (CGF1, AP, Gold, Silver, Bronze, Bio, etc.) for various models including OWLv2, gDino-T, LLMDet-L, APE-D, DINO-X, Gemini 2.5, and SAM 3 across benchmarks like LVIS, SA-Co, COCO, ADE-847, PC-59, and Cityscapes. Includes human performance bounds for reference. |
+
+---
+
+### Charts
+
+Line charts, bar charts, and other data visualizations are captured with descriptions of axes, data series, and visual elements.
+
+| Extracted Image | Description |
+|-----------------|-------------|
+| ![Chart example](images/example_chart.png) | **Figure 6** *(sam3)*: Line chart comparing SAM 3's interactive exemplar prompts vs. ideal PVS baseline on SA-Co, showing CGF1 score (y-axis, 40-80 range) vs. number of box prompts (x-axis, 0-8). Shows three lines for positive exemplar, negative exemplar, and PVS performance curves. |
+
+---
+
+### Diagrams
+
+Flowcharts, architecture diagrams, and schematic illustrations are detected with descriptions of components, data flow, and relationships.
+
+| Extracted Image | Description |
+|-----------------|-------------|
+| ![Diagram example](images/example_diagram.png) | **Figure 2** *(alpine_change)*: Flow chart of the experimental framework showing the process from input data processing and labels processing to model training, change map generation, and model evaluation. It includes two approaches: Post-Classification CD and Direct CD (RGB only), with various models like Prithvi-EO-2.0, Clay 1.0, U-Net, and ChangeViT. The diagram also includes training and test sets, saved model states, and evaluation metrics such as IOU, OA, and F1 Score. |
+
+---
+
+### Equations
+
+Equations posed a unique challenge during extraction. While Qwen3-VL successfully detected equations and extracted their LaTeX notation with high accuracy, the **bounding boxes were the least precise** of all element types. Common issues included:
+
+- Bounding boxes extending into surrounding text
+- Partial cuts through subscripts or superscripts
+- Inclusion of equation numbers in the crop
+
+However, the **LaTeX extraction was remarkably accurate** - the model correctly identified mathematical symbols, Greek letters, subscripts, superscripts, and equation structure even from low-resolution page renders.
+
+**Solution:** We re-render equations from extracted LaTeX using pdflatex + ImageMagick. This produces clean, high-quality equation images regardless of bbox precision. Both the original crop and rendered version are stored.
+
+| Crop from PDF (imprecise bbox) | Re-rendered from LaTeX (clean) |
+|-------------------------------|-------------------------------|
 | ![Equation crop](images/example_equation_crop.png) | ![Equation rendered](images/example_equation_rendered.png) |
+
+**Extracted LaTeX** *(usgs_snyder, Equations 5-9/5-10)*:
+```latex
+\sin \phi = \sin \alpha \sin \phi' + \cos \alpha \cos \phi' \cos (\lambda' - \beta)
+```
+
+The crop (left) shows fuzzy edges and potential text bleeding from imprecise bbox detection. The rendered version (right) is pixel-perfect, generated directly from the extracted LaTeX. For downstream applications (search, display, embedding), the rendered version is preferred.
 
 ---
 
