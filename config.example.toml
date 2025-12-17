@@ -1,0 +1,43 @@
+# OSGeo Library Configuration
+# Copy this file to config.toml or config.local.toml and adjust for your environment
+# config.local.toml is gitignored and takes precedence
+
+[llm]
+# Local llama.cpp server
+url = "http://localhost:8080/v1/chat/completions"
+model = "qwen3-30b"
+api_key = ""  # Empty for local server
+
+# OpenRouter example (uncomment and set api_key):
+# url = "https://openrouter.ai/api/v1/chat/completions"
+# model = "qwen/qwen3-30b-a3b"
+# api_key = "sk-or-v1-..."
+
+temperature = 0.3
+max_tokens = 1024
+
+[embedding]
+url = "http://localhost:8094/embedding"
+dimensions = 1024
+
+[database]
+# PostgreSQL connection
+# Empty host = Unix socket (peer authentication)
+# Empty user = current Unix user
+# Empty password = peer auth or ~/.pgpass
+name = "osgeo_library"
+host = ""
+port = 5432
+user = ""
+password = ""
+
+[paths]
+# Path to extracted data (elements, page images)
+# Can be absolute or relative to repo root
+data_dir = "db/data"
+
+[display]
+# Terminal image preview sizes for chafa (width x height)
+chafa_size = "80x35"            # Default for figures/diagrams
+chafa_size_equation = "100x20"  # Wider for equations (usually horizontal)
+chafa_size_table = "100x40"     # Larger for tables

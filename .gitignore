@@ -23,6 +23,10 @@ pdfs/
 .vscode/
 .idea/
 
+# Local config (contains paths, api keys)
+config.local.toml
+config.toml
+
 # Database content (generated data - too large for git)
 db/data/
 
