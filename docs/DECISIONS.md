@@ -194,7 +194,18 @@ curl http://localhost:8094/embedding \
 
 ## Element Enrichment: Qwen3-30B-A3B
 
-**Decision:** Use Qwen3-30B-A3B (MoE, ~3B active params) for generating search_text descriptions.
+**What is enrichment?**
+
+When we extract elements (figures, tables, equations), the vision model provides a visual description: "Map showing the study area with colored overlays..." But this description alone isn't enough for good search. A researcher might search for "alpine habitat classification Austria" or "change detection methodology" - terms that aren't in the visual description but ARE in the surrounding page text.
+
+Enrichment generates a **search_text** field that connects each element to its page context:
+- What does this element explain in THIS section of the paper?
+- What technical terms would a researcher use to find it?
+- What domain/application is it relevant to?
+
+This search_text is what gets embedded and searched, not the raw visual description.
+
+**Decision:** Use Qwen3-30B-A3B (MoE, ~3B active params) for generating search_text.
 
 **Alternatives tested (Dec 2025):**
 
