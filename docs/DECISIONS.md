@@ -45,7 +45,7 @@ llama-server \
 |----------|--------|
 | OpenRouter (Gemini, Nova) | Rate limits, costs at scale |
 | Claude API | Tested: faster (~13s) but less precise bounding boxes |
-| **Local llama.cpp** | **No limits, no cost, precise bboxes** |
+| **Local llama.cpp** | **No limits, no API costs, precise bboxes** |
 
 **Claude comparison (Dec 2025):** We tested Claude on 10 pages with 27 elements. While faster (~13s vs ~90s avg), Claude's bounding boxes are noticeably looser - it estimates rather than detects with trained precision. See `web/comparison.html` for side-by-side results. Qwen3-VL's visual grounding training makes it significantly more accurate for this task.
 
