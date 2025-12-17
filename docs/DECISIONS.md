@@ -23,7 +23,7 @@ Why we chose X over Y.
 - `Qwen3-VL-235B-A22B-Instruct-UD-TQ1_0.gguf` - Main language model (quantized)
 - `mmproj-F16.gguf` - Multimodal projector (vision encoder bridge)
 
-The mmproj (multimodal projector) is essential - it bridges the vision encoder to the language model, enabling image understanding. Without it, the model cannot process images. Both files must be passed to llama-server:
+The mmproj (multimodal projector) bridges the vision encoder to the language model, translating image features into tokens the LLM can understand. Both files must be passed to llama-server for vision capabilities:
 
 ```bash
 llama-server \
