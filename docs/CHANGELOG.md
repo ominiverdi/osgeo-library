@@ -2,6 +2,13 @@
 
 Brief log of what changed and when.
 
+## 2025-12-18 (v0.1.2)
+
+- **CLI `--open` flag**: Open images in GUI viewer (xdg-open/open)
+  - Works with SSH tunneling: client runs locally, fetches images over tunnel
+  - Available in search command and chat mode (`open N`)
+- **Documentation**: Added GUI viewer section to CLIENT.md
+
 ## 2025-12-18 (v0.1.1)
 
 - **CLI image rendering improvements**

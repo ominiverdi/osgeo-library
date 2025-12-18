@@ -203,6 +203,11 @@ enum Commands {
         /// Display images in terminal: --show (first), --show 1, --show 1,3,5
         #[arg(long, value_name = "N", num_args = 0..=1, default_missing_value = "1")]
         show: Option<String>,
+
+        /// Open images in GUI viewer: --open (first), --open 1, --open 1,3,5
+        /// Requires X11 forwarding for remote access (ssh -X)
+        #[arg(long, value_name = "N", num_args = 0..=1, default_missing_value = "1")]
+        open: Option<String>,
     },
 
     /// Ask a question and get an LLM-powered answer with citations
@@ -344,6 +349,62 @@ impl OsgeoClient {
 
         // Fallback: just show path
         println!("(Install chafa for terminal preview: sudo apt install chafa)");
+        Ok(())
+    }
+
+    /// Fetch image from server and open in GUI viewer.
+    /// Uses xdg-open (Linux) or open (macOS). Requires X11 forwarding for remote access.
+    fn fetch_and_open_image(&self, url: &str) -> Result<()> {
+        // Check for DISPLAY (X11) on Linux
+        #[cfg(target_os = "linux")]
+        {
+            if std::env::var("DISPLAY").is_err() {
+                anyhow::bail!(
+                    "No DISPLAY set. For remote access, use: ssh -X user@server\n\
+                     Or use --show for terminal preview instead."
+                );
+            }
+        }
+
+        // Fetch image bytes from server
+        let response = self
+            .client
+            .get(url)
+            .send()
+            .context("Failed to fetch image")?;
+
+        if !response.status().is_success() {
+            anyhow::bail!("Image not found ({})", response.status());
+        }
+
+        let bytes = response.bytes().context("Failed to read image bytes")?;
+
+        // Write to temp file with unique name
+        let temp_path = std::env::temp_dir().join(format!(
+            "osgeo-library-{}.png",
+            std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap()
+                .as_millis()
+        ));
+        std::fs::write(&temp_path, &bytes).context("Failed to write temp file")?;
+
+        // Open with platform-appropriate command
+        #[cfg(target_os = "macos")]
+        let open_cmd = "open";
+        #[cfg(not(target_os = "macos"))]
+        let open_cmd = "xdg-open";
+
+        let status = Command::new(open_cmd)
+            .arg(&temp_path)
+            .status()
+            .context(format!("Failed to run {}", open_cmd))?;
+
+        if !status.success() {
+            anyhow::bail!("{} failed with status: {}", open_cmd, status);
+        }
+
+        println!("Opened: {}", temp_path.display());
         Ok(())
     }
 }
@@ -498,6 +559,7 @@ fn cmd_search(
     chunks_only: bool,
     element_type: Option<String>,
     show: Option<String>,
+    open: Option<String>,
 ) -> Result<()> {
     // If element_type is specified, force elements_only
     let elements_only = elements_only || element_type.is_some();
@@ -580,6 +642,44 @@ fn cmd_search(
                 let size = result.chafa_size();
                 if let Err(e) = client.fetch_and_display_image(&image_url, &size) {
                     println!("{}: {}", "Failed to display image".red(), e);
+                }
+            }
+        }
+    }
+
+    // Handle --open flag
+    if let Some(open_arg) = open {
+        let indices: Vec<usize> = open_arg
+            .split(',')
+            .filter_map(|s| s.trim().parse::<usize>().ok())
+            .map(|n| n.saturating_sub(1))
+            .collect();
+
+        if indices.is_empty() {
+            return Ok(());
+        }
+
+        for idx in indices {
+            if idx >= response.results.len() {
+                println!("Invalid index [{}]. Use 1-{}", idx + 1, response.results.len());
+                continue;
+            }
+
+            let result = &response.results[idx];
+
+            if result.source_type != "element" {
+                println!("[{}] is a text chunk, no image available.", idx + 1);
+                continue;
+            }
+
+            if let Some(image_path) = result.best_image_path() {
+                let image_url = format!(
+                    "{}/image/{}/{}",
+                    client.base_url, result.document_slug, image_path
+                );
+
+                if let Err(e) = client.fetch_and_open_image(&image_url) {
+                    println!("{}: {}", "Failed to open image".red(), e);
                 }
             }
         }
@@ -678,7 +778,8 @@ fn cmd_chat(client: &OsgeoClient) -> Result<()> {
 
                 if lower == "help" || lower == "?" {
                     println!("\n{}", "Commands:".bold());
-                    println!("  show <n>     Display element image (e.g., 'show 1' or 'show 1,2,3')");
+                    println!("  show <n>     Display element image in terminal (e.g., 'show 1' or 'show 1,2,3')");
+                    println!("  open <n>     Open element image in GUI viewer (requires X11 for remote)");
                     println!("  sources      Show sources from last answer");
                     println!("  clear        Clear conversation (not implemented yet)");
                     println!("  help         Show this help");
@@ -699,6 +800,12 @@ fn cmd_chat(client: &OsgeoClient) -> Result<()> {
                 if lower.starts_with("show ") {
                     let arg = &input[5..].trim();
                     handle_show_command(client, arg, &last_sources);
+                    continue;
+                }
+
+                if lower.starts_with("open ") {
+                    let arg = &input[5..].trim();
+                    handle_open_command(client, arg, &last_sources);
                     continue;
                 }
 
@@ -831,6 +938,64 @@ fn handle_show_command(client: &OsgeoClient, arg: &str, sources: &[SearchResult]
     }
 }
 
+fn handle_open_command(client: &OsgeoClient, arg: &str, sources: &[SearchResult]) {
+    if sources.is_empty() {
+        println!("No results to open. Ask a question first.\n");
+        return;
+    }
+
+    // Parse indices: "1,2,3" or "1 2 3"
+    let indices: Vec<usize> = arg
+        .split(|c: char| c == ',' || c.is_whitespace())
+        .filter_map(|s| s.trim().parse::<usize>().ok())
+        .map(|n| n.saturating_sub(1))
+        .collect();
+
+    if indices.is_empty() {
+        println!("Usage: open <number> or open 1,2,3\n");
+        return;
+    }
+
+    for idx in indices {
+        if idx >= sources.len() {
+            println!("Invalid index [{}]. Use 1-{}\n", idx + 1, sources.len());
+            continue;
+        }
+
+        let result = &sources[idx];
+
+        if result.source_type != "element" {
+            println!("[{}] is a text chunk, no image available.\n", idx + 1);
+            continue;
+        }
+
+        if let Some(image_path) = result.best_image_path() {
+            let elem_type = result
+                .element_type
+                .as_ref()
+                .map(|s| s.to_uppercase())
+                .unwrap_or_default();
+            let label = result.element_label.as_deref().unwrap_or("");
+
+            println!("Opening {}: {}", elem_type.yellow(), label);
+
+            let image_url = format!(
+                "{}/image/{}/{}",
+                client.base_url, result.document_slug, image_path
+            );
+
+            match client.fetch_and_open_image(&image_url) {
+                Ok(_) => {}
+                Err(e) => {
+                    println!("{}: {}", "Failed to open image".red(), e);
+                }
+            }
+        } else {
+            println!("[{}] has no image path.\n", idx + 1);
+        }
+    }
+}
+
 // -----------------------------------------------------------------------------
 // Main
 // -----------------------------------------------------------------------------
@@ -881,9 +1046,10 @@ fn main() -> Result<()> {
             chunks_only,
             r#type,
             show,
+            open,
         }) => {
             check_connection(&client)?;
-            cmd_search(&client, query, limit, document, elements_only, chunks_only, r#type, show)
+            cmd_search(&client, query, limit, document, elements_only, chunks_only, r#type, show, open)
         }
         Some(Commands::Ask {
             question,

@@ -163,6 +163,33 @@ osgeo-library stats
 
 Shows counts of documents and elements by type in the database.
 
+## GUI Image Viewer
+
+When using `--open` or the `open` command in chat mode, images are opened in your system's default image viewer.
+
+```bash
+# Open first result in GUI viewer
+osgeo-library search "mercator" -t equation --open
+
+# Open specific results
+osgeo-library search "habitat" -t figure --open 1,2,3
+```
+
+**How it works:** The client downloads the image from the server to a temp file, then opens it with `xdg-open` (Linux) or `open` (macOS).
+
+**Remote access:** When using SSH tunneling, run the client on your local machine (not on the server). The image viewer opens locally:
+
+```
+Local machine                      Remote server
+┌────────────────┐                ┌────────────────┐
+│ osgeo-library  │───HTTP:8095───►│ API server     │
+│ (client)       │◄───image data──│                │
+│                │                │                │
+│ Image viewer   │                │                │
+│ (opens here)   │                │                │
+└────────────────┘                └────────────────┘
+```
+
 ## Terminal Image Rendering
 
 When using `--show` or the `show` command in chat mode, images are rendered in your terminal using chafa.
