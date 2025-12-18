@@ -25,6 +25,16 @@ from dataclasses import dataclass
 from db.connection import fetch_all, fetch_one
 from embeddings.embed import get_embedding, check_server
 
+# Score threshold: filter results below 20% relevance (distance > 0.94)
+# See docs/ARCHITECTURE.md for scoring details
+SCORE_THRESHOLD_PCT = 20
+DISTANCE_THRESHOLD = 1.0 - (SCORE_THRESHOLD_PCT / 100 * 0.3)  # 0.94
+
+
+def _score_from_distance(distance: float) -> float:
+    """Convert L2 distance to percentage score (0-100)."""
+    return max(0, min(100, (1.0 - distance) / 0.3 * 100))
+
 
 @dataclass
 class SearchResult:
@@ -84,6 +94,9 @@ def search(
 
     # Sort by score (lower distance = better match)
     results.sort(key=lambda r: r.score)
+
+    # Filter out low-relevance results (below threshold)
+    results = [r for r in results if r.score <= DISTANCE_THRESHOLD]
 
     return results[:limit]
 
@@ -289,9 +302,7 @@ def get_chunk_context(chunk_id: int, context_chunks: int = 2) -> List[Dict[str, 
 def format_result(result: SearchResult, verbose: bool = False) -> str:
     """Format a search result for display."""
     lines = []
-    # Cosine distance: 0=identical, 1=orthogonal
-    # Typical search results range 0.7-1.0, rescale to 0-100%
-    score_pct = max(0, min(100, (1 - result.score) / 0.3 * 100))
+    score_pct = _score_from_distance(result.score)
 
     if result.source_type == "element":
         elem_type = result.element_type.upper() if result.element_type else "UNKNOWN"

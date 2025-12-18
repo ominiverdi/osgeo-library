@@ -114,6 +114,39 @@ Query -> Embed (BGE-M3) -> Vector similarity (pgvector)
                           Ranked results with scores
 ```
 
+## Search Scoring
+
+The search uses L2 (Euclidean) distance with BGE-M3 normalized embeddings.
+
+### Distance Ranges
+
+| Query Type | Distance | Score | Description |
+|------------|----------|-------|-------------|
+| Exact content match | 0.30-0.60 | 100% | Using database content as query |
+| Highly specific semantic | 0.75-0.82 | 60-84% | "map projection distortion" |
+| Moderately specific | 0.82-0.87 | 43-60% | "Lambert conformal conic equations" |
+| General in-domain | 0.87-0.92 | 27-43% | "neural network training" |
+| Weak/tangential | 0.92-0.94 | 20-27% | Marginal relevance |
+| Out of domain | >1.0 | 0% | "chocolate cake recipe" |
+
+### Score Formula
+
+```python
+score_pct = max(0, min(100, (1.0 - distance) / 0.3 * 100))
+```
+
+This maps:
+- distance <= 0.70 -> 100% (exact/near-exact matches)
+- distance 0.70-1.0 -> 100%-0% (linear scale)
+- distance >= 1.0 -> 0% (out of domain)
+
+### Threshold
+
+Results with score < 20% (distance > 0.94) are filtered out as they typically match:
+- Bibliography/reference sections
+- Index entries
+- Incidental keyword matches in unrelated contexts
+
 ## Servers
 
 | Service | Port | Model |

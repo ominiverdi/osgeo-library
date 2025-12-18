@@ -35,6 +35,7 @@ from search_service import (
     search_elements,
     SearchResult,
     check_server as check_embed_server,
+    _score_from_distance,
 )
 from config import config
 
@@ -172,9 +173,7 @@ def format_sources(results: List[SearchResult]) -> str:
     lines = []
     for i, r in enumerate(results, 1):
         tag = get_source_tag(r)
-        # Cosine distance: 0=identical, 1=orthogonal
-        # Typical search results range 0.7-1.0, rescale to 0-100%
-        score_pct = max(0, min(100, (1 - r.score) / 0.3 * 100))
+        score_pct = _score_from_distance(r.score)
         if r.source_type == "element":
             lines.append(
                 f"[{tag}:{i}] {r.element_type.upper()}: {r.element_label} "
