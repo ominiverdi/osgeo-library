@@ -221,7 +221,7 @@ impl OsgeoClient {
         response.json().context("Failed to parse chat response")
     }
 
-    fn fetch_and_display_image(&self, url: &str) -> Result<()> {
+    fn fetch_and_display_image(&self, url: &str, element_type: Option<&str>) -> Result<()> {
         // Fetch image bytes from server
         let response = self
             .client
@@ -239,6 +239,16 @@ impl OsgeoClient {
         let temp_path = std::env::temp_dir().join("osgeo-library-image.png");
         std::fs::write(&temp_path, &bytes).context("Failed to write temp file")?;
 
+        // Choose size based on element type
+        let size = match element_type {
+            Some("equation") => "100x15",   // Wide and short for equations
+            Some("table") => "100x50",      // Large for tables
+            Some("chart") => "90x40",       // Medium-large for charts
+            Some("diagram") => "90x40",     // Medium-large for diagrams
+            Some("figure") => "80x35",      // Standard for figures
+            _ => "80x35",                   // Default
+        };
+
         // Display with chafa if available
         if Command::new("which")
             .arg("chafa")
@@ -247,7 +257,7 @@ impl OsgeoClient {
             .unwrap_or(false)
         {
             let status = Command::new("chafa")
-                .args(["--size", "80x35", temp_path.to_str().unwrap()])
+                .args(["--size", size, temp_path.to_str().unwrap()])
                 .status();
 
             if let Ok(s) = status {
@@ -493,7 +503,7 @@ fn cmd_search(
                     client.base_url, result.document_slug, crop_path
                 );
 
-                if let Err(e) = client.fetch_and_display_image(&image_url) {
+                if let Err(e) = client.fetch_and_display_image(&image_url, result.element_type.as_deref()) {
                     println!("{}: {}", "Failed to display image".red(), e);
                 }
             }
@@ -727,7 +737,7 @@ fn handle_show_command(client: &OsgeoClient, arg: &str, sources: &[SearchResult]
                 client.base_url, result.document_slug, crop_path
             );
 
-            match client.fetch_and_display_image(&image_url) {
+            match client.fetch_and_display_image(&image_url, result.element_type.as_deref()) {
                 Ok(_) => {}
                 Err(e) => {
                     println!("{}: {}", "Failed to display image".red(), e);
