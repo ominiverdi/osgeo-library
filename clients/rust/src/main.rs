@@ -28,6 +28,8 @@ struct SearchRequest {
     document_slug: Option<String>,
     include_chunks: bool,
     include_elements: bool,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    element_type: Option<String>,
 }
 
 #[derive(Debug, Serialize)]
@@ -115,6 +117,10 @@ enum Commands {
         /// Show only text chunks
         #[arg(long)]
         chunks_only: bool,
+
+        /// Filter by element type (figure, table, equation, chart, diagram)
+        #[arg(short, long)]
+        r#type: Option<String>,
     },
 
     /// Ask a question (one-shot)
@@ -402,13 +408,18 @@ fn cmd_search(
     document: Option<String>,
     elements_only: bool,
     chunks_only: bool,
+    element_type: Option<String>,
 ) -> Result<()> {
+    // If element_type is specified, force elements_only
+    let elements_only = elements_only || element_type.is_some();
+    
     let req = SearchRequest {
         query: query.clone(),
         limit,
         document_slug: document,
         include_chunks: !elements_only,
         include_elements: !chunks_only,
+        element_type,
     };
 
     println!("{}: {}", "Searching".dimmed(), query);
@@ -723,9 +734,10 @@ fn main() -> Result<()> {
             document,
             elements_only,
             chunks_only,
+            r#type,
         }) => {
             check_connection(&client)?;
-            cmd_search(&client, query, limit, document, elements_only, chunks_only)
+            cmd_search(&client, query, limit, document, elements_only, chunks_only, r#type)
         }
         Some(Commands::Ask {
             question,
