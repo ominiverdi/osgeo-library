@@ -121,6 +121,10 @@ enum Commands {
         /// Filter by element type (figure, table, equation, chart, diagram)
         #[arg(short, long)]
         r#type: Option<String>,
+
+        /// Show images: --show (first), --show 1, --show 1,3,5
+        #[arg(long, value_name = "N", num_args = 0..=1, default_missing_value = "1")]
+        show: Option<String>,
     },
 
     /// Ask a question (one-shot)
@@ -409,6 +413,7 @@ fn cmd_search(
     elements_only: bool,
     chunks_only: bool,
     element_type: Option<String>,
+    show: Option<String>,
 ) -> Result<()> {
     // If element_type is specified, force elements_only
     let elements_only = elements_only || element_type.is_some();
@@ -439,6 +444,60 @@ fn cmd_search(
     for (i, result) in response.results.iter().enumerate() {
         println!("{}", format_result(i + 1, result, true));
         println!();
+    }
+
+    // Handle --show flag
+    if let Some(show_arg) = show {
+        // Parse indices: "1" or "1,3,5"
+        let indices: Vec<usize> = show_arg
+            .split(',')
+            .filter_map(|s| s.trim().parse::<usize>().ok())
+            .map(|n| n.saturating_sub(1)) // Convert to 0-indexed
+            .collect();
+
+        if indices.is_empty() {
+            return Ok(());
+        }
+
+        println!("{}", "=".repeat(40));
+
+        for idx in indices {
+            if idx >= response.results.len() {
+                println!("Invalid index [{}]. Use 1-{}", idx + 1, response.results.len());
+                continue;
+            }
+
+            let result = &response.results[idx];
+
+            if result.source_type != "element" {
+                println!("[{}] is a text chunk, no image available.", idx + 1);
+                continue;
+            }
+
+            if let Some(crop_path) = &result.crop_path {
+                let elem_type = result
+                    .element_type
+                    .as_ref()
+                    .map(|s| s.to_uppercase())
+                    .unwrap_or_default();
+                let label = result.element_label.as_deref().unwrap_or("");
+
+                println!("\n{}: {}", elem_type.yellow(), label);
+                println!(
+                    "From: {}, page {}\n",
+                    result.document_title, result.page_number
+                );
+
+                let image_url = format!(
+                    "{}/image/{}/{}",
+                    client.base_url, result.document_slug, crop_path
+                );
+
+                if let Err(e) = client.fetch_and_display_image(&image_url) {
+                    println!("{}: {}", "Failed to display image".red(), e);
+                }
+            }
+        }
     }
 
     Ok(())
@@ -735,9 +794,10 @@ fn main() -> Result<()> {
             elements_only,
             chunks_only,
             r#type,
+            show,
         }) => {
             check_connection(&client)?;
-            cmd_search(&client, query, limit, document, elements_only, chunks_only, r#type)
+            cmd_search(&client, query, limit, document, elements_only, chunks_only, r#type, show)
         }
         Some(Commands::Ask {
             question,
