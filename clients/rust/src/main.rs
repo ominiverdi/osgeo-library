@@ -52,7 +52,64 @@ struct SearchResult {
     element_type: Option<String>,
     element_label: Option<String>,
     crop_path: Option<String>,
+    rendered_path: Option<String>,  // For equations: LaTeX-rendered image
+    image_width: Option<i32>,       // Image dimensions for proportional display
+    image_height: Option<i32>,
     chunk_index: Option<i32>,
+}
+
+impl SearchResult {
+    /// Get the best image path for display.
+    /// For equations, prefer rendered_path (clean LaTeX) over crop_path (raw crop).
+    fn best_image_path(&self) -> Option<&str> {
+        // For equations, prefer rendered version if available
+        if self.element_type.as_deref() == Some("equation") {
+            if let Some(ref rendered) = self.rendered_path {
+                return Some(rendered.as_str());
+            }
+        }
+        // Fall back to crop_path for all other types or if rendered not available
+        self.crop_path.as_deref()
+    }
+    
+    /// Calculate chafa size string based on actual image dimensions.
+    /// Scales to fit within max terminal width while preserving aspect ratio.
+    fn chafa_size(&self) -> String {
+        const MAX_WIDTH: i32 = 100;  // Max terminal columns
+        const MAX_HEIGHT: i32 = 40;  // Max terminal rows
+        
+        match (self.image_width, self.image_height) {
+            (Some(w), Some(h)) if w > 0 && h > 0 => {
+                // Terminal chars are roughly 2:1 aspect ratio (taller than wide)
+                // So we need to adjust: effective_height = height / 2
+                let aspect = w as f64 / h as f64;
+                
+                // Scale to fit max width first
+                let mut cols = MAX_WIDTH;
+                let mut rows = (cols as f64 / aspect / 2.0).ceil() as i32;
+                
+                // If too tall, scale down by height
+                if rows > MAX_HEIGHT {
+                    rows = MAX_HEIGHT;
+                    cols = (rows as f64 * aspect * 2.0).ceil() as i32;
+                }
+                
+                // Minimum sizes
+                cols = cols.max(20);
+                rows = rows.max(5);
+                
+                format!("{}x{}", cols, rows)
+            }
+            _ => {
+                // Fallback based on element type
+                match self.element_type.as_deref() {
+                    Some("equation") => "100x15".to_string(),
+                    Some("table") => "100x40".to_string(),
+                    _ => "80x35".to_string(),
+                }
+            }
+        }
+    }
 }
 
 #[derive(Debug, Deserialize)]
@@ -221,7 +278,7 @@ impl OsgeoClient {
         response.json().context("Failed to parse chat response")
     }
 
-    fn fetch_and_display_image(&self, url: &str, element_type: Option<&str>) -> Result<()> {
+    fn fetch_and_display_image(&self, url: &str, size: &str) -> Result<()> {
         // Fetch image bytes from server
         let response = self
             .client
@@ -238,16 +295,6 @@ impl OsgeoClient {
         // Write to temp file
         let temp_path = std::env::temp_dir().join("osgeo-library-image.png");
         std::fs::write(&temp_path, &bytes).context("Failed to write temp file")?;
-
-        // Choose size based on element type
-        let size = match element_type {
-            Some("equation") => "100x15",   // Wide and short for equations
-            Some("table") => "100x50",      // Large for tables
-            Some("chart") => "90x40",       // Medium-large for charts
-            Some("diagram") => "90x40",     // Medium-large for diagrams
-            Some("figure") => "80x35",      // Standard for figures
-            _ => "80x35",                   // Default
-        };
 
         // Display with chafa if available
         if Command::new("which")
@@ -484,7 +531,7 @@ fn cmd_search(
                 continue;
             }
 
-            if let Some(crop_path) = &result.crop_path {
+            if let Some(image_path) = result.best_image_path() {
                 let elem_type = result
                     .element_type
                     .as_ref()
@@ -500,10 +547,11 @@ fn cmd_search(
 
                 let image_url = format!(
                     "{}/image/{}/{}",
-                    client.base_url, result.document_slug, crop_path
+                    client.base_url, result.document_slug, image_path
                 );
 
-                if let Err(e) = client.fetch_and_display_image(&image_url, result.element_type.as_deref()) {
+                let size = result.chafa_size();
+                if let Err(e) = client.fetch_and_display_image(&image_url, &size) {
                     println!("{}: {}", "Failed to display image".red(), e);
                 }
             }
@@ -717,7 +765,7 @@ fn handle_show_command(client: &OsgeoClient, arg: &str, sources: &[SearchResult]
             continue;
         }
 
-        if let Some(crop_path) = &result.crop_path {
+        if let Some(image_path) = result.best_image_path() {
             let elem_type = result
                 .element_type
                 .as_ref()
@@ -734,10 +782,11 @@ fn handle_show_command(client: &OsgeoClient, arg: &str, sources: &[SearchResult]
             // Fetch image from server and display with chafa
             let image_url = format!(
                 "{}/image/{}/{}",
-                client.base_url, result.document_slug, crop_path
+                client.base_url, result.document_slug, image_path
             );
 
-            match client.fetch_and_display_image(&image_url, result.element_type.as_deref()) {
+            let size = result.chafa_size();
+            match client.fetch_and_display_image(&image_url, &size) {
                 Ok(_) => {}
                 Err(e) => {
                     println!("{}: {}", "Failed to display image".red(), e);
@@ -745,7 +794,7 @@ fn handle_show_command(client: &OsgeoClient, arg: &str, sources: &[SearchResult]
                         "{}: {}/{}",
                         "Image path".dimmed(),
                         result.document_slug,
-                        crop_path
+                        image_path
                     );
                 }
             }

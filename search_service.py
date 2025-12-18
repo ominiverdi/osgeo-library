@@ -51,6 +51,7 @@ class SearchResult:
     element_type: Optional[str] = None
     element_label: Optional[str] = None
     crop_path: Optional[str] = None
+    rendered_path: Optional[str] = None  # For equations: LaTeX-rendered image
     # Chunk-specific fields
     chunk_index: Optional[int] = None
 
@@ -225,6 +226,7 @@ def _search_elements_by_vector(
             e.description,
             e.search_text,
             e.crop_path,
+            e.rendered_path,
             e.embedding <-> %s::vector AS distance,
             d.slug AS document_slug,
             d.title AS document_title,
@@ -251,6 +253,7 @@ def _search_elements_by_vector(
             element_type=row["element_type"],
             element_label=row["label"],
             crop_path=row["crop_path"],
+            rendered_path=row["rendered_path"],
         )
         for row in rows
     ]

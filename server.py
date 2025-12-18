@@ -27,12 +27,13 @@ import os
 import re
 from dataclasses import asdict
 from pathlib import Path
-from typing import List, Optional
+from typing import List, Optional, Tuple
 
 from fastapi import FastAPI, HTTPException
 from fastapi.responses import FileResponse
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
+from PIL import Image
 
 from config import config
 from search_service import (
@@ -98,6 +99,9 @@ class SearchResultResponse(BaseModel):
     element_type: Optional[str] = None
     element_label: Optional[str] = None
     crop_path: Optional[str] = None
+    rendered_path: Optional[str] = None  # For equations: LaTeX-rendered image
+    image_width: Optional[int] = None  # Image dimensions for proportional display
+    image_height: Optional[int] = None
     # Chunk-specific
     chunk_index: Optional[int] = None
 
@@ -144,8 +148,37 @@ class HealthResponse(BaseModel):
 # -----------------------------------------------------------------------------
 
 
+def get_image_dimensions(
+    document_slug: str, image_path: str
+) -> Tuple[Optional[int], Optional[int]]:
+    """Get image width and height. Returns (None, None) if image not found."""
+    if not image_path:
+        return None, None
+    try:
+        full_path = Path(config.data_dir) / document_slug / image_path
+        if full_path.exists():
+            with Image.open(full_path) as img:
+                return img.size  # (width, height)
+    except Exception:
+        pass
+    return None, None
+
+
+def get_best_image_path(r: SearchResult) -> Optional[str]:
+    """Get the best image path for display. Prefers rendered_path for equations."""
+    if r.element_type == "equation" and r.rendered_path:
+        return r.rendered_path
+    return r.crop_path
+
+
 def result_to_response(r: SearchResult) -> SearchResultResponse:
     """Convert internal SearchResult to API response."""
+    # Determine best image path and get its dimensions
+    best_path = get_best_image_path(r)
+    width, height = (
+        get_image_dimensions(r.document_slug, best_path) if best_path else (None, None)
+    )
+
     return SearchResultResponse(
         id=r.id,
         score_pct=round(_score_from_distance(r.score), 1),
@@ -157,6 +190,9 @@ def result_to_response(r: SearchResult) -> SearchResultResponse:
         element_type=r.element_type,
         element_label=r.element_label,
         crop_path=r.crop_path,
+        rendered_path=r.rendered_path,
+        image_width=width,
+        image_height=height,
         chunk_index=r.chunk_index,
     )
 
