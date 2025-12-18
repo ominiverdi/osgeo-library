@@ -289,7 +289,9 @@ def get_chunk_context(chunk_id: int, context_chunks: int = 2) -> List[Dict[str, 
 def format_result(result: SearchResult, verbose: bool = False) -> str:
     """Format a search result for display."""
     lines = []
-    score_pct = max(0, (1 - result.score) * 100)
+    # Cosine distance: 0=identical, 1=orthogonal
+    # Typical search results range 0.7-1.0, rescale to 0-100%
+    score_pct = max(0, min(100, (1 - result.score) / 0.3 * 100))
 
     if result.source_type == "element":
         elem_type = result.element_type.upper() if result.element_type else "UNKNOWN"
