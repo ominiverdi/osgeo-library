@@ -72,11 +72,17 @@ impl SearchResult {
         self.crop_path.as_deref()
     }
     
-    /// Calculate chafa size string based on actual image dimensions.
-    /// Scales to fit within max terminal width while preserving aspect ratio.
+    /// Calculate chafa size string based on actual image dimensions and terminal size.
+    /// Scales to fit within terminal while preserving aspect ratio.
     fn chafa_size(&self) -> String {
-        const MAX_WIDTH: i32 = 100;  // Max terminal columns
-        const MAX_HEIGHT: i32 = 40;  // Max terminal rows
+        // Get actual terminal size, with sensible defaults
+        let (term_width, term_height) = terminal_size::terminal_size()
+            .map(|(w, h)| (w.0 as i32, h.0 as i32))
+            .unwrap_or((120, 40));
+        
+        // Leave some margin for borders and text
+        let max_width = (term_width - 4).max(40);
+        let max_height = (term_height - 8).max(20);  // Leave room for header/footer
         
         match (self.image_width, self.image_height) {
             (Some(w), Some(h)) if w > 0 && h > 0 => {
@@ -85,21 +91,21 @@ impl SearchResult {
                 let aspect = w as f64 / h as f64;
                 
                 // Scale to fit max width first
-                let mut cols = MAX_WIDTH;
+                let mut cols = max_width;
                 let mut rows = (cols as f64 / aspect / 2.0).ceil() as i32;
                 
                 // If too tall, scale down by height
-                if rows > MAX_HEIGHT {
-                    rows = MAX_HEIGHT;
+                if rows > max_height {
+                    rows = max_height;
                     cols = (rows as f64 * aspect * 2.0).ceil() as i32;
                 }
                 
                 // Minimum sizes - tables need more height for readability
                 cols = cols.max(20);
                 let min_rows = match self.element_type.as_deref() {
-                    Some("table") => 20,    // Tables need more vertical space
-                    Some("equation") => 8,  // Equations are typically short
-                    _ => 10,                // Default minimum
+                    Some("table") => 15,    // Tables need more vertical space
+                    Some("equation") => 6,  // Equations are typically short
+                    _ => 8,                 // Default minimum
                 };
                 rows = rows.max(min_rows);
                 
@@ -107,10 +113,11 @@ impl SearchResult {
             }
             _ => {
                 // Fallback based on element type
+                let fallback_width = max_width.min(100);
                 match self.element_type.as_deref() {
-                    Some("equation") => "100x15".to_string(),
-                    Some("table") => "100x40".to_string(),
-                    _ => "80x35".to_string(),
+                    Some("equation") => format!("{}x12", fallback_width),
+                    Some("table") => format!("{}x{}", fallback_width, max_height.min(40)),
+                    _ => format!("{}x{}", fallback_width.min(80), max_height.min(35)),
                 }
             }
         }
