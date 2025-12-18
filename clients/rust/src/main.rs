@@ -316,7 +316,13 @@ impl OsgeoClient {
             .unwrap_or(false)
         {
             let status = Command::new("chafa")
-                .args(["--size", size, temp_path.to_str().unwrap()])
+                .args([
+                    "--size", size,
+                    "--symbols", "all",     // Use all symbols for better detail
+                    "-w", "9",              // Work hardest for best quality
+                    "-c", "full",           // Full 24-bit color
+                    temp_path.to_str().unwrap()
+                ])
                 .status();
 
             if let Ok(s) = status {
