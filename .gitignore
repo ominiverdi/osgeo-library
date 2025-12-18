@@ -32,3 +32,6 @@ db/data/
 
 # Web viewer data (sample extractions for demo)
 # Uncomment to exclude: web/data/
+
+# Rust build artifacts
+clients/rust/target/

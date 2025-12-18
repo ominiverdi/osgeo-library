@@ -333,4 +333,124 @@ pip install requests psycopg2-binary langchain langchain-community
 5. **Run CLI:**
 ```bash
 python chat_cli.py
+```
+
+## Client-Server Architecture
+
+For multi-user access, the system uses a client-server model:
+
+```
+Users: alice, bob, darkblueb
+  |
+  +-- osgeo-lib (Rust CLI) --+
+                              | HTTP localhost:8095
+                              v
+  +--------------------------------------------+
+  | osgeo-library server (Python FastAPI)      |
+  | runs as: ominiverdi                        |
+  | owns: config.toml, API keys, DB access     |
+  +------+----------------+----------+---------+
+         |                |          |
+         v                v          v
+     BGE-M3:8094     PostgreSQL   OpenRouter API
+```
+
+### Components
+
+| Component | Description |
+|-----------|-------------|
+| `server.py` | FastAPI server with `/search`, `/chat`, `/health` endpoints |
+| `clients/rust/` | Lightweight Rust CLI `osgeo-library` (2MB static binary) |
+| `servers/start-server.sh` | Startup script for the API server |
+
+### API Endpoints
+
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/health` | GET | Server status and dependency checks |
+| `/search` | POST | Semantic search over documents |
+| `/chat` | POST | Search + LLM-powered response |
+| `/element/{id}` | GET | Get element details by ID |
+
+### Server Setup
+
+**Start the server (one-time or testing):**
+```bash
+./servers/start-server.sh
+```
+
+**Auto-start on reboot (cron):**
+```bash
+crontab -e
+# Add this line:
+@reboot ~/github/osgeo-library/servers/start-server.sh >> ~/logs/osgeo-library.log 2>&1
+```
+
+**Verify:**
+```bash
+curl http://localhost:8095/health
+```
+
+### Rust CLI Installation
+
+**Build from source:**
+```bash
+cd clients/rust
+cargo build --release
+sudo cp target/release/osgeo-library /usr/local/bin/
+```
+
+**Usage:**
+```bash
+# Interactive chat (default)
+osgeo-library
+
+# Search documents
+osgeo-library search "transverse mercator projection"
+
+# One-shot question
+osgeo-library ask "What is the UTM projection?"
+
+# Check server status
+osgeo-library health
+```
+
+### Remote Access (SSH Port Forwarding)
+
+To use the CLI from a remote machine:
+
+```bash
+# Set up SSH tunnel (in one terminal)
+ssh -L 8095:localhost:8095 osgeo7-gallery
+
+# Run CLI locally (in another terminal)
+osgeo-lib
+```
+
+**Convenience setup** - add to `~/.ssh/config`:
+```
+Host osgeo-lib
+    HostName osgeo7-gallery
+    LocalForward 8095 localhost:8095
+```
+
+Then just: `ssh osgeo-lib` and run `osgeo-library` locally.
+
+### Connection Errors
+
+If the server is not accessible, the CLI shows helpful guidance:
+
+```
+Error: Could not connect to server at localhost:8095
+
+The osgeo-library server is not running or not accessible.
+
+If you're on the server (osgeo7-gallery):
+  - Check if the server is running: systemctl status osgeo-library
+  - Start the server: sudo systemctl start osgeo-library
+
+If you're on a remote machine:
+  - Set up SSH port forwarding:
+    ssh -L 8095:localhost:8095 osgeo7-gallery
+```
 

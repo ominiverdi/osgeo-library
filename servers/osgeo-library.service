@@ -1,0 +1,56 @@
+# OSGeo Library API Server - systemd service (for future use)
+#
+# NOTE: Currently using cron @reboot instead. This file is kept for
+# reference if a proper system service is needed later.
+#
+# Quick setup with cron (no admin needed):
+#   crontab -e
+#   @reboot ~/github/osgeo-library/servers/start-server.sh >> ~/logs/osgeo-library.log 2>&1
+#
+# ---
+#
+# System service install (requires admin):
+#   sudo cp servers/osgeo-library.service /etc/systemd/system/
+#   sudo systemctl daemon-reload
+#   sudo systemctl enable osgeo-library
+#   sudo systemctl start osgeo-library
+#
+# Check status:
+#   systemctl status osgeo-library
+#   journalctl -u osgeo-library -f
+#
+# Test:
+#   curl http://localhost:8095/health
+
+[Unit]
+Description=OSGeo Library API Server
+After=network.target postgresql.service
+Wants=postgresql.service
+
+[Service]
+Type=simple
+User=ominiverdi
+Group=ominiverdi
+
+# Paths - adjust for your installation
+WorkingDirectory=/home/ominiverdi/github/osgeo-library
+Environment="PATH=/home/ominiverdi/github/osgeo-library/.venv/bin:/usr/local/bin:/usr/bin:/bin"
+
+# Server command
+ExecStart=/home/ominiverdi/github/osgeo-library/.venv/bin/uvicorn server:app --host 127.0.0.1 --port 8095
+
+# Restart on failure
+Restart=on-failure
+RestartSec=5
+
+# Security hardening
+NoNewPrivileges=true
+PrivateTmp=true
+
+# Logging
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=osgeo-library
+
+[Install]
+WantedBy=multi-user.target
