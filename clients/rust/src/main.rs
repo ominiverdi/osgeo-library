@@ -153,8 +153,17 @@ struct HealthResponse {
 
 #[derive(Parser)]
 #[command(name = "osgeo-library")]
-#[command(about = "Search and chat with the OSGeo Library", long_about = None)]
+#[command(about = "Search and chat with the OSGeo Library")]
 #[command(version)]
+#[command(after_help = "EXAMPLES:
+    osgeo-library                              Start interactive chat
+    osgeo-library search \"mercator projection\" Search all content
+    osgeo-library search \"area\" -t equation    Search only equations
+    osgeo-library search \"habitat\" -t table --show   Search tables, display image
+    osgeo-library ask \"What is SAM?\"           One-shot question
+
+ELEMENT TYPES (-t):
+    figure, table, equation, chart, diagram")]
 struct Cli {
     /// Server URL (default: http://127.0.0.1:8095)
     #[arg(short, long, env = "OSGEO_SERVER_URL")]
@@ -166,7 +175,7 @@ struct Cli {
 
 #[derive(Subcommand)]
 enum Commands {
-    /// Search documents
+    /// Search documents (text chunks and elements)
     Search {
         /// Search query
         query: String,
@@ -187,16 +196,16 @@ enum Commands {
         #[arg(long)]
         chunks_only: bool,
 
-        /// Filter by element type (figure, table, equation, chart, diagram)
-        #[arg(short, long)]
+        /// Filter by element type: figure, table, equation, chart, diagram
+        #[arg(short, long, value_name = "TYPE")]
         r#type: Option<String>,
 
-        /// Show images: --show (first), --show 1, --show 1,3,5
+        /// Display images in terminal: --show (first), --show 1, --show 1,3,5
         #[arg(long, value_name = "N", num_args = 0..=1, default_missing_value = "1")]
         show: Option<String>,
     },
 
-    /// Ask a question (one-shot)
+    /// Ask a question and get an LLM-powered answer with citations
     Ask {
         /// Your question
         question: String,
@@ -210,10 +219,10 @@ enum Commands {
         document: Option<String>,
     },
 
-    /// Interactive chat mode (default)
+    /// Interactive chat mode (default when no command given)
     Chat,
 
-    /// Check server health
+    /// Check server health and connectivity
     Health,
 }
 
