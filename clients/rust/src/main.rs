@@ -210,6 +210,48 @@ impl OsgeoClient {
 
         response.json().context("Failed to parse chat response")
     }
+
+    fn fetch_and_display_image(&self, url: &str) -> Result<()> {
+        // Fetch image bytes from server
+        let response = self
+            .client
+            .get(url)
+            .send()
+            .context("Failed to fetch image")?;
+
+        if !response.status().is_success() {
+            anyhow::bail!("Image not found ({})", response.status());
+        }
+
+        let bytes = response.bytes().context("Failed to read image bytes")?;
+
+        // Write to temp file
+        let temp_path = std::env::temp_dir().join("osgeo-library-image.png");
+        std::fs::write(&temp_path, &bytes).context("Failed to write temp file")?;
+
+        // Display with chafa if available
+        if Command::new("which")
+            .arg("chafa")
+            .output()
+            .map(|o| o.status.success())
+            .unwrap_or(false)
+        {
+            let status = Command::new("chafa")
+                .args(["--size", "80x35", temp_path.to_str().unwrap()])
+                .status();
+
+            if let Ok(s) = status {
+                if s.success() {
+                    println!();
+                    return Ok(());
+                }
+            }
+        }
+
+        // Fallback: just show path
+        println!("(Install chafa for terminal preview: sudo apt install chafa)");
+        Ok(())
+    }
 }
 
 // -----------------------------------------------------------------------------
@@ -325,31 +367,6 @@ fn format_sources(sources: &[SearchResult]) -> String {
         .join("\n")
 }
 
-fn show_image(path: &str) {
-    // Check if chafa is available
-    if Command::new("which")
-        .arg("chafa")
-        .output()
-        .map(|o| o.status.success())
-        .unwrap_or(false)
-    {
-        let status = Command::new("chafa")
-            .args(["--size", "80x35", path])
-            .status();
-
-        match status {
-            Ok(s) if s.success() => {
-                println!("\n{}: {}", "Path".dimmed(), path);
-            }
-            _ => {
-                println!("Failed to display image: {}", path);
-            }
-        }
-    } else {
-        println!("{}: {}", "Image".dimmed(), path);
-        println!("(Install chafa for terminal preview: sudo apt install chafa)");
-    }
-}
 
 // -----------------------------------------------------------------------------
 // Commands
@@ -526,7 +543,7 @@ fn cmd_chat(client: &OsgeoClient) -> Result<()> {
 
                 if lower.starts_with("show ") {
                     let arg = &input[5..].trim();
-                    handle_show_command(arg, &last_sources);
+                    handle_show_command(client, arg, &last_sources);
                     continue;
                 }
 
@@ -585,7 +602,7 @@ fn cmd_chat(client: &OsgeoClient) -> Result<()> {
     Ok(())
 }
 
-fn handle_show_command(arg: &str, sources: &[SearchResult]) {
+fn handle_show_command(client: &OsgeoClient, arg: &str, sources: &[SearchResult]) {
     if sources.is_empty() {
         println!("No results to show. Ask a question first.\n");
         return;
@@ -634,16 +651,24 @@ fn handle_show_command(arg: &str, sources: &[SearchResult]) {
                 result.document_title, result.page_number
             );
 
-            // Build full path - the server returns relative paths like "elements/..."
-            // The actual location depends on the data_dir configuration
-            // For now, show the path and let the user know
-            println!(
-                "{}: {}/{}",
-                "Image path".dimmed(),
-                result.document_slug,
-                crop_path
+            // Fetch image from server and display with chafa
+            let image_url = format!(
+                "{}/image/{}/{}",
+                client.base_url, result.document_slug, crop_path
             );
-            println!("(Image display requires local data access)\n");
+
+            match client.fetch_and_display_image(&image_url) {
+                Ok(_) => {}
+                Err(e) => {
+                    println!("{}: {}", "Failed to display image".red(), e);
+                    println!(
+                        "{}: {}/{}",
+                        "Image path".dimmed(),
+                        result.document_slug,
+                        crop_path
+                    );
+                }
+            }
         } else {
             println!("[{}] has no image path.\n", idx + 1);
         }

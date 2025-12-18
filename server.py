@@ -23,11 +23,14 @@ Configuration:
     API keys and credentials are kept server-side.
 """
 
+import os
 import re
 from dataclasses import asdict
+from pathlib import Path
 from typing import List, Optional
 
 from fastapi import FastAPI, HTTPException
+from fastapi.responses import FileResponse
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 
@@ -409,6 +412,43 @@ async def get_element(element_id: int):
     # Remove embedding vector (too large for API response)
     result.pop("embedding", None)
     return result
+
+
+@app.get("/image/{document_slug}/{path:path}")
+async def get_image(document_slug: str, path: str):
+    """
+    Serve element images.
+
+    Path format: /image/{document_slug}/elements/{filename}
+    Example: /image/usgs_snyder/elements/p51_figure_1_FIGURE_7.png
+    """
+    # Sanitize path to prevent directory traversal
+    if ".." in path or path.startswith("/"):
+        raise HTTPException(status_code=400, detail="Invalid path")
+
+    # Build full path
+    full_path = Path(config.data_dir) / document_slug / path
+
+    if not full_path.exists():
+        raise HTTPException(status_code=404, detail=f"Image not found: {path}")
+
+    if not full_path.is_file():
+        raise HTTPException(status_code=400, detail="Not a file")
+
+    # Check it's an image
+    suffix = full_path.suffix.lower()
+    if suffix not in (".png", ".jpg", ".jpeg", ".gif", ".webp"):
+        raise HTTPException(status_code=400, detail="Not an image file")
+
+    media_types = {
+        ".png": "image/png",
+        ".jpg": "image/jpeg",
+        ".jpeg": "image/jpeg",
+        ".gif": "image/gif",
+        ".webp": "image/webp",
+    }
+
+    return FileResponse(full_path, media_type=media_types.get(suffix, "image/png"))
 
 
 # -----------------------------------------------------------------------------
