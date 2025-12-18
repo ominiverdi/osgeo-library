@@ -94,9 +94,14 @@ impl SearchResult {
                     cols = (rows as f64 * aspect * 2.0).ceil() as i32;
                 }
                 
-                // Minimum sizes
+                // Minimum sizes - tables need more height for readability
                 cols = cols.max(20);
-                rows = rows.max(5);
+                let min_rows = match self.element_type.as_deref() {
+                    Some("table") => 20,    // Tables need more vertical space
+                    Some("equation") => 8,  // Equations are typically short
+                    _ => 10,                // Default minimum
+                };
+                rows = rows.max(min_rows);
                 
                 format!("{}x{}", cols, rows)
             }
