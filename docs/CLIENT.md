@@ -36,6 +36,21 @@ cargo build --release
 sudo cp target/release/osgeo-library /usr/local/bin/
 ```
 
+### Image Preview Dependency
+
+For terminal image preview (`--show` flag), install [chafa](https://hpjansson.org/chafa/):
+
+```bash
+# Debian/Ubuntu
+sudo apt install chafa
+
+# macOS
+brew install chafa
+
+# Fedora
+sudo dnf install chafa
+```
+
 ## Connection
 
 The client connects to the OSGeo Library API server at `http://127.0.0.1:8095` by default.
@@ -71,7 +86,40 @@ osgeo-library search "projection"
 
 ## Commands
 
-### Interactive Chat (Default)
+### Search
+
+Search for elements (figures, tables, equations, charts, diagrams) by semantic similarity:
+
+```bash
+# Basic search
+osgeo-library search "map projection"
+
+# Filter by element type
+osgeo-library search "habitat distribution" --type table
+osgeo-library search "coordinate transformation" --type equation
+
+# Limit results
+osgeo-library search "segmentation" --num 5
+
+# Show image preview in terminal
+osgeo-library search "mercator" --type equation --show
+
+# Open image in GUI viewer
+osgeo-library search "alpine vegetation" --type figure --open
+```
+
+**Element types:** `figure`, `table`, `equation`, `chart`, `diagram`
+
+**Search options:**
+
+| Option | Short | Description |
+|--------|-------|-------------|
+| `--type TYPE` | `-t` | Filter by element type |
+| `--num N` | `-n` | Number of results (default: 3) |
+| `--show` | `-s` | Preview images in terminal (requires chafa) |
+| `--open` | `-o` | Open images in GUI viewer |
+
+### Interactive Chat
 
 ```bash
 osgeo-library
@@ -92,15 +140,66 @@ Starts an interactive session with the LLM. The chat mode supports:
 | `help` | Show available commands |
 | `sources` | Show sources from the last answer |
 | `show N` | Display image for source N (e.g., `show 1` or `show 1,2,3`) |
+| `open N` | Open image in GUI viewer |
 | `quit` | Exit the chat |
 
-**Example Session:**
+### Health Check
 
+Check if the server is running and responsive:
+
+```bash
+osgeo-library health
 ```
-OSGeo Library Chat
-========================================
-Server: connected | Type 'help' for commands
 
-You: What projections preserve area?
-Searching...
-Thinking...
+Returns server status and version information.
+
+### Stats
+
+View library statistics:
+
+```bash
+osgeo-library stats
+```
+
+Shows counts of documents and elements by type in the database.
+
+## Terminal Image Rendering
+
+When using `--show` or the `show` command in chat mode, images are rendered in your terminal using chafa.
+
+**Proportional sizing:** Images are scaled to fit your terminal while preserving aspect ratio. The client detects terminal dimensions and calculates appropriate sizing:
+
+- Maximum width: 80% of terminal columns
+- Height based on aspect ratio with element-type minimums:
+  - Tables: 15 rows minimum (need readable text)
+  - Equations: 6 rows minimum (typically short)
+  - Figures/charts/diagrams: 8 rows minimum
+
+**Rendered equations:** For equations, the client prefers LaTeX-rendered images (clean white background) over raw PDF crops when available.
+
+**Quality settings:** The client uses high-quality chafa options:
+- `--symbols all` - use all available characters
+- `-w 9` - high detail work factor
+- `-c full` - full color mode
+
+## Troubleshooting
+
+### "Connection refused" error
+
+The API server is not running or not accessible. Check:
+
+1. Server is running: `systemctl status osgeo-library` (if using systemd)
+2. Correct port: default is 8095
+3. SSH tunnel is active (if remote)
+
+### Images not displaying
+
+1. Verify chafa is installed: `which chafa`
+2. Check terminal supports Unicode and colors
+3. Try a simpler terminal emulator if issues persist
+
+### Search returns no results
+
+1. Check the database has been populated: `osgeo-library stats`
+2. Try broader search terms
+3. Remove type filter to search all element types

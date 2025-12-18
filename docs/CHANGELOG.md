@@ -2,6 +2,16 @@
 
 Brief log of what changed and when.
 
+## 2025-12-18 (v0.1.1)
+
+- **CLI image rendering improvements**
+  - Server returns `rendered_path` and image dimensions in API response
+  - Client uses proportional sizing based on terminal dimensions
+  - Equations prefer rendered LaTeX images over raw crops
+  - Chafa quality options: `--symbols all -w 9 -c full`
+- **CLI help improvements**: Added examples and element types list
+- **Documentation**: Completed CLIENT.md with troubleshooting and image rendering sections
+
 ## 2025-12-16 (evening)
 
 - **db/data structure**: New per-page JSON structure for database ingestion
