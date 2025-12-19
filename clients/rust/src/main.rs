@@ -362,15 +362,39 @@ impl OsgeoClient {
     }
 
     /// Fetch image from server and open in GUI viewer.
-    /// Uses xdg-open (Linux) or open (macOS). Requires X11 forwarding for remote access.
+    /// Uses xdg-open (Linux), open (macOS), or start (Windows).
+    /// Requires a graphical display; use --show for terminal preview over SSH.
     fn fetch_and_open_image(&self, url: &str) -> Result<()> {
-        // Check for DISPLAY (X11) on Linux
+        // Check for graphical display availability
         #[cfg(target_os = "linux")]
         {
-            if std::env::var("DISPLAY").is_err() {
+            if std::env::var("DISPLAY").is_err() && std::env::var("WAYLAND_DISPLAY").is_err() {
                 anyhow::bail!(
-                    "No DISPLAY set. For remote access, use: ssh -X user@server\n\
-                     Or use --show for terminal preview instead."
+                    "--open requires a graphical display.\n\
+                     You appear to be running on a remote server without X11/Wayland forwarding.\n\n\
+                     Options:\n\
+                       1. Use --show for terminal preview instead\n\
+                       2. Connect with X11 forwarding: ssh -X user@server\n\
+                       3. Run the CLI on your local machine with SSH tunneling:\n\
+                          ssh -L 8095:localhost:8095 user@server\n\
+                          osgeo-library --server http://localhost:8095 search \"...\" --open"
+                );
+            }
+        }
+
+        #[cfg(target_os = "macos")]
+        {
+            // Check if running in SSH session without display
+            if std::env::var("SSH_CONNECTION").is_ok() && std::env::var("DISPLAY").is_err() {
+                anyhow::bail!(
+                    "--open requires a graphical display.\n\
+                     You appear to be connected via SSH without display forwarding.\n\n\
+                     Options:\n\
+                       1. Use --show for terminal preview instead\n\
+                       2. Connect with X11 forwarding: ssh -X user@server\n\
+                       3. Run the CLI on your local machine with SSH tunneling:\n\
+                          ssh -L 8095:localhost:8095 user@server\n\
+                          osgeo-library --server http://localhost:8095 search \"...\" --open"
                 );
             }
         }
@@ -400,17 +424,39 @@ impl OsgeoClient {
 
         // Open with platform-appropriate command
         #[cfg(target_os = "macos")]
-        let open_cmd = "open";
-        #[cfg(not(target_os = "macos"))]
-        let open_cmd = "xdg-open";
+        {
+            let status = Command::new("open")
+                .arg(&temp_path)
+                .status()
+                .context("Failed to run 'open'")?;
 
-        let status = Command::new(open_cmd)
-            .arg(&temp_path)
-            .status()
-            .context(format!("Failed to run {}", open_cmd))?;
+            if !status.success() {
+                anyhow::bail!("open failed with status: {}", status);
+            }
+        }
 
-        if !status.success() {
-            anyhow::bail!("{} failed with status: {}", open_cmd, status);
+        #[cfg(target_os = "linux")]
+        {
+            let status = Command::new("xdg-open")
+                .arg(&temp_path)
+                .status()
+                .context("Failed to run 'xdg-open'. Is xdg-utils installed?")?;
+
+            if !status.success() {
+                anyhow::bail!("xdg-open failed with status: {}", status);
+            }
+        }
+
+        #[cfg(target_os = "windows")]
+        {
+            let status = Command::new("cmd")
+                .args(["/c", "start", "", temp_path.to_str().unwrap()])
+                .status()
+                .context("Failed to run 'start'")?;
+
+            if !status.success() {
+                anyhow::bail!("start failed with status: {}", status);
+            }
         }
 
         println!("Opened: {}", temp_path.display());

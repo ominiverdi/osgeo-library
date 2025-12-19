@@ -183,9 +183,29 @@ osgeo-library search "mercator" -t equation --open
 osgeo-library search "habitat" -t figure --open 1,2,3
 ```
 
-**How it works:** The client downloads the image from the server to a temp file, then opens it with `xdg-open` (Linux) or `open` (macOS).
+**How it works:** The client downloads the image from the server to a temp file, then opens it with `xdg-open` (Linux), `open` (macOS), or `start` (Windows).
 
-**Remote access:** When using SSH tunneling, run the client on your local machine (not on the server). The image viewer opens locally:
+**Requires a graphical display:** The `--open` flag will not work if you're connected to a remote server via plain SSH. You'll see an error like:
+
+```
+Failed to open image: --open requires a graphical display.
+```
+
+**Options for remote access:**
+
+1. **Use `--show` instead** - Renders images in the terminal using chafa. Works over any SSH connection.
+
+2. **Use X11 forwarding** - Connect with `ssh -X user@server`. This forwards the display but can be slow.
+
+3. **Run the CLI locally with SSH tunneling** (recommended for `--open`):
+
+```bash
+# On your local machine:
+ssh -L 8095:localhost:8095 user@server
+
+# Then in another terminal (locally):
+osgeo-library --server http://localhost:8095 search "habitat" -t table --open 1,2,3,4
+```
 
 ```
 Local machine                      Remote server

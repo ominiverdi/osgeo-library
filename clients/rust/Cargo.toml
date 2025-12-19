@@ -1,6 +1,6 @@
 [package]
 name = "osgeo-library"
-version = "0.1.3"
+version = "0.1.4"
 edition = "2021"
 description = "CLI client for OSGeo Library - search scientific documents"
 authors = ["Lorenzo Becchi"]
