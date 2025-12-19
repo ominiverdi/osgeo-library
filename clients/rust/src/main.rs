@@ -318,8 +318,9 @@ impl OsgeoClient {
 
         let bytes = response.bytes().context("Failed to read image bytes")?;
 
-        // Write to temp file
-        let temp_path = std::env::temp_dir().join("osgeo-library-image.png");
+        // Write to temp file (include uid to avoid permission conflicts between users)
+        let uid = unsafe { libc::getuid() };
+        let temp_path = std::env::temp_dir().join(format!("osgeo-library-image-{}.png", uid));
         std::fs::write(&temp_path, &bytes).context("Failed to write temp file")?;
 
         // Display with chafa if available

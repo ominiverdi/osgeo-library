@@ -29,6 +29,10 @@ terminal_size = "0.3"
 # Error handling
 anyhow = "1.0"
 
+# Unix user ID for per-user temp files
+[target.'cfg(unix)'.dependencies]
+libc = "0.2"
+
 [profile.release]
 opt-level = "z"     # Optimize for size
 lto = true          # Link-time optimization
