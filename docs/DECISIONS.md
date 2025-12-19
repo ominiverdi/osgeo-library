@@ -281,6 +281,40 @@ And rejects:
 - Significant typos
 - Wrong names entirely
 
+### Minimum Confidence Filter
+
+In addition to the distance threshold, we filter results below **20% confidence** to reduce context pollution.
+
+**The problem:** Semantic search returns vaguely related results that don't contain query terms:
+
+```
+$ search "glacier monitoring" (without filter)
+
+  28.2% | monitoring:Yes glacier:No  | Habitat and Land Cover Change...
+  24.5% | monitoring:Yes glacier:No  | Alps facing the challenge...
+  19.5% | monitoring:Yes glacier:No  | Explainability can foster...
+  15.7% | monitoring:No  glacier:No  | katalog/dataset/4a813c09...  <- noise
+  15.4% | monitoring:No  glacier:No  | GOES satellite band 13...     <- noise
+  15.0% | monitoring:No  glacier:No  | David P Roy, Michael A...     <- noise
+```
+
+Results at 15% confidence have neither "glacier" nor "monitoring" - they're just semantically vague matches that pollute LLM context.
+
+**Solution:** `MIN_CONFIDENCE_PCT = 20` filters these out:
+
+```
+$ search "glacier monitoring" (with filter)
+
+  28.2% | Habitat and Land Cover Change Detection in Alpine...
+  24.5% | Alps facing the challenge of changing water resources...
+  23.6% | foundational INTERREG project "HabitAlp"...
+  20.3% | Long-Term Monitoring in the eLTER Site...
+```
+
+4 relevant results instead of 10 with noise. All contain at least one query term.
+
+**Note:** This doesn't affect BM25 matches - "Adam Stewart" still returns 10+ results at 66-100% confidence because BM25 finds exact term matches.
+
 ### Solution 2: Keyword Extraction for Questions
 
 Natural language questions add noise that hurts semantic matching:

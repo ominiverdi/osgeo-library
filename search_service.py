@@ -142,11 +142,22 @@ def extract_keywords(query: str) -> str:
     return result.strip()
 
 
-# Score threshold: filter results below 5% relevance (distance > 0.985)
-# Lowered from 20% to allow name/entity searches to match
-# See docs/ARCHITECTURE.md for scoring details
+# Score thresholds for filtering results
+# See docs/DECISIONS.md for details on threshold tuning
+#
+# DISTANCE_THRESHOLD: maximum distance to include (filters out irrelevant results)
+# - 0.985 allows entity/name searches that semantic search struggles with
+#
+# MIN_CONFIDENCE_PCT: minimum confidence to return results
+# - Filters out low-relevance semantic matches that don't contain query terms
+# - 30% filters noise while keeping partial matches
+# - Example: "glacier monitoring" at 15% confidence has neither word
+#
 SCORE_THRESHOLD_PCT = 5
 DISTANCE_THRESHOLD = 1.0 - (SCORE_THRESHOLD_PCT / 100 * 0.3)  # 0.985
+
+MIN_CONFIDENCE_PCT = 20
+MIN_CONFIDENCE_DISTANCE = 1.0 - (MIN_CONFIDENCE_PCT / 100 * 0.3)  # 0.94
 
 
 def _score_from_distance(distance: float) -> float:
@@ -260,8 +271,13 @@ def search(
     # Sort by score (lower distance = better match)
     results.sort(key=lambda r: r.score)
 
-    # Filter out low-relevance results (below threshold)
-    results = [r for r in results if r.score <= DISTANCE_THRESHOLD]
+    # Filter out low-relevance results
+    # Two thresholds: DISTANCE_THRESHOLD (max) and MIN_CONFIDENCE_DISTANCE (quality floor)
+    results = [
+        r
+        for r in results
+        if r.score <= min(DISTANCE_THRESHOLD, MIN_CONFIDENCE_DISTANCE)
+    ]
 
     return results[:limit]
 
