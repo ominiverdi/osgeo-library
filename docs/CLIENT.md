@@ -88,7 +88,7 @@ osgeo-library search "projection"
 
 ### Search
 
-Search for elements (figures, tables, equations, charts, diagrams) by semantic similarity:
+Search for elements (figures, tables, equations) by semantic similarity:
 
 ```bash
 # Basic search
@@ -106,9 +106,17 @@ osgeo-library search "mercator" --type equation --show
 
 # Open image in GUI viewer
 osgeo-library search "alpine vegetation" --type figure --open
+
+# Open multiple images at once
+osgeo-library search "change detection" -t table --open 1,2,3,4
+osgeo-library search "neural network" -t figure --open 1,2,3,4
+osgeo-library search "coordinate system" -t equation --open 1,2,3,4
+
+# Mixed elements (all types)
+osgeo-library search "land cover classification" --elements-only --open 1,2,3,4
 ```
 
-**Element types:** `figure`, `table`, `equation`, `chart`, `diagram`
+**Element types:** `figure`, `table`, `equation`
 
 **Search options:**
 
@@ -200,7 +208,7 @@ When using `--show` or the `show` command in chat mode, images are rendered in y
 - Height based on aspect ratio with element-type minimums:
   - Tables: 15 rows minimum (need readable text)
   - Equations: 6 rows minimum (typically short)
-  - Figures/charts/diagrams: 8 rows minimum
+  - Figures: 8 rows minimum
 
 **Rendered equations:** For equations, the client prefers LaTeX-rendered images (clean white background) over raw PDF crops when available.
 
