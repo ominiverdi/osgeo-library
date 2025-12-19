@@ -16,7 +16,7 @@ jobs:
       matrix:
         include:
           - target: x86_64-unknown-linux-gnu
-            os: ubuntu-latest
+            os: ubuntu-22.04
             name: osgeo-library-linux-x86_64
           - target: x86_64-apple-darwin
             os: macos-latest
