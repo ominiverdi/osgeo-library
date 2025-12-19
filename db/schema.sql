@@ -73,6 +73,24 @@ CREATE INDEX idx_elements_page_id ON elements(page_id);
 CREATE INDEX idx_elements_type ON elements(element_type);
 CREATE INDEX idx_documents_slug ON documents(slug);
 
+-- Full-text search (tsvector) columns and indexes
+-- These enable BM25-style keyword matching alongside semantic search
+
+-- Add tsvector columns for full-text search
+ALTER TABLE chunks ADD COLUMN IF NOT EXISTS tsv tsvector
+    GENERATED ALWAYS AS (to_tsvector('english', coalesce(content, ''))) STORED;
+
+ALTER TABLE elements ADD COLUMN IF NOT EXISTS tsv tsvector
+    GENERATED ALWAYS AS (to_tsvector('english', 
+        coalesce(label, '') || ' ' || 
+        coalesce(description, '') || ' ' || 
+        coalesce(search_text, '')
+    )) STORED;
+
+-- GIN indexes for fast full-text search
+CREATE INDEX IF NOT EXISTS idx_chunks_tsv ON chunks USING GIN(tsv);
+CREATE INDEX IF NOT EXISTS idx_elements_tsv ON elements USING GIN(tsv);
+
 -- Vector indexes (ivfflat) for similarity search
 -- Note: Create these AFTER loading data for better index quality
 -- Lists parameter should be ~ sqrt(row_count), minimum 100

@@ -236,3 +236,171 @@ What does this element explain in this context? List key search terms. 2-3 sente
 > "This element explains the forward projection formulas for the IMW Modified Polyconic map projection, calculating coordinates (Xb, Yb, Xc, Yc) based on latitude and longitude parameters. Key search terms: Modified Polyconic, map projection, forward formulas, latitude longitude, coordinate calculation."
 
 **Processing time:** ~47 minutes for 1131 elements (all three documents)
+
+---
+
+## Search Threshold and Keyword Extraction
+
+**Decision:** Use distance threshold of 0.985 (5% relevance) and extract keywords from natural language queries.
+
+### The Problem
+
+Semantic search with BGE-M3 embeddings returns a distance score (L2 distance) for each result. Lower distance = better match. But what threshold should filter out irrelevant results?
+
+**Initial threshold (0.94 / 20% relevance)** was too strict for entity searches:
+
+| Query | Best Match Distance | Passed 0.94? |
+|-------|---------------------|--------------|
+| `TorchGeo deep learning` | 0.82 | Yes |
+| `map projection equations` | 0.85 | Yes |
+| `Adam Stewart` (person name) | 0.956 | **No** |
+| `Adam J. Stewart` | 0.946 | **No** |
+
+Person names and specific entities don't have strong semantic meaning to the embedding model - they're just tokens. A threshold of 0.94 filtered them out.
+
+### Solution 1: Lower Threshold to 0.985
+
+**New threshold: 0.985 (5% relevance)**
+
+This allows entity searches while still filtering noise:
+
+| Query | Distance | Passes 0.985? |
+|-------|----------|---------------|
+| `Adam Stewart` | 0.956 | Yes |
+| `Adam J. Stewart` | 0.946 | Yes |
+| `Stewart Adam` (reversed) | 0.981 | Yes |
+| `Adem Stewart` (typo) | 0.999 | No |
+| `Adam Steward` (wrong name) | 1.079 | No |
+
+The threshold correctly accepts:
+- Exact name matches
+- With middle initial
+- Reversed order
+
+And rejects:
+- Significant typos
+- Wrong names entirely
+
+### Solution 2: Keyword Extraction for Questions
+
+Natural language questions add noise that hurts semantic matching:
+
+| Query | Best Distance |
+|-------|---------------|
+| `what papers include Adam Stewart somehow?` | 0.992 |
+| `papers Adam Stewart` (keywords only) | 0.919 |
+
+Stopwords like "what", "include", "somehow" dilute the semantic signal.
+
+**Implementation:** The search function now:
+1. Extracts keywords by removing stopwords (what, how, is, include, somehow, etc.)
+2. Searches with BOTH the original query AND the keywords
+3. Keeps the best (lowest) score for each result
+4. Filters by threshold
+
+```python
+STOPWORDS = {'what', 'which', 'who', 'how', 'is', 'are', 'include', 'somehow', ...}
+
+def extract_keywords(query: str) -> str:
+    # Preserves capitalized words (proper nouns like "Adam Stewart")
+    # Removes stopwords from lowercase words
+    ...
+```
+
+**Result:** Colloquial questions now work:
+```
+$ osgeo-library search "what papers include Adam Stewart somehow?"
+1 results:
+[t:1] TEXT chunk 0 - Mlcs Libs p.24 | 25%
+24 Adam J. Stewart et al. Stewart, Adam, Nils Lehmann...
+```
+
+### Trade-offs
+
+| Threshold | Pros | Cons |
+|-----------|------|------|
+| 0.94 (strict) | Less noise | Misses entity/name searches |
+| **0.985 (current)** | **Finds names, handles typos well** | **May include marginally relevant results** |
+| 1.0+ (loose) | Finds everything | Too much noise |
+
+---
+
+## Hybrid Search: Semantic + BM25
+
+**Decision:** Combine semantic (vector) search with BM25 (keyword) search for best results.
+
+### The Problem
+
+Semantic search alone struggles with:
+- Person names ("Adam Stewart")
+- Exact terms and acronyms ("TorchGeo", "SSL4EO-L")  
+- Specific identifiers
+
+These don't have strong semantic meaning - they're just tokens to the embedding model.
+
+### Solution: Hybrid Search
+
+We now run **both** search methods and merge results:
+
+1. **Semantic search** (BGE-M3 embeddings) - finds conceptually related content
+2. **BM25 keyword search** (PostgreSQL tsvector) - finds exact term matches
+
+Results are deduplicated, keeping the best score for each document.
+
+**Implementation:**
+
+```sql
+-- Added tsvector columns for full-text search
+ALTER TABLE chunks ADD COLUMN tsv tsvector
+    GENERATED ALWAYS AS (to_tsvector('english', content)) STORED;
+
+ALTER TABLE elements ADD COLUMN tsv tsvector
+    GENERATED ALWAYS AS (to_tsvector('english', 
+        label || ' ' || description || ' ' || search_text
+    )) STORED;
+
+-- GIN indexes for fast lookup
+CREATE INDEX idx_chunks_tsv ON chunks USING GIN(tsv);
+CREATE INDEX idx_elements_tsv ON elements USING GIN(tsv);
+```
+
+**Score normalization:** BM25 returns higher-is-better scores (0-1). We convert to distance (lower-is-better) for consistency: `distance = 1 - (bm25_score * 2)`.
+
+### Results
+
+Before (semantic only):
+```
+$ osgeo-library search "Adam Stewart"
+No results found.
+```
+
+After (hybrid):
+```
+$ osgeo-library search "Adam Stewart"
+10 results:
+[t:1] Mlcs Libs p.24 | 100% - Adam J. Stewart et al...
+[t:2] Torchgeo p.22 | 100% - [117] Andreas Steiner...Adam Stewart...
+...
+```
+
+### Performance
+
+| Search Type | Query Time | Index Size |
+|-------------|------------|------------|
+| Semantic (ivfflat) | ~50ms | ~4MB per 10k vectors |
+| BM25 (GIN) | ~5ms | ~1MB per 10k docs |
+| Hybrid (both) | ~60ms | Both |
+
+The overhead is minimal since PostgreSQL handles both efficiently.
+
+### When Each Method Wins
+
+| Query Type | Winner | Example |
+|------------|--------|---------|
+| Concepts/topics | Semantic | "deep learning for satellite imagery" |
+| Person names | BM25 | "Adam Stewart" |
+| Exact terms | BM25 | "TorchGeo" |
+| Natural language questions | Both (via keyword extraction) | "what papers include Adam Stewart?" |
+| Synonyms/related terms | Semantic | "remote sensing" finds "satellite imagery" |
+
+---

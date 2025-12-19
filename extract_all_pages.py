@@ -221,6 +221,10 @@ def update_document_json(doc_dir: Path, pdf_path: Path, total_pages: int):
     # Get list of extracted pages
     existing = get_existing_pages(doc_dir)
 
+    # Set extraction_date only on first extraction (preserve if already set)
+    if "extraction_date" not in doc_data:
+        doc_data["extraction_date"] = datetime.now().isoformat()
+
     doc_data.update(
         {
             "document": doc_dir.name,

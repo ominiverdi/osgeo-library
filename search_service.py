@@ -19,16 +19,134 @@ Usage:
 """
 
 import json
+import re
 from typing import List, Dict, Any, Optional
 from dataclasses import dataclass
 
 from db.connection import fetch_all, fetch_one
 from embeddings.embed import get_embedding, check_server
 
-# Score threshold: filter results below 20% relevance (distance > 0.94)
+# Common stopwords to remove from queries for better semantic matching
+STOPWORDS = {
+    "what",
+    "which",
+    "who",
+    "whom",
+    "where",
+    "when",
+    "why",
+    "how",
+    "is",
+    "are",
+    "was",
+    "were",
+    "be",
+    "been",
+    "being",
+    "have",
+    "has",
+    "had",
+    "do",
+    "does",
+    "did",
+    "a",
+    "an",
+    "the",
+    "and",
+    "or",
+    "but",
+    "if",
+    "then",
+    "this",
+    "that",
+    "these",
+    "those",
+    "i",
+    "you",
+    "he",
+    "she",
+    "it",
+    "we",
+    "they",
+    "my",
+    "your",
+    "his",
+    "her",
+    "its",
+    "our",
+    "their",
+    "can",
+    "could",
+    "would",
+    "should",
+    "may",
+    "might",
+    "must",
+    "about",
+    "some",
+    "any",
+    "all",
+    "each",
+    "every",
+    "include",
+    "includes",
+    "including",
+    "included",
+    "find",
+    "found",
+    "show",
+    "shows",
+    "tell",
+    "give",
+    "get",
+    "somehow",
+    "something",
+    "anything",
+    "someone",
+    "anyone",
+    "please",
+    "thanks",
+    "thank",
+    "help",
+    "need",
+    "want",
+}
+
+
+def extract_keywords(query: str) -> str:
+    """
+    Extract keywords from a natural language query by removing stopwords.
+    Preserves quoted phrases and capitalized words (likely proper nouns).
+    """
+    # Preserve quoted phrases
+    quoted = re.findall(r'"([^"]+)"', query)
+
+    # Remove punctuation except quotes, split into words
+    clean = re.sub(r'[^\w\s"]', " ", query)
+    words = clean.split()
+
+    # Filter stopwords, but keep capitalized words (proper nouns)
+    keywords = []
+    for word in words:
+        lower = word.lower()
+        # Keep if: not a stopword, OR starts with capital (proper noun)
+        if lower not in STOPWORDS or (word[0].isupper() and len(word) > 1):
+            keywords.append(word)
+
+    # Add back quoted phrases
+    result = " ".join(keywords)
+    for phrase in quoted:
+        if phrase not in result:
+            result += " " + phrase
+
+    return result.strip()
+
+
+# Score threshold: filter results below 5% relevance (distance > 0.985)
+# Lowered from 20% to allow name/entity searches to match
 # See docs/ARCHITECTURE.md for scoring details
-SCORE_THRESHOLD_PCT = 20
-DISTANCE_THRESHOLD = 1.0 - (SCORE_THRESHOLD_PCT / 100 * 0.3)  # 0.94
+SCORE_THRESHOLD_PCT = 5
+DISTANCE_THRESHOLD = 1.0 - (SCORE_THRESHOLD_PCT / 100 * 0.3)  # 0.985
 
 
 def _score_from_distance(distance: float) -> float:
@@ -62,9 +180,15 @@ def search(
     document_slug: Optional[str] = None,
     include_chunks: bool = True,
     include_elements: bool = True,
+    hybrid: bool = True,
 ) -> List[SearchResult]:
     """
-    Search both chunks and elements, returning combined ranked results.
+    Hybrid search combining semantic (vector) and keyword (BM25) matching.
+
+    Searches both chunks and elements, merging results from:
+    1. Semantic search (embedding similarity)
+    2. BM25 keyword search (exact term matching)
+    3. Keyword-extracted query (for natural language questions)
 
     Args:
         query: Search query text
@@ -72,6 +196,7 @@ def search(
         document_slug: Filter to specific document (optional)
         include_chunks: Include text chunks in search
         include_elements: Include elements (figures, tables, etc.)
+        hybrid: Use hybrid search (semantic + BM25). If False, semantic only.
 
     Returns:
         List of SearchResult objects sorted by relevance
@@ -79,19 +204,58 @@ def search(
     if not check_server():
         raise RuntimeError("Embedding server not available")
 
-    embedding = get_embedding(query)
-    if not embedding:
-        raise RuntimeError("Failed to generate query embedding")
+    # Extract keywords for potentially better matching
+    keywords = extract_keywords(query)
 
-    results = []
+    # Use dict to keep best score for each result
+    best_results: Dict[tuple, SearchResult] = {}
 
-    if include_chunks:
-        chunks = _search_chunks_by_vector(embedding, limit, document_slug)
-        results.extend(chunks)
+    def add_result(result: SearchResult):
+        """Add result, keeping the one with best score."""
+        key = (result.source_type, result.id)
+        if key not in best_results or result.score < best_results[key].score:
+            best_results[key] = result
 
-    if include_elements:
-        elements = _search_elements_by_vector(embedding, limit, document_slug)
-        results.extend(elements)
+    # --- Semantic search ---
+    queries_to_run = [query]
+    if keywords and keywords != query and len(keywords) > 2:
+        queries_to_run.append(keywords)
+
+    for q in queries_to_run:
+        embedding = get_embedding(q)
+        if not embedding:
+            continue
+
+        if include_chunks:
+            for chunk in _search_chunks_by_vector(embedding, limit, document_slug):
+                add_result(chunk)
+
+        if include_elements:
+            for elem in _search_elements_by_vector(embedding, limit, document_slug):
+                add_result(elem)
+
+    # --- BM25 keyword search ---
+    if hybrid:
+        # Search with original query
+        if include_chunks:
+            for chunk in _search_chunks_by_bm25(query, limit, document_slug):
+                add_result(chunk)
+
+        if include_elements:
+            for elem in _search_elements_by_bm25(query, limit, document_slug):
+                add_result(elem)
+
+        # Also search with extracted keywords if different
+        if keywords and keywords != query:
+            if include_chunks:
+                for chunk in _search_chunks_by_bm25(keywords, limit, document_slug):
+                    add_result(chunk)
+
+            if include_elements:
+                for elem in _search_elements_by_bm25(keywords, limit, document_slug):
+                    add_result(elem)
+
+    results = list(best_results.values())
 
     # Sort by score (lower distance = better match)
     results.sort(key=lambda r: r.score)
@@ -245,6 +409,125 @@ def _search_elements_by_vector(
         SearchResult(
             id=row["id"],
             score=row["distance"],
+            content=row["search_text"] or row["description"],
+            source_type="element",
+            document_slug=row["document_slug"],
+            document_title=row["document_title"],
+            page_number=row["page_number"],
+            element_type=row["element_type"],
+            element_label=row["label"],
+            crop_path=row["crop_path"],
+            rendered_path=row["rendered_path"],
+        )
+        for row in rows
+    ]
+
+
+def _search_chunks_by_bm25(
+    query: str,
+    limit: int,
+    document_slug: Optional[str] = None,
+) -> List[SearchResult]:
+    """Search chunks using full-text search (BM25-style ranking)."""
+    where_clause = ""
+    if document_slug:
+        where_clause = "AND d.slug = %s"
+
+    sql = f"""
+        SELECT 
+            c.id,
+            c.content,
+            c.chunk_index,
+            ts_rank(c.tsv, plainto_tsquery('english', %s)) AS bm25_score,
+            d.slug AS document_slug,
+            d.title AS document_title,
+            p.page_number
+        FROM chunks c
+        JOIN documents d ON c.document_id = d.id
+        JOIN pages p ON c.page_id = p.id
+        WHERE c.tsv @@ plainto_tsquery('english', %s)
+        {where_clause}
+        ORDER BY bm25_score DESC
+        LIMIT %s
+    """
+
+    if document_slug:
+        params = (query, query, document_slug, limit)
+    else:
+        params = (query, query, limit)
+
+    rows = fetch_all(sql, params)
+
+    # Convert BM25 score to a "distance" for consistency (lower = better)
+    # BM25 scores are typically 0-1, higher is better
+    # We invert: distance = 1 - score (capped at 0)
+    return [
+        SearchResult(
+            id=row["id"],
+            score=max(0, 1.0 - row["bm25_score"] * 2),  # Scale and invert
+            content=row["content"],
+            source_type="chunk",
+            document_slug=row["document_slug"],
+            document_title=row["document_title"],
+            page_number=row["page_number"],
+            chunk_index=row["chunk_index"],
+        )
+        for row in rows
+    ]
+
+
+def _search_elements_by_bm25(
+    query: str,
+    limit: int,
+    document_slug: Optional[str] = None,
+    element_type: Optional[str] = None,
+) -> List[SearchResult]:
+    """Search elements using full-text search (BM25-style ranking)."""
+    extra_clauses = []
+    params: list = [query, query]  # For ts_rank and WHERE
+
+    if document_slug:
+        extra_clauses.append("d.slug = %s")
+        params.append(document_slug)
+
+    if element_type:
+        extra_clauses.append("e.element_type = %s")
+        params.append(element_type)
+
+    extra_where = ""
+    if extra_clauses:
+        extra_where = "AND " + " AND ".join(extra_clauses)
+
+    params.append(limit)
+
+    sql = f"""
+        SELECT 
+            e.id,
+            e.element_type,
+            e.label,
+            e.description,
+            e.search_text,
+            e.crop_path,
+            e.rendered_path,
+            ts_rank(e.tsv, plainto_tsquery('english', %s)) AS bm25_score,
+            d.slug AS document_slug,
+            d.title AS document_title,
+            p.page_number
+        FROM elements e
+        JOIN documents d ON e.document_id = d.id
+        JOIN pages p ON e.page_id = p.id
+        WHERE e.tsv @@ plainto_tsquery('english', %s)
+        {extra_where}
+        ORDER BY bm25_score DESC
+        LIMIT %s
+    """
+
+    rows = fetch_all(sql, tuple(params))
+
+    return [
+        SearchResult(
+            id=row["id"],
+            score=max(0, 1.0 - row["bm25_score"] * 2),  # Scale and invert
             content=row["search_text"] or row["description"],
             source_type="element",
             document_slug=row["document_slug"],

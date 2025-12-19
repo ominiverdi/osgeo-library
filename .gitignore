@@ -35,3 +35,6 @@ db/data/
 
 # Rust build artifacts
 clients/rust/target/
+
+# Local documentation (machine-specific)
+localdocs/
