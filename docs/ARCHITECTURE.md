@@ -454,3 +454,42 @@ If you're on a remote machine:
     ssh -L 8095:localhost:8095 osgeo7-gallery
 ```
 
+## Syncing to Remote Server
+
+After extracting new documents locally, sync the database and images to the remote server.
+
+### Quick Reference
+
+```bash
+# 1. Backup local database
+mkdir -p db_backup
+pg_dump osgeo_library > db_backup/osgeo_library_$(date +%Y%m%d).sql
+
+# 2. Backup remote database
+ssh osgeo7-gallery "mkdir -p ~/db_backup && pg_dump osgeo_library > ~/db_backup/osgeo_library_\$(date +%Y%m%d).sql"
+
+# 3. Copy and restore database to remote
+scp db_backup/osgeo_library_$(date +%Y%m%d).sql osgeo7-gallery:~/db_backup/
+ssh osgeo7-gallery "psql -d osgeo_library -c 'DROP SCHEMA public CASCADE; CREATE SCHEMA public;' && psql -d osgeo_library < ~/db_backup/osgeo_library_$(date +%Y%m%d).sql"
+
+# 4. Sync element images
+rsync -avz --progress db/data/ osgeo7-gallery:~/data/osgeo-library/
+```
+
+### Full Extraction Pipeline
+
+For processing a new PDF end-to-end:
+
+```bash
+# 1. Extract (requires vision model on port 8090)
+python extract_all_pages.py pdfs/document.pdf --name doc_name --skip-existing
+
+# 2. Enrich (requires text model on port 8080)
+python enrich_elements.py doc_name
+
+# 3. Ingest to database (requires embedding server on port 8094)
+python ingest_to_db.py doc_name
+
+# 4. Sync to remote (see Quick Reference above)
+```
+

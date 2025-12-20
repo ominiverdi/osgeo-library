@@ -38,3 +38,4 @@ clients/rust/target/
 
 # Local documentation (machine-specific)
 localdocs/
+db_backup/
