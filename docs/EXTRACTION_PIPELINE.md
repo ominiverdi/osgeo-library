@@ -6,10 +6,10 @@ Step-by-step guide for processing PDFs and syncing to production.
 
 ### Servers
 
-| Service | Port | Model | Location |
-|---------|------|-------|----------|
-| Vision (extraction) | 8090 | Qwen3-VL-235B | external |
-| Text (enrichment) | 8080 | Qwen3-30B-A3B | `/media/nvme2g-a/llm_toolbox/servers/` |
+| Service | Port | Model | Script |
+|---------|------|-------|--------|
+| Vision (extraction) | 8090 | Qwen3-VL-235B | `/media/nvme2g-a/llm_toolbox/servers/qwen3-vl-235b-8090.sh` |
+| Text (enrichment) | 8080 | Qwen3-30B-A3B | `/media/nvme2g-a/llm_toolbox/servers/qwen3-30b-32k.sh` |
 | Embedding | 8094 | BGE-M3-F16 | `/media/nvme2g-a/llm_toolbox/servers/bge-m3-embed-8094.sh` |
 
 ### Paths
@@ -54,10 +54,11 @@ psql -d osgeo_library -c "SELECT COUNT(*) FROM documents;" && echo " - Database 
 # Embedding server (BGE-M3)
 /media/nvme2g-a/llm_toolbox/servers/bge-m3-embed-8094.sh &
 
-# Text/enrichment server (Qwen3-30B) 
-/media/nvme2g-a/llm_toolbox/servers/gpt-oss-20b-32k.sh &
+# Text/enrichment server (Qwen3-30B)
+/media/nvme2g-a/llm_toolbox/servers/qwen3-30b-32k.sh &
 
-# Vision server (Qwen3-VL-235B) - check with admin, runs on separate GPU
+# Vision server (Qwen3-VL-235B)
+/media/nvme2g-a/llm_toolbox/servers/qwen3-vl-235b-8090.sh &
 ```
 
 ---
@@ -137,22 +138,38 @@ pg_dump osgeo_library > db_backup/osgeo_library_$(date +%Y%m%d).sql
 ssh osgeo7-gallery "mkdir -p ~/db_backup && pg_dump osgeo_library > ~/db_backup/osgeo_library_\$(date +%Y%m%d).sql"
 ```
 
-### Step 2: Copy and Restore Database
+### Step 2: Sync Element Images First
+
+Sync images before database so queries don't reference missing files.
+
+```bash
+rsync -avz --progress db/data/ osgeo7-gallery:~/data/osgeo-library/
+```
+
+### Step 3: Update Database (Transactional)
+
+Use a staging database to avoid downtime. The old database stays live until the new one is ready.
 
 ```bash
 # Copy dump to remote
 scp db_backup/osgeo_library_$(date +%Y%m%d).sql osgeo7-gallery:~/db_backup/
 
-# Restore on remote (WARNING: replaces existing data)
-ssh osgeo7-gallery "psql -d osgeo_library -c 'DROP SCHEMA public CASCADE; CREATE SCHEMA public;' && \
-  psql -d osgeo_library < ~/db_backup/osgeo_library_$(date +%Y%m%d).sql"
+# Create staging database, restore, then swap
+ssh osgeo7-gallery "
+  dropdb --if-exists osgeo_library_new &&
+  createdb osgeo_library_new &&
+  psql -d osgeo_library_new -c 'CREATE EXTENSION vector;' &&
+  psql -d osgeo_library_new < ~/db_backup/osgeo_library_$(date +%Y%m%d).sql &&
+  psql -c 'ALTER DATABASE osgeo_library RENAME TO osgeo_library_old;' &&
+  psql -c 'ALTER DATABASE osgeo_library_new RENAME TO osgeo_library;' &&
+  dropdb osgeo_library_old
+"
 ```
 
-### Step 3: Sync Element Images
-
-```bash
-rsync -avz --progress db/data/ osgeo7-gallery:~/data/osgeo-library/
-```
+This ensures:
+- No moment where the database is missing
+- Queries continue against old DB until swap completes
+- Swap is atomic (just a rename)
 
 ### Step 4: Verify Remote
 
@@ -169,6 +186,7 @@ As of 2025-12-20:
 
 | Slug | Pages | Elements | Source File |
 |------|-------|----------|-------------|
+| digital_earth | 844 | 456 | ManualOfDigitalEarth_2020.pdf |
 | usgs_snyder | 397 | 1041 | usgs_snyder1987.pdf |
 | sam3 | 68 | 76 | sam3.pdf |
 | aiseg_sam3 | 62 | 70 | aiSeg_sam3_2025.pdf |
@@ -179,13 +197,7 @@ As of 2025-12-20:
 | alpine_change | 23 | 14 | 2511.00073v1.pdf |
 | eo_distortions | 18 | 19 | 2403.04385.pdf |
 
-**Total:** 9 documents, 691 pages, 1275 elements
-
-### Not Yet Processed
-
-| File | Pages | Size |
-|------|-------|------|
-| ManualOfDigitalEarth_2020.pdf | 846 | 31 MB |
+**Total:** 10 documents, 1535 pages, 1731 elements
 
 ---
 
