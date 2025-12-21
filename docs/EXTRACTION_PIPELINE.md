@@ -289,5 +289,5 @@ curl -s http://localhost:8095/health | python3 -m json.tool
 Or as a one-liner from minto:
 
 ```bash
-ssh osgeo7-gallery "cd ~/github/osgeo-library && git pull && pkill -f 'port 8095'; sleep 1 && ./servers/start-server.sh >> ~/logs/osgeo-library.log 2>&1 &"
+ssh osgeo7-gallery "cd ~/github/osgeo-library && git pull && pkill -f '\-\-port 8095'; sleep 2 && ./servers/start-server.sh >> ~/logs/osgeo-library.log 2>&1 &"
 ```
