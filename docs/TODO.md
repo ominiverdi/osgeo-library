@@ -206,18 +206,25 @@ Script: `bot/matrix_bot.py`
 ├── extract_all_pages.py     # Batch extraction (db/data format, resumable)
 ├── migrate_to_db.py         # Convert web/data -> db/data structure
 ├── run_extraction.sh        # Overnight batch runner
-├── ingest_to_db.py          # TODO: Load extractions into PostgreSQL
-├── search_service.py        # TODO: Query interface
-├── bot/
+├── ingest_to_db.py          # Load extractions into PostgreSQL
+├── search_service.py        # Semantic search with pgvector
+├── server.py                # FastAPI REST API
+├── chat_cli.py              # Interactive CLI with RAG
+├── config.py                # Configuration management
+├── bot/                     # TODO: Matrix bot integration
 │   ├── __init__.py
 │   ├── matrix_bot.py        # TODO: Matrix client
 │   ├── tools.py             # TODO: Tool definitions
 │   ├── agent.py             # TODO: Agentic loop
 │   └── context.py           # TODO: Conversation context
+├── clients/
+│   └── rust/                # Rust CLI client
+├── servers/
+│   └── start-server.sh      # API server startup script
 ├── db/
-│   ├── schema.sql           # TODO: PostgreSQL schema
-│   ├── connection.py        # TODO: DB connection
-│   ├── migrations/          # TODO: Schema migrations
+│   ├── schema.sql           # PostgreSQL + pgvector schema
+│   ├── connection.py        # DB connection helpers
+│   ├── chunking.py          # Text chunking
 │   └── data/                # Extracted content (per-page JSON, images, elements)
 │       ├── sam3/
 │       │   ├── document.json
@@ -227,7 +234,7 @@ Script: `bot/matrix_bot.py`
 │       ├── usgs_snyder/
 │       └── alpine_change/
 ├── embeddings/
-│   └── embed.py             # TODO: Embedding generation
+│   └── embed.py             # BGE-M3 embedding generation
 └── web/
     └── data/                # Demo extractions (monolithic JSON, subset of pages)
 ```
@@ -312,23 +319,24 @@ When user asks "where did you find that?":
 11. [x] Create `chat_cli.py` - multi-turn RAG with LangChain
 12. [x] Create `servers/bge-m3-cpu.sh` - CPU deployment script
 13. [x] Quantize BGE-M3 to Q8_0 (1.1GB -> 606MB)
-14. [ ] Deploy to osgeo7-gallery (waiting for pgvector + chafa)
-15. [ ] Create bot tools
-16. [ ] Create Matrix bot skeleton
-17. [ ] Integration testing
+14. [x] Deploy to osgeo7-gallery
+15. [x] Create server.py FastAPI with /search, /chat, /documents/search, /page endpoints
+16. [x] Create Rust CLI client (osgeo-library)
+17. [ ] Create Matrix bot integration
+18. [ ] Integration testing
 
 ## Deployment Status (osgeo7-gallery)
 
 | Component | Status |
 |-----------|--------|
-| Git repo | Cloned and updated |
-| Embedding model | Copied (bge-m3-Q8_0.gguf) |
+| Git repo | Deployed |
+| Embedding model | Running (bge-m3-Q8_0.gguf) |
 | Embedding server | Running on port 8094 |
-| Element images | Copied (66MB) |
-| Database dump | Copied (45MB) |
-| pgvector extension | Waiting on admin |
-| chafa | Waiting on admin |
-| Python venv | Needs deps install |
+| API server | Running on port 8095 |
+| Element images | Synced |
+| Database | PostgreSQL + pgvector |
+| Python venv | Installed |
+| Rust CLI | Available in releases |
 
 ## Page Browsing API
 
