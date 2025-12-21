@@ -370,7 +370,63 @@ Users: alice, bob, darkblueb
 | `/health` | GET | Server status and dependency checks |
 | `/search` | POST | Semantic search over documents |
 | `/chat` | POST | Search + LLM-powered response |
+| `/documents/search` | POST | Search documents by title/slug/filename |
+| `/page/{slug}/{page_number}` | GET | Get page image (base64) with metadata |
 | `/element/{id}` | GET | Get element details by ID |
+| `/image/{slug}/{path}` | GET | Serve element images |
+
+### Document Search Endpoint
+
+Search for documents by title, slug, or source filename:
+
+```bash
+curl -X POST http://localhost:8095/documents/search \
+  -H "Content-Type: application/json" \
+  -d '{"query": "snyder", "limit": 20}'
+```
+
+Response:
+```json
+{
+    "query": "snyder",
+    "results": [
+        {
+            "slug": "usgs_snyder",
+            "title": "Map Projections: A Working Manual",
+            "source_file": "snyder_1987.pdf",
+            "total_pages": 397
+        }
+    ],
+    "total": 1
+}
+```
+
+### Page Endpoint
+
+Get a page image with metadata. Returns base64-encoded image data:
+
+```bash
+curl http://localhost:8095/page/usgs_snyder/26
+```
+
+Response:
+```json
+{
+    "document_slug": "usgs_snyder",
+    "document_title": "Map Projections: A Working Manual",
+    "page_number": 26,
+    "total_pages": 397,
+    "image_base64": "iVBORw0KGgo...",
+    "image_width": 1322,
+    "image_height": 1655,
+    "mime_type": "image/png",
+    "has_annotated": true
+}
+```
+
+Error responses:
+- `404`: Document not found
+- `404`: Page out of bounds (message includes total page count)
 
 ### Server Setup
 

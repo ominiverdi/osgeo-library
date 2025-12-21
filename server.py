@@ -7,9 +7,13 @@ Designed to run as a system service, allowing multi-user access
 via a lightweight client (Rust CLI).
 
 Endpoints:
-    GET  /health     - Server status and service checks
-    POST /search     - Semantic search over documents
-    POST /chat       - Search + LLM-powered response
+    GET  /health                          - Server status and service checks
+    POST /search                          - Semantic search over documents
+    POST /chat                            - Search + LLM-powered response
+    POST /documents/search                - Search documents by title/slug/filename
+    GET  /page/{slug}/{page_number}       - Get page image (base64) with metadata
+    GET  /element/{element_id}            - Get element details
+    GET  /image/{slug}/{path}             - Serve element images
 
 Usage:
     # Development
@@ -23,6 +27,7 @@ Configuration:
     API keys and credentials are kept server-side.
 """
 
+import base64
 import os
 import re
 from dataclasses import asdict
@@ -143,6 +148,44 @@ class HealthResponse(BaseModel):
     version: str = "0.1.0"
 
 
+class DocumentSearchRequest(BaseModel):
+    """Document search request parameters."""
+
+    query: str = Field(..., description="Search query for title/slug/filename")
+    limit: int = Field(default=20, ge=1, le=100, description="Max results")
+
+
+class DocumentSearchResult(BaseModel):
+    """Single document search result."""
+
+    slug: str
+    title: str
+    source_file: str
+    total_pages: int
+
+
+class DocumentSearchResponse(BaseModel):
+    """Document search response."""
+
+    query: str
+    results: List[DocumentSearchResult]
+    total: int
+
+
+class PageResponse(BaseModel):
+    """Page image and metadata response."""
+
+    document_slug: str
+    document_title: str
+    page_number: int
+    total_pages: int
+    image_base64: str
+    image_width: int
+    image_height: int
+    mime_type: str = "image/png"
+    has_annotated: bool = False
+
+
 # -----------------------------------------------------------------------------
 # Helper functions
 # -----------------------------------------------------------------------------
@@ -182,7 +225,7 @@ def result_to_response(r: SearchResult) -> SearchResultResponse:
     return SearchResultResponse(
         id=r.id,
         score_pct=round(_score_from_distance(r.score), 1),
-        content=r.content[:500] if r.content else "",  # Truncate for API
+        content=r.content or "",
         source_type=r.source_type,
         document_slug=r.document_slug,
         document_title=r.document_title,
@@ -235,7 +278,7 @@ def get_source_tag(result: SearchResult) -> str:
         "diagram": "d",
     }
     if result.source_type == "element":
-        return type_map.get(result.element_type, "e")
+        return type_map.get(result.element_type or "", "e")
     return "t"
 
 
@@ -248,8 +291,9 @@ def format_context_for_llm(results: List[SearchResult]) -> str:
     for i, r in enumerate(results, 1):
         tag = get_source_tag(r)
         if r.source_type == "element":
+            element_type = (r.element_type or "element").upper()
             parts.append(
-                f"[{tag}:{i}] {r.element_type.upper()}: {r.element_label} "
+                f"[{tag}:{i}] {element_type}: {r.element_label} "
                 f"(from {r.document_title}, page {r.page_number})\n"
                 f"    {r.content[:500]}"
             )
@@ -485,6 +529,145 @@ async def get_image(document_slug: str, path: str):
     }
 
     return FileResponse(full_path, media_type=media_types.get(suffix, "image/png"))
+
+
+@app.post("/documents/search", response_model=DocumentSearchResponse)
+async def search_documents(req: DocumentSearchRequest):
+    """
+    Search documents by title, slug, or source filename.
+
+    Returns matching documents with their slugs and page counts.
+    """
+    from db.connection import fetch_all
+
+    try:
+        # Case-insensitive search on title, slug, and source_file
+        query_pattern = f"%{req.query}%"
+        results = fetch_all(
+            """
+            SELECT 
+                d.slug,
+                d.title,
+                d.source_file,
+                COUNT(p.id) as total_pages
+            FROM documents d
+            LEFT JOIN pages p ON p.document_id = d.id
+            WHERE d.title ILIKE %s
+               OR d.slug ILIKE %s
+               OR d.source_file ILIKE %s
+            GROUP BY d.id, d.slug, d.title, d.source_file
+            ORDER BY d.title
+            LIMIT %s
+            """,
+            (query_pattern, query_pattern, query_pattern, req.limit),
+        )
+
+        return DocumentSearchResponse(
+            query=req.query,
+            results=[
+                DocumentSearchResult(
+                    slug=r["slug"],
+                    title=r["title"],
+                    source_file=r["source_file"],
+                    total_pages=r["total_pages"],
+                )
+                for r in results
+            ],
+            total=len(results),
+        )
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/page/{document_slug}/{page_number}", response_model=PageResponse)
+async def get_page(document_slug: str, page_number: int):
+    """
+    Get a page image with metadata.
+
+    Returns base64-encoded image and document info including total pages.
+    """
+    from db.connection import fetch_one, fetch_all
+
+    try:
+        # Get document info
+        doc = fetch_one(
+            "SELECT id, slug, title FROM documents WHERE slug = %s",
+            (document_slug,),
+        )
+        if not doc:
+            raise HTTPException(
+                status_code=404, detail=f"Document not found: {document_slug}"
+            )
+
+        # Get total page count
+        page_count = fetch_one(
+            "SELECT COUNT(*) as total FROM pages WHERE document_id = %s",
+            (doc["id"],),
+        )
+        total_pages = page_count["total"] if page_count else 0
+
+        # Get the specific page
+        page = fetch_one(
+            """
+            SELECT page_number, image_path, annotated_image_path, width, height
+            FROM pages
+            WHERE document_id = %s AND page_number = %s
+            """,
+            (doc["id"], page_number),
+        )
+        if not page:
+            raise HTTPException(
+                status_code=404,
+                detail=f"Page {page_number} not found. Document has {total_pages} pages.",
+            )
+
+        # Load and encode the image
+        image_path = Path(config.data_dir) / document_slug / page["image_path"]
+        if not image_path.exists():
+            raise HTTPException(
+                status_code=404, detail=f"Image file not found: {page['image_path']}"
+            )
+
+        with open(image_path, "rb") as f:
+            image_data = f.read()
+        image_base64 = base64.b64encode(image_data).decode("utf-8")
+
+        # Determine mime type
+        suffix = image_path.suffix.lower()
+        mime_types = {
+            ".png": "image/png",
+            ".jpg": "image/jpeg",
+            ".jpeg": "image/jpeg",
+        }
+        mime_type = mime_types.get(suffix, "image/png")
+
+        # Get dimensions (from DB or image)
+        width = page["width"]
+        height = page["height"]
+        if not width or not height:
+            with Image.open(image_path) as img:
+                width, height = img.size
+
+        # Check if annotated version exists
+        has_annotated = bool(page["annotated_image_path"])
+
+        return PageResponse(
+            document_slug=doc["slug"],
+            document_title=doc["title"],
+            page_number=page["page_number"],
+            total_pages=total_pages,
+            image_base64=image_base64,
+            image_width=width,
+            image_height=height,
+            mime_type=mime_type,
+            has_annotated=has_annotated,
+        )
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 # -----------------------------------------------------------------------------

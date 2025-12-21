@@ -260,3 +260,34 @@ curl http://localhost:8094/health
 cd ~/github/osgeo-library && source .venv/bin/activate
 ./servers/start-server.sh
 ```
+
+### Updating Server Code
+
+When new features are added to the API, deploy to osgeo7-gallery:
+
+```bash
+# 1. SSH to the server
+ssh osgeo7-gallery
+
+# 2. Pull latest code
+cd ~/github/osgeo-library
+git pull
+
+# 3. Update dependencies (if requirements.txt changed)
+source .venv/bin/activate
+pip install -r requirements.txt
+
+# 4. Restart the API server
+pkill -f "uvicorn server:app --host 127.0.0.1 --port 8095"
+sleep 1
+./servers/start-server.sh >> ~/logs/osgeo-library.log 2>&1 &
+
+# 5. Verify
+curl -s http://localhost:8095/health | python3 -m json.tool
+```
+
+Or as a one-liner from minto:
+
+```bash
+ssh osgeo7-gallery "cd ~/github/osgeo-library && git pull && pkill -f 'port 8095'; sleep 1 && ./servers/start-server.sh >> ~/logs/osgeo-library.log 2>&1 &"
+```
