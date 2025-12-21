@@ -329,3 +329,26 @@ When user asks "where did you find that?":
 | pgvector extension | Waiting on admin |
 | chafa | Waiting on admin |
 | Python venv | Needs deps install |
+
+## Page Browsing API
+
+### Known Limitations
+
+1. **Page numbers are PDF-based, not document-based**
+   - `/page/{slug}/1` returns the first PDF page, which may be a cover or blank page
+   - Printed page numbers in the document (e.g., "Page 15") don't match API page numbers
+   - Example: USGS Snyder has front matter, so "Page 1" of content might be PDF page 10+
+
+2. **No page summary/preview**
+   - Currently returns only the image and basic metadata
+   - Could be useful to include:
+     - Text content of the page (already in DB as `pages.full_text`)
+     - List of elements on the page (figures, tables, equations)
+     - Section/chapter title if detectable
+
+### Future Improvements
+
+- [ ] Add `text` field to PageResponse with page full_text
+- [ ] Add `elements` field listing elements on that page
+- [ ] Consider page number mapping (PDF page vs printed page)
+- [ ] Add `GET /page/{slug}/{page_number}/annotated` for annotated version
