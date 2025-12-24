@@ -42,13 +42,44 @@ High-level overview of the OSGeo Library system.
 | **Database** | PostgreSQL with pgvector for semantic similarity search |
 | **LLM** | Qwen3-30B (local) or OpenRouter for chat responses |
 
+### PDF Processing Stack
+
+| Component | Role |
+|-----------|------|
+| **PyMuPDF (fitz)** | PDF rendering, text extraction, image handling |
+| **Qwen3-VL-235B** | Visual grounding: element detection with bounding boxes, LaTeX extraction |
+| **PIL/Pillow** | Element cropping using PyMuPDF images + Qwen-VL bboxes |
+| **pdflatex + ImageMagick** | Re-rendering extracted LaTeX to clean images |
+
+PyMuPDF handles all PDF I/O operations. Qwen-VL provides the "eyes" for detecting and classifying visual elements. This combination gives us:
+- Fast, accurate page rendering (PyMuPDF at 150 DPI)
+- Reliable text extraction with layout preservation
+- Precise bounding boxes from a vision model trained for visual grounding
+- Clean equation images re-rendered from extracted LaTeX
+
 ## Data Flow
 
 ### Extraction (offline)
 
 ```
-PDF → Qwen3-VL-235B → Elements + Text → Qwen3-30B (enrichment) → BGE-M3 → PostgreSQL
+PDF ─┬─► PyMuPDF ─► Page images (PNG) ─► Qwen3-VL-235B ─► Element bboxes
+     │                                                          │
+     └─► PyMuPDF ─► Raw text                                    v
+                                                    PIL crops elements
+                                                           │
+                                                           v
+                                    Qwen3-30B (enrichment) ─► BGE-M3 ─► PostgreSQL
 ```
+
+Detailed steps:
+1. **PyMuPDF** opens PDF, renders pages to PNG at 150 DPI
+2. **PyMuPDF** extracts text from each page
+3. **Qwen3-VL-235B** receives page image, returns element bboxes (0-1000 scale)
+4. **PIL** crops elements using bbox coordinates converted to pixels
+5. For equations: **pdflatex** re-renders extracted LaTeX to clean PNG
+6. **Qwen3-30B** enriches elements with search_text based on page context
+7. **BGE-M3** generates embeddings for chunks and elements
+8. All data stored in **PostgreSQL** with pgvector
 
 See [EXTRACTION.md](EXTRACTION.md) for details.
 
