@@ -91,11 +91,21 @@ class Config:
     config_source: str = "defaults"
 
 
+def get_package_root() -> Path:
+    """Get the root directory of the osgeo-library package."""
+    # This file is at doclibrary/config.py, so parent.parent is repo root
+    return Path(__file__).parent.parent.resolve()
+
+
 def find_config_file() -> Optional[Path]:
     """Find config file in standard locations."""
+    package_root = get_package_root()
+
     locations = [
         Path("config.local.toml"),  # Local override (gitignored)
         Path("config.toml"),  # Current directory
+        package_root / "config.local.toml",  # Package root local override
+        package_root / "config.toml",  # Package root
         Path.home() / ".config" / "doclibrary" / "config.toml",
         # Legacy location for backward compatibility
         Path.home() / ".config" / "osgeo-library" / "config.toml",
