@@ -29,6 +29,9 @@ terminal_size = "0.3"
 # Error handling
 anyhow = "1.0"
 
+# Base64 decoding for page images
+base64 = "0.21"
+
 # Unix user ID for per-user temp files
 [target.'cfg(unix)'.dependencies]
 libc = "0.2"

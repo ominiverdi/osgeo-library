@@ -10,6 +10,7 @@ use reqwest::blocking::Client;
 use rustyline::error::ReadlineError;
 use rustyline::DefaultEditor;
 use serde::{Deserialize, Serialize};
+use std::io::IsTerminal;
 use std::process::Command;
 use std::time::Duration;
 
@@ -147,6 +148,54 @@ struct HealthResponse {
     version: String,
 }
 
+#[derive(Debug, Deserialize)]
+struct DocumentListItem {
+    slug: String,
+    title: String,
+    source_file: Option<String>,
+    total_pages: i32,
+    summary: Option<String>,
+    keywords: Option<Vec<String>>,
+    license: Option<String>,
+}
+
+#[derive(Debug, Deserialize)]
+struct DocumentListResponse {
+    documents: Vec<DocumentListItem>,
+    page: i32,
+    page_size: i32,
+    total_pages: i32,
+    total_documents: i32,
+}
+
+#[derive(Debug, Deserialize)]
+struct DocumentDetailResponse {
+    slug: String,
+    title: String,
+    source_file: Option<String>,
+    total_pages: i32,
+    summary: Option<String>,
+    keywords: Option<Vec<String>>,
+    license: Option<String>,
+    extraction_date: Option<String>,
+    element_counts: std::collections::HashMap<String, i32>,
+}
+
+#[derive(Debug, Deserialize)]
+struct PageResponse {
+    document_slug: String,
+    document_title: String,
+    page_number: i32,
+    total_pages: i32,
+    image_base64: String,
+    image_width: i32,
+    image_height: i32,
+    mime_type: String,
+    has_annotated: bool,
+    summary: Option<String>,
+    keywords: Option<Vec<String>>,
+}
+
 // -----------------------------------------------------------------------------
 // CLI Definition
 // -----------------------------------------------------------------------------
@@ -157,6 +206,8 @@ struct HealthResponse {
 #[command(version)]
 #[command(after_help = "EXAMPLES:
     osgeo-library                              Start interactive chat
+    osgeo-library docs                         List all documents
+    osgeo-library doc usgs_snyder              Show document details
     osgeo-library search \"mercator projection\" Search all content
     osgeo-library search \"area\" -t equation    Search only equations
     osgeo-library search \"habitat\" -t table --show   Search tables, display image
@@ -229,6 +280,27 @@ enum Commands {
 
     /// Check server health and connectivity
     Health,
+
+    /// List all documents in the library
+    Docs {
+        /// Page number (1-indexed)
+        #[arg(short, long, default_value = "1")]
+        page: i32,
+
+        /// Results per page
+        #[arg(short = 'n', long, default_value = "20")]
+        limit: i32,
+
+        /// Sort by: title, date_added, page_count
+        #[arg(short, long, default_value = "title")]
+        sort: String,
+    },
+
+    /// Get detailed info about a specific document
+    Doc {
+        /// Document slug (e.g., 'usgs_snyder', 'torchgeo')
+        slug: String,
+    },
 }
 
 // -----------------------------------------------------------------------------
@@ -302,6 +374,165 @@ impl OsgeoClient {
         }
 
         response.json().context("Failed to parse chat response")
+    }
+
+    fn list_documents(&self, page: i32, page_size: i32, sort_by: &str) -> Result<DocumentListResponse> {
+        let url = format!(
+            "{}/documents?page={}&page_size={}&sort_by={}",
+            self.base_url, page, page_size, sort_by
+        );
+        let response = self
+            .client
+            .get(&url)
+            .send()
+            .context("Failed to fetch documents")?;
+
+        if !response.status().is_success() {
+            let status = response.status();
+            let body = response.text().unwrap_or_default();
+            anyhow::bail!("Failed to list documents ({}): {}", status, body);
+        }
+
+        response.json().context("Failed to parse documents response")
+    }
+
+    fn get_document(&self, slug: &str) -> Result<DocumentDetailResponse> {
+        let url = format!("{}/documents/{}", self.base_url, slug);
+        let response = self
+            .client
+            .get(&url)
+            .send()
+            .context("Failed to fetch document")?;
+
+        if !response.status().is_success() {
+            let status = response.status();
+            let body = response.text().unwrap_or_default();
+            anyhow::bail!("Failed to get document ({}): {}", status, body);
+        }
+
+        response.json().context("Failed to parse document response")
+    }
+
+    fn get_page(&self, slug: &str, page_number: i32) -> Result<PageResponse> {
+        let url = format!("{}/page/{}/{}", self.base_url, slug, page_number);
+        let response = self
+            .client
+            .get(&url)
+            .send()
+            .context("Failed to fetch page")?;
+
+        if !response.status().is_success() {
+            let status = response.status();
+            let body = response.text().unwrap_or_default();
+            anyhow::bail!("Failed to get page ({}): {}", status, body);
+        }
+
+        response.json().context("Failed to parse page response")
+    }
+
+    fn display_base64_image(&self, base64_data: &str, size: &str) -> Result<()> {
+        use base64::{Engine as _, engine::general_purpose};
+        
+        let bytes = general_purpose::STANDARD
+            .decode(base64_data)
+            .context("Failed to decode base64 image")?;
+
+        // Write to temp file
+        #[cfg(unix)]
+        let temp_path = {
+            let uid = unsafe { libc::getuid() };
+            std::env::temp_dir().join(format!("osgeo-library-page-{}.png", uid))
+        };
+        #[cfg(windows)]
+        let temp_path = {
+            let pid = std::process::id();
+            std::env::temp_dir().join(format!("osgeo-library-page-{}.png", pid))
+        };
+        std::fs::write(&temp_path, &bytes).context("Failed to write temp file")?;
+
+        // Display with chafa if available
+        if Command::new("which")
+            .arg("chafa")
+            .output()
+            .map(|o| o.status.success())
+            .unwrap_or(false)
+        {
+            let status = Command::new("chafa")
+                .args([
+                    "--size", size,
+                    "--symbols", "all",
+                    "-w", "9",
+                    "-c", "full",
+                    temp_path.to_str().unwrap()
+                ])
+                .status();
+
+            if let Ok(s) = status {
+                if s.success() {
+                    println!();
+                    return Ok(());
+                }
+            }
+        }
+
+        println!("(Install chafa for terminal preview: sudo apt install chafa)");
+        Ok(())
+    }
+
+    fn open_base64_image(&self, base64_data: &str) -> Result<()> {
+        use base64::{Engine as _, engine::general_purpose};
+        
+        // Check for graphical display availability
+        #[cfg(target_os = "linux")]
+        {
+            if std::env::var("DISPLAY").is_err() && std::env::var("WAYLAND_DISPLAY").is_err() {
+                anyhow::bail!(
+                    "open requires a graphical display.\n\
+                     Use 'page <slug> <N>' for terminal preview instead."
+                );
+            }
+        }
+        
+        let bytes = general_purpose::STANDARD
+            .decode(base64_data)
+            .context("Failed to decode base64 image")?;
+
+        // Write to temp file with unique name
+        let temp_path = std::env::temp_dir().join(format!(
+            "osgeo-library-page-{}.png",
+            std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap()
+                .as_millis()
+        ));
+        std::fs::write(&temp_path, &bytes).context("Failed to write temp file")?;
+
+        // Open with platform-appropriate command
+        #[cfg(target_os = "linux")]
+        {
+            Command::new("xdg-open")
+                .arg(&temp_path)
+                .spawn()
+                .context("Failed to run 'xdg-open'")?;
+        }
+
+        #[cfg(target_os = "macos")]
+        {
+            Command::new("open")
+                .arg(&temp_path)
+                .spawn()
+                .context("Failed to run 'open'")?;
+        }
+
+        #[cfg(target_os = "windows")]
+        {
+            Command::new("cmd")
+                .args(["/C", "start", "", temp_path.to_str().unwrap()])
+                .spawn()
+                .context("Failed to open image")?;
+        }
+
+        Ok(())
     }
 
     fn fetch_and_display_image(&self, url: &str, size: &str) -> Result<()> {
@@ -484,7 +715,6 @@ fn get_source_tag(result: &SearchResult) -> &'static str {
 }
 
 fn format_result(i: usize, result: &SearchResult, verbose: bool) -> String {
-    let tag = get_source_tag(result);
     let mut lines = Vec::new();
 
     if result.source_type == "element" {
@@ -499,14 +729,13 @@ fn format_result(i: usize, result: &SearchResult, verbose: bool) -> String {
             .unwrap_or("(unlabeled)");
 
         lines.push(format!(
-            "[{}:{}] {} {}",
-            tag.cyan(),
-            i.to_string().cyan(),
-            elem_type.yellow(),
+            "[{}] {} {}",
+            i.to_string().yellow(),
+            elem_type.cyan(),
             label
         ));
         lines.push(format!(
-            "       {} p.{} | {:.0}%",
+            "    {} p.{} | {:.0}%",
             result.document_title.dimmed(),
             result.page_number,
             result.score_pct
@@ -514,13 +743,12 @@ fn format_result(i: usize, result: &SearchResult, verbose: bool) -> String {
     } else {
         let chunk_idx = result.chunk_index.unwrap_or(0);
         lines.push(format!(
-            "[{}:{}] TEXT chunk {}",
-            tag.cyan(),
-            i.to_string().cyan(),
+            "[{}] TEXT chunk {}",
+            i.to_string().yellow(),
             chunk_idx
         ));
         lines.push(format!(
-            "       {} p.{} | {:.0}%",
+            "    {} p.{} | {:.0}%",
             result.document_title.dimmed(),
             result.page_number,
             result.score_pct
@@ -529,7 +757,7 @@ fn format_result(i: usize, result: &SearchResult, verbose: bool) -> String {
 
     if verbose && !result.content.is_empty() {
         let preview: String = result.content.chars().take(200).collect();
-        lines.push(format!("       {}", preview.dimmed()));
+        lines.push(format!("    {}", preview.dimmed()));
     }
 
     lines.join("\n")
@@ -601,6 +829,109 @@ fn cmd_health(client: &OsgeoClient) -> Result<()> {
     println!("Embedding:  {}", check(health.embedding_server));
     println!("LLM:        {}", check(health.llm_server));
     println!("Database:   {}", check(health.database));
+
+    Ok(())
+}
+
+fn cmd_docs(client: &OsgeoClient, page: i32, limit: i32, sort: String) -> Result<()> {
+    let response = client.list_documents(page, limit, &sort)?;
+
+    println!("{}", "OSGeo Document Library".bold());
+    println!("{}", "=".repeat(50));
+    println!(
+        "Page {} of {} ({} documents total)\n",
+        response.page,
+        response.total_pages,
+        response.total_documents
+    );
+
+    for doc in &response.documents {
+        println!("{}", doc.title.bold());
+        println!("  Slug: {}  |  Pages: {}", doc.slug.cyan(), doc.total_pages);
+        
+        if let Some(ref keywords) = doc.keywords {
+            if !keywords.is_empty() {
+                let kw_str: String = keywords.iter().take(5).cloned().collect::<Vec<_>>().join(", ");
+                println!("  Keywords: {}", kw_str.dimmed());
+            }
+        }
+        
+        if let Some(ref summary) = doc.summary {
+            // Truncate long summaries
+            let display_summary = if summary.len() > 150 {
+                format!("{}...", &summary[..150])
+            } else {
+                summary.clone()
+            };
+            println!("  {}", display_summary.dimmed());
+        }
+        println!();
+    }
+
+    if response.total_pages > 1 {
+        println!(
+            "Use {} to see more pages",
+            format!("--page {}", page + 1).cyan()
+        );
+    }
+
+    Ok(())
+}
+
+fn cmd_doc(client: &OsgeoClient, slug: String) -> Result<()> {
+    let doc = client.get_document(&slug)?;
+
+    println!("{}", doc.title.bold());
+    println!("{}", "=".repeat(50));
+    println!("Slug:       {}", doc.slug.cyan());
+    println!("Pages:      {}", doc.total_pages);
+    
+    if let Some(ref source) = doc.source_file {
+        println!("Source:     {}", source);
+    }
+    
+    if let Some(ref date) = doc.extraction_date {
+        println!("Extracted:  {}", date);
+    }
+    
+    if let Some(ref license) = doc.license {
+        println!("License:    {}", license);
+    }
+
+    // Element counts
+    let total_elements: i32 = doc.element_counts.values().sum();
+    if total_elements > 0 {
+        println!("\n{}", "Elements:".bold());
+        for (elem_type, count) in &doc.element_counts {
+            if *count > 0 {
+                println!("  {:12} {}", format!("{}:", elem_type), count);
+            }
+        }
+    }
+
+    // Keywords
+    if let Some(ref keywords) = doc.keywords {
+        if !keywords.is_empty() {
+            println!("\n{}", "Keywords:".bold());
+            println!("  {}", keywords.join(", "));
+        }
+    }
+
+    // Summary
+    if let Some(ref summary) = doc.summary {
+        println!("\n{}", "Summary:".bold());
+        println!("{}", summary);
+    }
+
+    println!("\n{}", "Usage:".dimmed());
+    println!(
+        "  Search:  osgeo-library search \"query\" -d {}",
+        doc.slug
+    );
+    println!(
+        "  Chat:    osgeo-library ask \"question\" -d {}",
+        doc.slug
+    );
 
     Ok(())
 }
@@ -810,6 +1141,14 @@ fn cmd_chat(client: &OsgeoClient) -> Result<()> {
 
     let mut rl = DefaultEditor::new()?;
     let mut last_sources: Vec<SearchResult> = Vec::new();
+    let mut docs_page: i32 = 0;  // 0 = not viewing docs, >0 = current page
+    let mut docs_total_pages: i32 = 0;
+    let mut docs_slugs: Vec<String> = Vec::new();  // slugs from current docs page
+    let mut current_doc: Option<String> = None;  // current document being viewed
+    let mut last_page_view: Option<(String, i32, i32)> = None;  // (slug, page_num, total_pages)
+    
+    // Detect if stdin is piped (not interactive)
+    let is_piped = !std::io::stdin().is_terminal();
 
     loop {
         let readline = rl.readline(&format!("{} ", "You:".green().bold()));
@@ -819,6 +1158,11 @@ fn cmd_chat(client: &OsgeoClient) -> Result<()> {
                 let input = line.trim();
                 if input.is_empty() {
                     continue;
+                }
+                
+                // Echo command when piped for test visibility
+                if is_piped {
+                    println!("{} {}", "You:".green().bold(), input);
                 }
 
                 rl.add_history_entry(input)?;
@@ -832,13 +1176,30 @@ fn cmd_chat(client: &OsgeoClient) -> Result<()> {
                 }
 
                 if lower == "help" || lower == "?" {
-                    println!("\n{}", "Commands:".bold());
-                    println!("  show <n>     Display element image in terminal (e.g., 'show 1' or 'show 1,2,3')");
-                    println!("  open <n>     Open element image in GUI viewer (requires X11 for remote)");
-                    println!("  sources      Show sources from last answer");
-                    println!("  clear        Clear conversation (not implemented yet)");
-                    println!("  help         Show this help");
-                    println!("  quit/exit    Exit\n");
+                    println!("\n{}", "Browse:".bold());
+                    println!("  docs              List documents in library");
+                    println!("  doc <N|slug>      Select document (e.g., 'doc 1' or 'doc usgs_snyder')");
+                    println!("  page [slug] <N>   View page (e.g., 'page 55' or 'page usgs_snyder 55')");
+                    println!("  next/n, prev/p    Navigate to next/previous page");
+                    println!();
+                    println!("{}", "Elements:".bold());
+                    println!("  figures           List figures on current page (or 'figures all')");
+                    println!("  tables            List tables on current page (or 'tables all')");
+                    println!("  equations         List equations on current page (or 'equations all')");
+                    println!();
+                    println!("{}", "View:".bold());
+                    println!("  show <N>          Show element in terminal (e.g., 'show 1' or 'show 1,2,3')");
+                    println!("  open <N>          Open element in GUI viewer");
+                    println!("  open page <N>     Open page in GUI viewer");
+                    println!();
+                    println!("{}", "Search:".bold());
+                    println!("  search <query>    Semantic search (no LLM)");
+                    println!("  sources           Show sources from last answer");
+                    println!("  <question>        Ask a question (uses LLM)");
+                    println!();
+                    println!("{}", "Other:".bold());
+                    println!("  help              Show this help");
+                    println!("  quit/exit/q       Exit\n");
                     continue;
                 }
 
@@ -853,24 +1214,621 @@ fn cmd_chat(client: &OsgeoClient) -> Result<()> {
                 }
 
                 if lower.starts_with("show ") {
-                    let arg = &input[5..].trim();
-                    handle_show_command(client, arg, &last_sources);
+                    let arg = input[5..].trim();
+                    
+                    // Check if it's "show page <slug> <N>" or "show page <N>"
+                    if arg.to_lowercase().starts_with("page ") {
+                        let page_arg = arg[5..].trim();
+                        let parts: Vec<&str> = page_arg.split_whitespace().collect();
+                        
+                        let (doc_slug, page_num) = match parts.len() {
+                            1 => {
+                                match parts[0].parse::<i32>() {
+                                    Ok(n) if n > 0 => {
+                                        match &current_doc {
+                                            Some(slug) => (slug.clone(), n),
+                                            None => {
+                                                println!("Use 'doc <slug>' first, or specify: show page <slug> <N>\n");
+                                                continue;
+                                            }
+                                        }
+                                    }
+                                    _ => {
+                                        println!("Usage: show page <N> or show page <slug> <N>\n");
+                                        continue;
+                                    }
+                                }
+                            }
+                            2 => {
+                                let slug = parts[0].to_string();
+                                match parts[1].parse::<i32>() {
+                                    Ok(n) if n > 0 => (slug, n),
+                                    _ => {
+                                        println!("Usage: show page <N> or show page <slug> <N>\n");
+                                        continue;
+                                    }
+                                }
+                            }
+                            _ => {
+                                println!("Usage: show page <N> or show page <slug> <N>\n");
+                                continue;
+                            }
+                        };
+                        
+                        print!("Loading page {}...", page_num);
+                        std::io::Write::flush(&mut std::io::stdout()).ok();
+                        
+                        match client.get_page(&doc_slug, page_num) {
+                            Ok(page) => {
+                                println!(" done\n");
+                                println!("{} p.{}/{}", 
+                                    page.document_title.bold(),
+                                    page.page_number,
+                                    page.total_pages
+                                );
+                                
+                                if let Some(summary) = &page.summary {
+                                    println!("{}: {}", "Summary".dimmed(), summary);
+                                }
+                                
+                                if let Some(keywords) = &page.keywords {
+                                    if !keywords.is_empty() {
+                                        println!("{}: {}", "Keywords".dimmed(), keywords.join(", "));
+                                    }
+                                }
+                                
+                                println!();
+                                
+                                if let Err(e) = client.display_base64_image(&page.image_base64, "80x40") {
+                                    println!("{}: {}", "Error displaying image".red(), e);
+                                }
+                                
+                                // Save state for next/prev navigation and set current doc
+                                last_page_view = Some((doc_slug.clone(), page.page_number, page.total_pages));
+                                current_doc = Some(doc_slug.clone());
+                            }
+                            Err(e) => {
+                                println!("\n{}: {}\n", "Error".red(), e);
+                            }
+                        }
+                    } else {
+                        // Original behavior: show source by index
+                        handle_show_command(client, &arg, &last_sources);
+                    }
                     continue;
                 }
 
                 if lower.starts_with("open ") {
-                    let arg = &input[5..].trim();
-                    handle_open_command(client, arg, &last_sources);
+                    let arg = input[5..].trim();
+                    
+                    // Check if it's "open page <slug> <N>" or "open page <N>"
+                    if arg.to_lowercase().starts_with("page ") {
+                        let page_arg = arg[5..].trim();
+                        let parts: Vec<&str> = page_arg.split_whitespace().collect();
+                        
+                        let (doc_slug, page_num) = match parts.len() {
+                            1 => {
+                                match parts[0].parse::<i32>() {
+                                    Ok(n) if n > 0 => {
+                                        match &current_doc {
+                                            Some(slug) => (slug.clone(), n),
+                                            None => {
+                                                println!("Use 'doc <slug>' first, or specify: open page <slug> <N>\n");
+                                                continue;
+                                            }
+                                        }
+                                    }
+                                    _ => {
+                                        println!("Usage: open page <N> or open page <slug> <N>\n");
+                                        continue;
+                                    }
+                                }
+                            }
+                            2 => {
+                                let slug = parts[0].to_string();
+                                match parts[1].parse::<i32>() {
+                                    Ok(n) if n > 0 => (slug, n),
+                                    _ => {
+                                        println!("Usage: open page <N> or open page <slug> <N>\n");
+                                        continue;
+                                    }
+                                }
+                            }
+                            _ => {
+                                println!("Usage: open page <N> or open page <slug> <N>\n");
+                                continue;
+                            }
+                        };
+                        
+                        print!("Loading page {}...", page_num);
+                        std::io::Write::flush(&mut std::io::stdout()).ok();
+                        
+                        match client.get_page(&doc_slug, page_num) {
+                            Ok(page) => {
+                                println!(" opening");
+                                if let Err(e) = client.open_base64_image(&page.image_base64) {
+                                    println!("{}: {}\n", "Error".red(), e);
+                                }
+                                
+                                // Update state for next/prev and figures/tables/equations
+                                last_page_view = Some((doc_slug.clone(), page.page_number, page.total_pages));
+                                current_doc = Some(doc_slug.clone());
+                            }
+                            Err(e) => {
+                                println!("\n{}: {}\n", "Error".red(), e);
+                            }
+                        }
+                    } else {
+                        // Original behavior: open source by index
+                        handle_open_command(client, &arg, &last_sources);
+                    }
                     continue;
                 }
 
-                // Regular question
+                // page <N> or page <slug> <N> - view page N of document
+                if lower.starts_with("page ") {
+                    let arg = input[5..].trim();
+                    let parts: Vec<&str> = arg.split_whitespace().collect();
+                    
+                    let (doc_slug, page_num) = match parts.len() {
+                        1 => {
+                            // page <N> - use current document
+                            match arg.parse::<i32>() {
+                                Ok(n) if n > 0 => {
+                                    match &current_doc {
+                                        Some(slug) => (slug.clone(), n),
+                                        None => {
+                                            println!("Use 'doc <slug>' first, or specify: page <slug> <N>\n");
+                                            continue;
+                                        }
+                                    }
+                                }
+                                _ => {
+                                    println!("Usage: page <N> or page <slug> <N>\n");
+                                    continue;
+                                }
+                            }
+                        }
+                        2 => {
+                            // page <slug> <N>
+                            let slug = parts[0].to_string();
+                            match parts[1].parse::<i32>() {
+                                Ok(n) if n > 0 => (slug, n),
+                                _ => {
+                                    println!("Usage: page <N> or page <slug> <N>\n");
+                                    continue;
+                                }
+                            }
+                        }
+                        _ => {
+                            println!("Usage: page <N> or page <slug> <N>\n");
+                            continue;
+                        }
+                    };
+                    
+                    // Fetch and display page
+                    print!("Loading page {}...", page_num);
+                    std::io::Write::flush(&mut std::io::stdout()).ok();
+                    
+                    match client.get_page(&doc_slug, page_num) {
+                        Ok(page) => {
+                            println!(" done\n");
+                            println!("{} p.{}/{}", 
+                                page.document_title.bold(),
+                                page.page_number,
+                                page.total_pages
+                            );
+                            
+                            // Show summary if available
+                            if let Some(summary) = &page.summary {
+                                println!("{}: {}", "Summary".dimmed(), summary);
+                            }
+                            
+                            // Show keywords if available
+                            if let Some(keywords) = &page.keywords {
+                                if !keywords.is_empty() {
+                                    println!("{}: {}", "Keywords".dimmed(), keywords.join(", "));
+                                }
+                            }
+                            
+                            println!();
+                            
+                            // Display image
+                            if let Err(e) = client.display_base64_image(&page.image_base64, "80x40") {
+                                println!("{}: {}", "Error displaying image".red(), e);
+                            }
+                            
+                            // Save state for next/prev navigation and set current doc
+                            last_page_view = Some((doc_slug.clone(), page.page_number, page.total_pages));
+                            current_doc = Some(doc_slug.clone());
+                        }
+                        Err(e) => {
+                            println!("\n{}: {}\n", "Error".red(), e);
+                        }
+                    }
+                    continue;
+                }
+
+                if lower == "docs" || lower == "next" || lower == "n" || lower == "prev" || lower == "p" {
+                    // Check if we're navigating pages (after viewing a page)
+                    if (lower == "next" || lower == "n" || lower == "prev" || lower == "p") && last_page_view.is_some() {
+                        let (slug, current_page, total) = last_page_view.as_ref().unwrap();
+                        
+                        let new_page = if lower == "next" || lower == "n" {
+                            if *current_page >= *total {
+                                println!("Already on last page ({}/{}).\n", current_page, total);
+                                continue;
+                            }
+                            current_page + 1
+                        } else {
+                            if *current_page <= 1 {
+                                println!("Already on first page.\n");
+                                continue;
+                            }
+                            current_page - 1
+                        };
+                        
+                        print!("Loading page {}...", new_page);
+                        std::io::Write::flush(&mut std::io::stdout()).ok();
+                        
+                        match client.get_page(slug, new_page) {
+                            Ok(page) => {
+                                println!(" done\n");
+                                println!("{} p.{}/{}", 
+                                    page.document_title.bold(),
+                                    page.page_number,
+                                    page.total_pages
+                                );
+                                
+                                if let Some(summary) = &page.summary {
+                                    println!("{}: {}", "Summary".dimmed(), summary);
+                                }
+                                
+                                if let Some(keywords) = &page.keywords {
+                                    if !keywords.is_empty() {
+                                        println!("{}: {}", "Keywords".dimmed(), keywords.join(", "));
+                                    }
+                                }
+                                
+                                println!();
+                                
+                                if let Err(e) = client.display_base64_image(&page.image_base64, "80x40") {
+                                    println!("{}: {}", "Error displaying image".red(), e);
+                                }
+                                
+                                last_page_view = Some((slug.clone(), page.page_number, page.total_pages));
+                            }
+                            Err(e) => {
+                                println!("\n{}: {}\n", "Error".red(), e);
+                            }
+                        }
+                        continue;
+                    }
+                    
+                    // Otherwise, handle document list pagination
+                    // Determine which page to fetch
+                    let target_page = if lower == "docs" {
+                        1
+                    } else if lower == "next" || lower == "n" {
+                        if docs_page == 0 {
+                            println!("Use 'docs' first to list documents.\n");
+                            continue;
+                        }
+                        if docs_page >= docs_total_pages {
+                            println!("Already on last page.\n");
+                            continue;
+                        }
+                        docs_page + 1
+                    } else {
+                        // prev/p
+                        if docs_page == 0 {
+                            println!("Use 'docs' first to list documents.\n");
+                            continue;
+                        }
+                        if docs_page <= 1 {
+                            println!("Already on first page.\n");
+                            continue;
+                        }
+                        docs_page - 1
+                    };
+
+                    match client.list_documents(target_page, 5, "title") {
+                        Ok(response) => {
+                            docs_page = response.page;
+                            docs_total_pages = response.total_pages;
+                            docs_slugs = response.documents.iter().map(|d| d.slug.clone()).collect();
+                            
+                            println!("\n{} (page {}/{})", "Documents in library:".bold(), docs_page, docs_total_pages);
+                            println!("{}", "=".repeat(50));
+                            for (i, doc) in response.documents.iter().enumerate() {
+                                println!("[{}] {} - {} pages", 
+                                    (i + 1).to_string().yellow(),
+                                    doc.slug.cyan(),
+                                    doc.total_pages);
+                                println!("    {}", doc.title);
+                                if let Some(ref keywords) = doc.keywords {
+                                    if !keywords.is_empty() {
+                                        let kw: String = keywords.iter().take(4).cloned().collect::<Vec<_>>().join(", ");
+                                        println!("    {}", kw.dimmed());
+                                    }
+                                }
+                            }
+                            let nav_hint = if docs_total_pages > 1 {
+                                " | 'n'=next, 'p'=prev"
+                            } else {
+                                ""
+                            };
+                            println!("\n'doc N' or 'doc <slug>' for details{}\n", nav_hint);
+                        }
+                        Err(e) => println!("{}: {}\n", "Error".red(), e),
+                    }
+                    continue;
+                }
+
+                if lower.starts_with("doc ") {
+                    let arg = input[4..].trim();
+                    if arg.is_empty() {
+                        println!("Usage: doc <N> or doc <slug> (e.g., 'doc 1' or 'doc usgs_snyder')\n");
+                        continue;
+                    }
+                    // Check if arg is a number (index into docs_slugs)
+                    let slug = if let Ok(n) = arg.parse::<usize>() {
+                        if n == 0 || n > docs_slugs.len() {
+                            if docs_slugs.is_empty() {
+                                println!("Use 'docs' first to list documents.\n");
+                            } else {
+                                println!("Invalid index. Use 1-{}.\n", docs_slugs.len());
+                            }
+                            continue;
+                        }
+                        docs_slugs[n - 1].as_str()
+                    } else {
+                        arg
+                    };
+                    match client.get_document(slug) {
+                        Ok(doc) => {
+                            current_doc = Some(doc.slug.clone());
+                            
+                            println!("\n{}", doc.title.bold());
+                            println!("{}", "=".repeat(50));
+                            println!("Slug:    {}", doc.slug.cyan());
+                            println!("Pages:   {}", doc.total_pages);
+                            if let Some(ref source) = doc.source_file {
+                                println!("Source:  {}", source);
+                            }
+                            
+                            // Element counts
+                            let total: i32 = doc.element_counts.values().sum();
+                            if total > 0 {
+                                println!("\n{}", "Elements:".bold());
+                                for (t, c) in &doc.element_counts {
+                                    if *c > 0 {
+                                        println!("  {}: {}", t, c);
+                                    }
+                                }
+                                println!("\nUse 'figures', 'tables', or 'equations' to browse");
+                            }
+                            
+                            if let Some(ref keywords) = doc.keywords {
+                                if !keywords.is_empty() {
+                                    println!("\n{}", "Keywords:".bold());
+                                    println!("  {}", keywords.join(", "));
+                                }
+                            }
+                            
+                            if let Some(ref summary) = doc.summary {
+                                println!("\n{}", "Summary:".bold());
+                                println!("{}", summary);
+                            }
+                            println!();
+                        }
+                        Err(e) => println!("{}: {}\n", "Error".red(), e),
+                    }
+                    continue;
+                }
+
+                // Browse elements - from current page if viewing, otherwise from document
+                if lower == "figures" || lower == "tables" || lower == "equations" {
+                    let (doc_slug, page_filter) = match (&last_page_view, &current_doc) {
+                        (Some((slug, page_num, _)), _) => (slug.clone(), Some(*page_num)),
+                        (None, Some(slug)) => (slug.clone(), None),
+                        (None, None) => {
+                            println!("Use 'doc <slug>' or view a page first.\n");
+                            continue;
+                        }
+                    };
+                    
+                    let element_type = match lower.as_str() {
+                        "figures" => "figure",
+                        "tables" => "table",
+                        "equations" => "equation",
+                        _ => unreachable!(),
+                    };
+                    
+                    // Get more results so we can filter by page if needed
+                    let req = SearchRequest {
+                        query: "*".to_string(),  // Match all
+                        limit: if page_filter.is_some() { 50 } else { 20 },
+                        document_slug: Some(doc_slug.clone()),
+                        include_chunks: false,
+                        include_elements: true,
+                        element_type: Some(element_type.to_string()),
+                    };
+                    
+                    match client.search(req) {
+                        Ok(response) => {
+                            // Filter by page if we're viewing a specific page
+                            let results: Vec<_> = if let Some(page_num) = page_filter {
+                                response.results.into_iter()
+                                    .filter(|r| r.page_number == page_num)
+                                    .collect()
+                            } else {
+                                response.results
+                            };
+                            
+                            if results.is_empty() {
+                                if let Some(page_num) = page_filter {
+                                    println!("No {} on page {} of {}.", lower, page_num, doc_slug);
+                                    println!("Use '{} all' to see all {} in document.\n", lower, lower);
+                                } else {
+                                    println!("No {} found in {}.\n", lower, doc_slug);
+                                }
+                            } else {
+                                let scope = if let Some(page_num) = page_filter {
+                                    format!("{} p.{}", doc_slug, page_num)
+                                } else {
+                                    doc_slug.clone()
+                                };
+                                
+                                println!("\n{} in {} ({} found):", 
+                                    lower.to_uppercase().bold(), 
+                                    scope.cyan(),
+                                    results.len());
+                                println!("{}", "=".repeat(50));
+                                
+                                for (i, result) in results.iter().enumerate() {
+                                    let label = result.element_label.as_deref().unwrap_or("(unlabeled)");
+                                    let page = result.page_number;
+                                    let preview = result.content.chars().take(60).collect::<String>();
+                                    let preview = if result.content.len() > 60 {
+                                        format!("{}...", preview)
+                                    } else {
+                                        preview
+                                    };
+                                    println!("[{}] {} (p.{})", (i + 1).to_string().yellow(), label, page);
+                                    println!("    {}", preview.dimmed());
+                                }
+                                
+                                last_sources = results;
+                                println!("\nUse 'show N' or 'open N' to view.\n");
+                            }
+                        }
+                        Err(e) => println!("{}: {}\n", "Error".red(), e),
+                    }
+                    continue;
+                }
+                
+                // Browse ALL elements in document (ignoring page context)
+                if lower == "figures all" || lower == "tables all" || lower == "equations all" {
+                    let doc_slug = match &current_doc {
+                        Some(slug) => slug.clone(),
+                        None => {
+                            println!("Use 'doc <slug>' first to select a document.\n");
+                            continue;
+                        }
+                    };
+                    
+                    let element_type = match lower.as_str() {
+                        "figures all" => "figure",
+                        "tables all" => "table",
+                        "equations all" => "equation",
+                        _ => unreachable!(),
+                    };
+                    let type_plural = match lower.as_str() {
+                        "figures all" => "figures",
+                        "tables all" => "tables",
+                        "equations all" => "equations",
+                        _ => unreachable!(),
+                    };
+                    
+                    let req = SearchRequest {
+                        query: "*".to_string(),
+                        limit: 50,  // Show more for "all"
+                        document_slug: Some(doc_slug.clone()),
+                        include_chunks: false,
+                        include_elements: true,
+                        element_type: Some(element_type.to_string()),
+                    };
+                    
+                    match client.search(req) {
+                        Ok(response) => {
+                            if response.results.is_empty() {
+                                println!("No {} found in {}.\n", type_plural, doc_slug);
+                            } else {
+                                println!("\n{} in {} ({} found):", 
+                                    type_plural.to_uppercase().bold(), 
+                                    doc_slug.cyan(),
+                                    response.results.len());
+                                println!("{}", "=".repeat(50));
+                                
+                                for (i, result) in response.results.iter().enumerate() {
+                                    let label = result.element_label.as_deref().unwrap_or("(unlabeled)");
+                                    let page = result.page_number;
+                                    let preview = result.content.chars().take(60).collect::<String>();
+                                    let preview = if result.content.len() > 60 {
+                                        format!("{}...", preview)
+                                    } else {
+                                        preview
+                                    };
+                                    println!("[{}] {} (p.{})", (i + 1).to_string().yellow(), label, page);
+                                    println!("    {}", preview.dimmed());
+                                }
+                                
+                                last_sources = response.results;
+                                println!("\nUse 'show N' or 'open N' to view.\n");
+                            }
+                        }
+                        Err(e) => println!("{}: {}\n", "Error".red(), e),
+                    }
+                    continue;
+                }
+
+                // Fast search (no LLM)
+                if lower.starts_with("search ") {
+                    let query = input[7..].trim();
+                    if query.is_empty() {
+                        println!("Usage: search <query>\n");
+                        continue;
+                    }
+                    
+                    let req = SearchRequest {
+                        query: query.to_string(),
+                        limit: 10,
+                        document_slug: current_doc.clone(),
+                        include_chunks: true,
+                        include_elements: true,
+                        element_type: None,
+                    };
+                    
+                    println!("{}", "Searching...".dimmed());
+                    
+                    match client.search(req) {
+                        Ok(response) => {
+                            if response.results.is_empty() {
+                                println!("No results found.\n");
+                            } else {
+                                let scope = if current_doc.is_some() {
+                                    format!(" in {}", current_doc.as_ref().unwrap().cyan())
+                                } else {
+                                    String::new()
+                                };
+                                println!("\n{} results{}:\n", response.results.len().to_string().green(), scope);
+                                
+                                for (i, result) in response.results.iter().enumerate() {
+                                    println!("{}", format_result(i + 1, result, true));
+                                    println!();
+                                }
+                                
+                                last_sources = response.results;
+                                
+                                let has_elements = last_sources.iter().any(|s| s.source_type == "element");
+                                if has_elements {
+                                    println!("Use 'show N' or 'open N' to view images.\n");
+                                }
+                            }
+                        }
+                        Err(e) => println!("{}: {}\n", "Error".red(), e),
+                    }
+                    continue;
+                }
+
+                // Regular question (LLM-powered)
                 println!("{}", "Searching...".dimmed());
 
                 let req = ChatRequest {
                     question: input.to_string(),
                     limit: 8,
-                    document_slug: None,
+                    document_slug: current_doc.clone(),
                 };
 
                 match client.chat(req) {
@@ -884,15 +1842,35 @@ fn cmd_chat(client: &OsgeoClient) -> Result<()> {
 
                         last_sources = response.sources;
 
+                        // Show sources in same format as search results
                         if !last_sources.is_empty() {
-                            let elem_count = last_sources
-                                .iter()
-                                .filter(|s| s.source_type == "element")
-                                .count();
-                            if elem_count > 0 {
+                            println!("{} ({}):", "Sources".dimmed(), last_sources.len());
+                            for (i, result) in last_sources.iter().enumerate() {
+                                let (type_str, label) = if result.source_type == "element" {
+                                    let t = result.element_type.as_ref()
+                                        .map(|t| t.to_uppercase())
+                                        .unwrap_or_else(|| "ELEMENT".to_string());
+                                    let l = result.element_label.as_deref().unwrap_or("").to_string();
+                                    (t, l)
+                                } else {
+                                    let chunk_num = result.chunk_index.unwrap_or(0) + 1;
+                                    ("CHUNK".to_string(), format!("#{}", chunk_num))
+                                };
                                 println!(
-                                    "(Type 'sources' for references, 'show N' for images)\n"
+                                    "  [{}] {} {} - {} p.{}",
+                                    (i + 1).to_string().yellow(),
+                                    type_str.cyan(),
+                                    label,
+                                    result.document_slug.dimmed(),
+                                    result.page_number
                                 );
+                            }
+                            
+                            let has_elements = last_sources.iter().any(|s| s.source_type == "element");
+                            if has_elements {
+                                println!("\nUse 'show N' to view, or 'page <slug> <N>' for full page.\n");
+                            } else {
+                                println!("\nUse 'page <slug> <N>' to view full page.\n");
                             }
                         }
                     }
@@ -1093,6 +2071,14 @@ fn main() -> Result<()> {
 
     let result = match cli.command {
         Some(Commands::Health) => cmd_health(&client),
+        Some(Commands::Docs { page, limit, sort }) => {
+            check_connection(&client)?;
+            cmd_docs(&client, page, limit, sort)
+        }
+        Some(Commands::Doc { slug }) => {
+            check_connection(&client)?;
+            cmd_doc(&client, slug)
+        }
         Some(Commands::Search {
             query,
             limit,
