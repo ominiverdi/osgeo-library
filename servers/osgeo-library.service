@@ -36,8 +36,8 @@ Group=ominiverdi
 WorkingDirectory=/home/ominiverdi/github/osgeo-library
 Environment="PATH=/home/ominiverdi/github/osgeo-library/.venv/bin:/usr/local/bin:/usr/bin:/bin"
 
-# Server command
-ExecStart=/home/ominiverdi/github/osgeo-library/.venv/bin/uvicorn server:app --host 127.0.0.1 --port 8095
+# Server command (doclibrary package)
+ExecStart=/home/ominiverdi/github/osgeo-library/.venv/bin/python -m doclibrary.servers.api
 
 # Restart on failure
 Restart=on-failure

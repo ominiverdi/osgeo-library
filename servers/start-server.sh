@@ -25,4 +25,4 @@ echo "[$(date)] Starting OSGeo Library API server..."
 echo "  Project: $PROJECT_DIR"
 echo "  Port: 8095"
 
-exec "$PROJECT_DIR/.venv/bin/uvicorn" server:app --host 127.0.0.1 --port 8095
+exec "$PROJECT_DIR/.venv/bin/python" -m doclibrary.servers.api
