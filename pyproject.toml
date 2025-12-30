@@ -1,0 +1,94 @@
+[project]
+name = "doclibrary"
+version = "1.0.0"
+description = "Extract and search visual elements from scientific PDFs"
+readme = "README.md"
+license = {text = "MIT"}
+requires-python = ">=3.10"
+authors = [
+    {name = "Lorenzo Becchi"}
+]
+keywords = ["pdf", "extraction", "search", "embeddings", "scientific", "documents"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Scientific/Engineering",
+    "Topic :: Text Processing :: Indexing",
+]
+dependencies = [
+    "fastapi>=0.104.0",
+    "uvicorn>=0.24.0",
+    "requests>=2.31.0",
+    "psycopg2-binary>=2.9.9",
+    "pillow>=10.0.0",
+    "pymupdf>=1.23.0",
+    "openai>=1.3.0",
+    "pydantic>=2.5.0",
+    "httpx>=0.25.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.4.0",
+    "pytest-asyncio>=0.21.0",
+    "pytest-cov>=4.1.0",
+    "ruff>=0.1.0",
+]
+mcp = [
+    "mcp[cli]>=1.2.0",
+]
+
+[project.scripts]
+doclibrary = "doclibrary.cli:main"
+
+[project.urls]
+Homepage = "https://github.com/ominiverdi/osgeo-library"
+Documentation = "https://github.com/ominiverdi/osgeo-library/tree/main/docs"
+Repository = "https://github.com/ominiverdi/osgeo-library"
+
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["doclibrary*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+markers = [
+    "integration: marks tests requiring external services (postgres, llm, embedding server)",
+    "slow: marks tests as slow running",
+]
+asyncio_mode = "auto"
+filterwarnings = [
+    "ignore::DeprecationWarning",
+]
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "N", "UP", "B", "C4"]
+ignore = ["E501"]  # Line too long - handled by formatter
+
+[tool.coverage.run]
+source = ["doclibrary"]
+branch = true
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "raise NotImplementedError",
+    "if __name__ == .__main__.:",
+]

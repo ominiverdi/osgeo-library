@@ -1,8 +1,9 @@
-# OSGeo Library Configuration
+# doclibrary Configuration
 # Copy this file to config.toml or config.local.toml and adjust for your environment
 # config.local.toml is gitignored and takes precedence
 
 [llm]
+# LLM for chat/search responses (text generation)
 # Local llama.cpp server
 url = "http://localhost:8080/v1/chat/completions"
 model = "qwen3-30b"
@@ -15,6 +16,18 @@ api_key = ""  # Empty for local server
 
 temperature = 0.3
 max_tokens = 1024
+
+[vision_llm]
+# Vision LLM for PDF extraction (requires multimodal model with grounding)
+# Qwen3-VL-235B recommended for best bounding box accuracy
+url = "http://localhost:8090/v1"
+model = "qwen2-vl-7b"
+
+[enrichment_llm]
+# LLM for element enrichment (generating search_text)
+# Can be same as [llm] or different
+url = "http://localhost:8080/v1"
+model = "qwen3-30b"
 
 [embedding]
 url = "http://localhost:8094/embedding"

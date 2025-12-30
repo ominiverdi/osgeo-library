@@ -86,6 +86,41 @@ osgeo-library search "projection"
 
 ## Commands
 
+### List Documents
+
+Browse the document library:
+
+```bash
+# List all documents with summaries
+osgeo-library docs
+
+# Paginated list
+osgeo-library docs --page 2 --limit 10
+
+# Sort by different fields
+osgeo-library docs --sort page_count
+osgeo-library docs --sort date_added
+```
+
+**Docs options:**
+
+| Option | Short | Description |
+|--------|-------|-------------|
+| `--page N` | `-p` | Page number (default: 1) |
+| `--limit N` | `-n` | Results per page (default: 20) |
+| `--sort FIELD` | `-s` | Sort by: title, date_added, page_count |
+
+### Document Details
+
+Get detailed information about a specific document:
+
+```bash
+osgeo-library doc usgs_snyder
+osgeo-library doc torchgeo
+```
+
+Shows: title, page count, summary, keywords, license, and element counts (figures, tables, equations, etc.)
+
 ### Search
 
 Search for elements (figures, tables, equations) by semantic similarity:
