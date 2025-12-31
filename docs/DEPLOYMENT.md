@@ -109,14 +109,16 @@ psql -d osgeo_library < ~/data/osgeo-library/osgeo_library.sql
 
 ```bash
 python3 -m venv .venv
-source .venv/bin/activate
-pip install -r requirements.txt
+uv pip install -r requirements.txt
+uv pip install -e .
 ```
 
 ### 5. Start API Server
 
 ```bash
-./servers/start-server.sh
+.venv/bin/python -m doclibrary.servers.api
+# Or in background:
+nohup .venv/bin/python -m doclibrary.servers.api >> ~/logs/osgeo-library.log 2>&1 &
 ```
 
 ### 6. Auto-start on Reboot
@@ -153,14 +155,14 @@ ssh osgeo7-gallery
 cd ~/github/osgeo-library
 git pull
 
-# 3. Update dependencies (if requirements.txt changed)
-source .venv/bin/activate
-pip install -r requirements.txt
+# 3. Update dependencies and reinstall package
+uv pip install -r requirements.txt
+uv pip install -e .
 
 # 4. Restart the API server
-pkill -f "uvicorn server:app --host 127.0.0.1 --port 8095"
-sleep 1
-./servers/start-server.sh >> ~/logs/osgeo-library.log 2>&1 &
+pkill -f "port 8095" || true
+sleep 2
+nohup .venv/bin/python -m doclibrary.servers.api >> ~/logs/osgeo-library.log 2>&1 &
 
 # 5. Verify
 curl -s http://localhost:8095/health | python3 -m json.tool
@@ -168,7 +170,7 @@ curl -s http://localhost:8095/health | python3 -m json.tool
 
 **One-liner from minto:**
 ```bash
-ssh osgeo7-gallery "cd ~/github/osgeo-library && git pull && pkill -f '\-\-port 8095'; sleep 2 && ./servers/start-server.sh >> ~/logs/osgeo-library.log 2>&1 &"
+ssh osgeo7-gallery "cd ~/github/osgeo-library && git pull && uv pip install -e . && pkill -f 'port 8095' || true; sleep 2 && nohup .venv/bin/python -m doclibrary.servers.api >> ~/logs/osgeo-library.log 2>&1 &"
 ```
 
 ---
@@ -416,8 +418,8 @@ ps aux | grep "port 8095"
 tail -50 ~/logs/osgeo-library.log
 
 # Restart
-pkill -f '\-\-port 8095'
-./servers/start-server.sh >> ~/logs/osgeo-library.log 2>&1 &
+pkill -f "port 8095" || true
+nohup .venv/bin/python -m doclibrary.servers.api >> ~/logs/osgeo-library.log 2>&1 &
 ```
 
 ### Database connection failed
