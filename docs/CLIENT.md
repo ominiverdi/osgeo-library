@@ -184,8 +184,8 @@ Starts an interactive session with the LLM. The chat mode supports:
 | `docs` | List documents in library |
 | `doc <N\|slug>` | Select document (e.g., `doc 1` or `doc usgs_snyder`) |
 | `page [slug] <N>` | View page (e.g., `page 55` or `page usgs_snyder 55`) |
-| `next` / `n` | Navigate to next page |
-| `prev` / `p` | Navigate to previous page |
+| `next` / `n` | Navigate to next page (or start docs listing) |
+| `prev` / `p` | Navigate to previous page (or start docs listing) |
 | **Elements** | |
 | `figures` | List figures on current page (or `figures all`) |
 | `tables` | List tables on current page (or `tables all`) |
@@ -199,6 +199,7 @@ Starts an interactive session with the LLM. The chat mode supports:
 | `sources` | Show sources from the last answer |
 | `<question>` | Ask a question (uses LLM) |
 | **Other** | |
+| `health` / `status` / `stats` | Show server status |
 | `help` | Show available commands |
 | `quit` / `exit` / `q` | Exit the chat |
 
@@ -210,17 +211,14 @@ Check if the server is running and responsive:
 osgeo-library health
 ```
 
-Returns server status and version information.
+Returns server status including:
+- Overall status (healthy/degraded)
+- Embedding server availability
+- LLM server availability  
+- Database connectivity
+- API version
 
-### Stats
-
-View library statistics:
-
-```bash
-osgeo-library stats
-```
-
-Shows counts of documents and elements by type in the database.
+In chat mode, you can also use `health`, `status`, or `stats` commands.
 
 ## GUI Image Viewer
 
