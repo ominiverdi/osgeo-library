@@ -42,3 +42,4 @@ db_backup/
 
 # Reports (keep markdown summaries, ignore raw JSON data)
 reports/*.json
+opencode.json
