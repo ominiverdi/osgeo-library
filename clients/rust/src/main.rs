@@ -1824,25 +1824,20 @@ fn cmd_chat(client: &OsgeoClient) -> Result<()> {
                     let req = SearchRequest {
                         query: query.to_string(),
                         limit: 10,
-                        document_slug: current_doc.clone(),
+                        document_slug: None,  // Always search all documents
                         include_chunks: true,
                         include_elements: true,
                         element_type: None,
                     };
                     
-                    println!("{}", "Searching...".dimmed());
+                    println!("{}", "Searching all documents...".dimmed());
                     
                     match client.search(req) {
                         Ok(response) => {
                             if response.results.is_empty() {
                                 println!("No results found.\n");
                             } else {
-                                let scope = if current_doc.is_some() {
-                                    format!(" in {}", current_doc.as_ref().unwrap().cyan())
-                                } else {
-                                    String::new()
-                                };
-                                println!("\n{} results{}:\n", response.results.len().to_string().green(), scope);
+                                println!("\n{} results:\n", response.results.len().to_string().green());
                                 
                                 for (i, result) in response.results.iter().enumerate() {
                                     println!("{}", format_result(i + 1, result, true));
