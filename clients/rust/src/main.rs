@@ -1175,7 +1175,7 @@ fn cmd_chat(client: &OsgeoClient) -> Result<()> {
                     break;
                 }
 
-                if lower == "health" || lower == "status" || lower == "stats" {
+                if lower == "health" || lower == "status" || lower == "stats" || lower == "info" {
                     match client.health() {
                         Ok(health) => {
                             println!("\n{}", "Server Status".bold());
@@ -1194,6 +1194,20 @@ fn cmd_chat(client: &OsgeoClient) -> Result<()> {
                         }
                         Err(e) => println!("{}: {}\n", "Error".red(), e),
                     }
+                    continue;
+                }
+
+                if lower == "version" || lower == "ver" {
+                    println!("\n{} {}", "osgeo-library".bold(), env!("CARGO_PKG_VERSION"));
+                    match client.health() {
+                        Ok(health) => println!("Server API:  {}\n", health.version),
+                        Err(_) => println!("Server:      not connected\n"),
+                    }
+                    continue;
+                }
+
+                if lower == "clear" || lower == "cls" {
+                    print!("\x1B[2J\x1B[1;1H");
                     continue;
                 }
 
@@ -1221,6 +1235,8 @@ fn cmd_chat(client: &OsgeoClient) -> Result<()> {
                     println!();
                     println!("{}", "Other:".bold());
                     println!("  health/status     Show server status");
+                    println!("  version           Show client and server version");
+                    println!("  clear             Clear screen");
                     println!("  help              Show this help");
                     println!("  quit/exit/q       Exit\n");
                     continue;
@@ -1472,7 +1488,7 @@ fn cmd_chat(client: &OsgeoClient) -> Result<()> {
                     continue;
                 }
 
-                if lower == "docs" || lower == "next" || lower == "n" || lower == "prev" || lower == "p" {
+                if lower == "docs" || lower == "list" || lower == "ls" || lower == "next" || lower == "n" || lower == "prev" || lower == "p" {
                     // Check if we're navigating pages (after viewing a page)
                     if (lower == "next" || lower == "n" || lower == "prev" || lower == "p") && last_page_view.is_some() {
                         let (slug, current_page, total) = last_page_view.as_ref().unwrap();
@@ -1530,7 +1546,7 @@ fn cmd_chat(client: &OsgeoClient) -> Result<()> {
                     
                     // Otherwise, handle document list pagination
                     // Determine which page to fetch
-                    let target_page = if lower == "docs" {
+                    let target_page = if lower == "docs" || lower == "list" || lower == "ls" {
                         1
                     } else if lower == "next" || lower == "n" {
                         if docs_page == 0 {

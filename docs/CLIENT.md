@@ -181,7 +181,7 @@ Starts an interactive session with the LLM. The chat mode supports:
 | Command | Description |
 |---------|-------------|
 | **Browse** | |
-| `docs` | List documents in library |
+| `docs` / `list` / `ls` | List documents in library |
 | `doc <N\|slug>` | Select document (e.g., `doc 1` or `doc usgs_snyder`) |
 | `page [slug] <N>` | View page (e.g., `page 55` or `page usgs_snyder 55`) |
 | `next` / `n` | Navigate to next page (or start docs listing) |
@@ -199,7 +199,9 @@ Starts an interactive session with the LLM. The chat mode supports:
 | `sources` | Show sources from the last answer |
 | `<question>` | Ask a question (uses LLM) |
 | **Other** | |
-| `health` / `status` / `stats` | Show server status |
+| `health` / `status` / `info` | Show server status |
+| `version` / `ver` | Show client and server version |
+| `clear` / `cls` | Clear screen |
 | `help` | Show available commands |
 | `quit` / `exit` / `q` | Exit the chat |
 
