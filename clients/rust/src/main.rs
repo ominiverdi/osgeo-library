@@ -1175,7 +1175,7 @@ fn cmd_chat(client: &OsgeoClient) -> Result<()> {
                     break;
                 }
 
-                if lower == "health" || lower == "status" {
+                if lower == "health" || lower == "status" || lower == "stats" {
                     match client.health() {
                         Ok(health) => {
                             println!("\n{}", "Server Status".bold());
@@ -1220,6 +1220,7 @@ fn cmd_chat(client: &OsgeoClient) -> Result<()> {
                     println!("  <question>        Ask a question (uses LLM)");
                     println!();
                     println!("{}", "Other:".bold());
+                    println!("  health/status     Show server status");
                     println!("  help              Show this help");
                     println!("  quit/exit/q       Exit\n");
                     continue;
@@ -1533,25 +1534,25 @@ fn cmd_chat(client: &OsgeoClient) -> Result<()> {
                         1
                     } else if lower == "next" || lower == "n" {
                         if docs_page == 0 {
-                            println!("Use 'docs' first to list documents.\n");
-                            continue;
-                        }
-                        if docs_page >= docs_total_pages {
+                            // Auto-start at page 1 if not viewing docs yet
+                            1
+                        } else if docs_page >= docs_total_pages {
                             println!("Already on last page.\n");
                             continue;
+                        } else {
+                            docs_page + 1
                         }
-                        docs_page + 1
                     } else {
                         // prev/p
                         if docs_page == 0 {
-                            println!("Use 'docs' first to list documents.\n");
-                            continue;
-                        }
-                        if docs_page <= 1 {
+                            // Auto-start at page 1 if not viewing docs yet
+                            1
+                        } else if docs_page <= 1 {
                             println!("Already on first page.\n");
                             continue;
+                        } else {
+                            docs_page - 1
                         }
-                        docs_page - 1
                     };
 
                     match client.list_documents(target_page, 5, "title") {
