@@ -736,7 +736,7 @@ fn format_result(i: usize, result: &SearchResult, verbose: bool) -> String {
         ));
         lines.push(format!(
             "    {} p.{} | {:.0}%",
-            result.document_title.dimmed(),
+            result.document_slug.cyan(),
             result.page_number,
             result.score_pct
         ));
@@ -749,7 +749,7 @@ fn format_result(i: usize, result: &SearchResult, verbose: bool) -> String {
         ));
         lines.push(format!(
             "    {} p.{} | {:.0}%",
-            result.document_title.dimmed(),
+            result.document_slug.cyan(),
             result.page_number,
             result.score_pct
         ));
