@@ -197,11 +197,14 @@ def _parse_elements(raw_response: str, width: int, height: int) -> List[Dict[str
                     continue
 
                 # Convert 0-1000 scale to pixels
+                # Note: Vision model has systematic upward shift, add vertical offset
+                # to correct (approx 1.06% of height)
+                y_offset = int(0.0106 * height)
                 px_bbox = [
                     int(bbox[0] / 1000 * width),
-                    int(bbox[1] / 1000 * height),
+                    int(bbox[1] / 1000 * height) + y_offset,
                     int(bbox[2] / 1000 * width),
-                    int(bbox[3] / 1000 * height),
+                    int(bbox[3] / 1000 * height) + y_offset,
                 ]
 
                 elem_data = {
@@ -249,7 +252,9 @@ def _crop_and_save_element(
         return None, None
 
     # Use core crop_element function
-    cropped = crop_element(image, bbox, padding=10, scale=image.width)
+    # Use 7% padding around elements for safety margin
+    padding = int(0.07 * min(image.width, image.height))
+    cropped = crop_element(image, bbox, padding=padding, scale=image.width)
     if cropped is None:
         return None, None
 

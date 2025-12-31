@@ -389,7 +389,7 @@ IMPORTANT: Include citation tags like [1], [2], [3] in your answer to reference 
             {"role": "user", "content": augmented_question},
         ]
 
-        answer = query_llm(messages, config.llm_url, config.llm_model)
+        answer = query_llm(messages, config.llm_url, config.llm_model, api_key=config.llm_api_key)
 
         return ChatResponse(
             answer=answer,

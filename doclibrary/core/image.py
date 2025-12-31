@@ -60,20 +60,26 @@ def create_annotated_image(
 
     for element in elements:
         element_type = element.get("type", "default")
+
+        # Prefer bbox_pixels (corrected) over bbox (original)
+        bbox_pixels = element.get("bbox_pixels")
         bbox = element.get("bbox")
 
-        if not bbox or len(bbox) != 4:
-            continue
-
-        # Check if bbox is in 0-1000 scale (Qwen-VL format) or pixels
-        if all(0 <= coord <= 1000 for coord in bbox):
-            # Convert from 0-1000 scale to pixels
-            x1 = int(bbox[0] * width / 1000)
-            y1 = int(bbox[1] * height / 1000)
-            x2 = int(bbox[2] * width / 1000)
-            y2 = int(bbox[3] * height / 1000)
+        if bbox_pixels and len(bbox_pixels) == 4:
+            # Use pre-computed pixel coordinates (with any corrections applied)
+            x1, y1, x2, y2 = [int(c) for c in bbox_pixels]
+        elif bbox and len(bbox) == 4:
+            # Check if bbox is in 0-1000 scale (Qwen-VL format) or pixels
+            if all(0 <= coord <= 1000 for coord in bbox):
+                # Convert from 0-1000 scale to pixels
+                x1 = int(bbox[0] * width / 1000)
+                y1 = int(bbox[1] * height / 1000)
+                x2 = int(bbox[2] * width / 1000)
+                y2 = int(bbox[3] * height / 1000)
+            else:
+                x1, y1, x2, y2 = [int(c) for c in bbox]
         else:
-            x1, y1, x2, y2 = [int(c) for c in bbox]
+            continue
 
         # Get color for element type
         color = get_element_color(element_type)
