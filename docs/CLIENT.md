@@ -180,11 +180,27 @@ Starts an interactive session with the LLM. The chat mode supports:
 
 | Command | Description |
 |---------|-------------|
-| `help` | Show available commands |
+| **Browse** | |
+| `docs` | List documents in library |
+| `doc <N\|slug>` | Select document (e.g., `doc 1` or `doc usgs_snyder`) |
+| `page [slug] <N>` | View page (e.g., `page 55` or `page usgs_snyder 55`) |
+| `next` / `n` | Navigate to next page |
+| `prev` / `p` | Navigate to previous page |
+| **Elements** | |
+| `figures` | List figures on current page (or `figures all`) |
+| `tables` | List tables on current page (or `tables all`) |
+| `equations` | List equations on current page (or `equations all`) |
+| **View** | |
+| `show <N>` | Display element in terminal (e.g., `show 1` or `show 1,2,3`) |
+| `open <N>` | Open element in GUI viewer |
+| `open page <N>` | Open page in GUI viewer |
+| **Search** | |
+| `search <query>` | Semantic search (no LLM) |
 | `sources` | Show sources from the last answer |
-| `show N` | Display image for source N (e.g., `show 1` or `show 1,2,3`) |
-| `open N` | Open image in GUI viewer |
-| `quit` | Exit the chat |
+| `<question>` | Ask a question (uses LLM) |
+| **Other** | |
+| `help` | Show available commands |
+| `quit` / `exit` / `q` | Exit the chat |
 
 ### Health Check
 
