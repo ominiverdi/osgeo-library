@@ -1208,6 +1208,7 @@ fn cmd_chat(client: &OsgeoClient) -> Result<()> {
 
                 if lower == "clear" || lower == "cls" {
                     print!("\x1B[2J\x1B[1;1H");
+                    std::io::Write::flush(&mut std::io::stdout()).ok();
                     continue;
                 }
 
