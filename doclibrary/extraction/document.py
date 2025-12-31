@@ -515,9 +515,9 @@ def extract_document(
         # Update document.json after each page (for progress tracking)
         _update_document_json(output_dir, pdf_path, total_pages, config.vision_llm_model)
 
-        # Small delay between pages
+        # Delay between pages to prevent GPU overload/thermal issues
         if i < len(pages) - 1:
-            time.sleep(0.5)
+            time.sleep(5.0)
 
     total_time = time.time() - total_start
 
