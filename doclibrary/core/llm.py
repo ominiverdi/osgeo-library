@@ -72,6 +72,8 @@ class LLMClient:
         headers = {"Content-Type": "application/json"}
         if self.api_key:
             headers["Authorization"] = f"Bearer {self.api_key}"
+            # OpenRouter requires HTTP-Referer for free tier models
+            headers["HTTP-Referer"] = "https://github.com/ominiverdi/osgeo-library"
 
         response = requests.post(
             self.url,

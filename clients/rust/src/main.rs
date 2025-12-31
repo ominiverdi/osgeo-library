@@ -1175,6 +1175,28 @@ fn cmd_chat(client: &OsgeoClient) -> Result<()> {
                     break;
                 }
 
+                if lower == "health" || lower == "status" {
+                    match client.health() {
+                        Ok(health) => {
+                            println!("\n{}", "Server Status".bold());
+                            let status_color = if health.status == "healthy" {
+                                health.status.green()
+                            } else {
+                                health.status.yellow()
+                            };
+                            println!("Status:     {}", status_color);
+                            println!("Version:    {}", health.version);
+                            let check = |ok: bool| if ok { "OK".green() } else { "FAILED".red() };
+                            println!("Embedding:  {}", check(health.embedding_server));
+                            println!("LLM:        {}", check(health.llm_server));
+                            println!("Database:   {}", check(health.database));
+                            println!();
+                        }
+                        Err(e) => println!("{}: {}\n", "Error".red(), e),
+                    }
+                    continue;
+                }
+
                 if lower == "help" || lower == "?" {
                     println!("\n{}", "Browse:".bold());
                     println!("  docs              List documents in library");
