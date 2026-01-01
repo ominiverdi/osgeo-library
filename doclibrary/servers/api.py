@@ -44,7 +44,7 @@ from doclibrary.config import config
 from doclibrary.core.constants import SYSTEM_PROMPT
 from doclibrary.core.formatting import format_context_for_llm
 from doclibrary.core.llm import check_llm_health, query_llm
-from doclibrary.db import fetch_all, fetch_one
+from doclibrary.db import fetch_all, fetch_one, get_document_by_slug
 from doclibrary.search import (
     SearchResult,
     check_server as check_embed_server,
@@ -363,6 +363,72 @@ async def search_endpoint(req: SearchRequest):
         raise HTTPException(status_code=500, detail=str(e))
 
 
+def extract_search_terms(question: str, document_info: Optional[dict] = None) -> str:
+    """Use LLM to extract effective search terms from a natural language question.
+
+    This enables multi-pass search: first extract what to search for,
+    then perform the actual search. More robust than direct keyword extraction,
+    especially for conversational queries and multilingual environments.
+
+    Args:
+        question: The user's natural language question
+        document_info: Optional dict with 'title', 'summary', 'keywords' for context
+
+    Returns:
+        Space-separated search terms optimized for hybrid search
+    """
+    context_section = ""
+    if document_info:
+        title = document_info.get("title", "")
+        summary = document_info.get("summary", "")
+        keywords = document_info.get("keywords", [])
+        if isinstance(keywords, list):
+            keywords = ", ".join(keywords)
+
+        context_section = f"""
+Document context:
+- Title: {title}
+- Summary: {summary[:300]}{"..." if len(summary) > 300 else ""}
+- Keywords: {keywords}
+
+"""
+
+    prompt = f"""Extract 3-6 effective search terms from this question.
+{context_section}
+Rules:
+- Return only the key terms, space-separated
+- Focus on nouns, technical terms, and specific concepts
+- Use domain-specific terms from the document context when relevant
+- Remove conversational filler (can you, please, tell me, etc.)
+- Keep proper nouns and acronyms
+- No explanation, just the terms
+
+Question: {question}
+
+Search terms:"""
+
+    messages = [{"role": "user", "content": prompt}]
+
+    # Use lower temperature for consistent extraction
+    terms = query_llm(
+        messages,
+        config.llm_url,
+        config.llm_model,
+        api_key=config.llm_api_key,
+        temperature=0.1,
+        max_tokens=50,
+    )
+
+    # Clean up: remove quotes, extra punctuation, newlines
+    terms = terms.strip().strip("\"'").replace("\n", " ")
+
+    # Fallback to original question if extraction fails
+    if not terms or terms.startswith("Error"):
+        return question
+
+    return terms
+
+
 @app.post("/chat", response_model=ChatResponse)
 async def chat_endpoint(req: ChatRequest):
     """Ask a question and get an LLM-powered answer with citations."""
@@ -373,12 +439,33 @@ async def chat_endpoint(req: ChatRequest):
         raise HTTPException(status_code=503, detail="LLM server unavailable")
 
     try:
-        results = search(req.question, limit=req.limit, document_slug=req.document_slug)
+        # Fetch document context if a document is selected
+        document_info = None
+        if req.document_slug:
+            document_info = get_document_by_slug(req.document_slug)
+
+        # Pass 1: Extract search terms from natural language question
+        search_terms = extract_search_terms(req.question, document_info)
+
+        # Pass 2: Search with extracted terms (scoped to document if selected)
+        results = search(search_terms, limit=req.limit, document_slug=req.document_slug)
+
+        # Fallback: If no results and a document was selected, search all documents
+        used_fallback = False
+        if not results and req.document_slug:
+            results = search(search_terms, limit=req.limit, document_slug=None)
+            used_fallback = True
+
         context = format_context_for_llm(results)
+
+        # Note in question if using fallback results
+        fallback_note = ""
+        if used_fallback and results:
+            fallback_note = f"\n\nNote: No results were found in '{req.document_slug}', showing results from other documents."
 
         augmented_question = f"""Context (cite using the tags shown):
 
-{context}
+{context}{fallback_note}
 
 Question: {req.question}
 
@@ -389,12 +476,18 @@ IMPORTANT: Include citation tags like [1], [2], [3] in your answer to reference 
             {"role": "user", "content": augmented_question},
         ]
 
+        # Pass 3: Generate answer
         answer = query_llm(messages, config.llm_url, config.llm_model, api_key=config.llm_api_key)
+
+        # Include fallback info in query_used
+        query_info = search_terms
+        if used_fallback:
+            query_info = f"{search_terms} (fallback: all docs)"
 
         return ChatResponse(
             answer=answer,
             sources=[result_to_response(r) for r in results],
-            query_used=req.question,
+            query_used=query_info,
         )
 
     except RuntimeError as e:
