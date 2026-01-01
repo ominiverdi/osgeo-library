@@ -205,6 +205,172 @@ Starts an interactive session with the LLM. The chat mode supports:
 | `help` | Show available commands |
 | `quit` / `exit` / `q` | Exit the chat |
 
+### Scripted Usage (Piping Commands)
+
+The chat mode accepts piped input for non-interactive/scripted usage. Commands are processed sequentially.
+
+**Basic syntax:**
+```bash
+echo -e "command1\ncommand2\nquit" | osgeo-library chat
+```
+
+**Example 1: Browse the library and explore a document**
+
+```bash
+osgeo-library chat <<EOF
+docs
+doc usgs_snyder
+page 1
+next
+next
+figures
+quit
+EOF
+```
+
+This lists all documents, selects "usgs_snyder", views pages 1-3, then lists figures on page 3.
+
+**Example 2: Search and view multiple results**
+
+```bash
+osgeo-library chat <<EOF
+search map projection equations
+show 1
+show 2
+show 3
+quit
+EOF
+```
+
+Searches for map projection equations and displays the top 3 results in the terminal.
+
+**Example 3: Open multiple figures in GUI viewer**
+
+```bash
+osgeo-library chat <<EOF
+doc aibench
+figures all
+open 1
+open 2
+open 3
+open 4
+quit
+EOF
+```
+
+Lists all figures in aibench document and opens the first 4 in separate GUI windows.
+
+**Example 4: Compare tables across documents**
+
+```bash
+osgeo-library chat <<EOF
+search benchmark comparison table
+show 1
+show 2
+sources
+quit
+EOF
+```
+
+Searches for benchmark tables, shows them in terminal, then displays source details.
+
+**Example 5: Quick page reference with context**
+
+```bash
+osgeo-library chat <<EOF
+doc usgs_snyder
+page 35
+figures
+tables
+equations
+quit
+EOF
+```
+
+Views page 35 and lists all visual elements on that page.
+
+**Example 6: Search and open in GUI for presentation**
+
+```bash
+osgeo-library chat <<EOF
+search satellite segmentation neural network
+open 1
+open 2
+open page aiseg 7
+quit
+EOF
+```
+
+Searches, opens top 2 element results, then opens a specific page in GUI viewers.
+
+**Example 7: Browse document elements by type**
+
+```bash
+osgeo-library chat <<EOF
+doc digital_earth
+tables all
+show 1
+show 2
+figures all
+show 1
+quit
+EOF
+```
+
+Explores tables and figures in a large document, viewing samples of each.
+
+**Example 8: Using a commands file**
+
+Create `explore.txt`:
+```
+docs
+n
+n
+doc torchgeo
+figures all
+show 1
+page 5
+quit
+```
+
+Run it:
+```bash
+cat explore.txt | osgeo-library chat
+```
+
+**Example 9: One-liner for quick lookups**
+
+```bash
+# View specific page
+echo -e "page usgs_snyder 42\nquit" | osgeo-library chat
+
+# Search and show first result
+echo -e "search mercator projection\nshow 1\nquit" | osgeo-library chat
+
+# Open page in GUI
+echo -e "open page aibench 1\nquit" | osgeo-library chat
+
+# List all equations in a document
+echo -e "doc usgs_snyder\nequations all\nquit" | osgeo-library chat
+```
+
+**Key commands for scripting:**
+
+| Command | Description |
+|---------|-------------|
+| `docs` | List all documents |
+| `doc <slug>` | Select and show document details |
+| `page <slug> <N>` | Display page N in terminal |
+| `open page <slug> <N>` | Open page N in GUI viewer |
+| `next` / `prev` | Navigate pages |
+| `figures` / `tables` / `equations` | List elements on current page |
+| `figures all` | List all elements of type in document |
+| `search <query>` | Semantic search across library |
+| `show <N>` | Display result N in terminal |
+| `open <N>` | Open result N in GUI viewer |
+| `sources` | Show sources from last search |
+| `quit` | Exit (required to end piped session) |
+
 ### Health Check
 
 Check if the server is running and responsive:
