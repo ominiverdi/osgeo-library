@@ -11,6 +11,11 @@ __pycache__/
 # Test outputs
 output/
 *.log
+logs/
+
+# Build artifacts
+doclibrary.egg-info/
+*.egg-info/
 
 # Test PDFs (large files)
 pdfs/
@@ -28,7 +33,7 @@ config.local.toml
 config.toml
 
 # Database content (generated data - too large for git)
-db/data/
+db/
 
 # Web viewer data (sample extractions for demo)
 # Uncomment to exclude: web/data/

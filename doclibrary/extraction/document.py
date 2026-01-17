@@ -65,8 +65,18 @@ Use empty arrays [] for categories with no elements."""
 
 
 def _get_vision_client() -> OpenAI:
-    """Get OpenAI client for vision LLM server."""
-    return OpenAI(base_url=config.vision_llm_url, api_key="not-needed")
+    """Get OpenAI client for vision LLM server.
+
+    Uses extended timeout (30 min) because vision model processing
+    can take 500-600+ seconds for complex pages with many elements.
+    """
+    import httpx
+
+    return OpenAI(
+        base_url=config.vision_llm_url,
+        api_key="not-needed",
+        timeout=httpx.Timeout(connect=30.0, read=1800.0, write=120.0, pool=60.0),
+    )
 
 
 def pdf_page_to_image(
@@ -475,6 +485,12 @@ def extract_document(
     doc = fitz.open(str(pdf_path))
     total_pages = len(doc)
     doc.close()
+
+    # Filter out pages beyond document length
+    original_count = len(pages)
+    pages = [p for p in pages if p <= total_pages]
+    if len(pages) < original_count and verbose:
+        print(f"Note: Capped page range to {total_pages} (document length)")
 
     # Check for existing pages if skip_existing
     if skip_existing:
