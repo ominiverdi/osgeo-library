@@ -116,20 +116,34 @@ class TestLLMIntegration:
 
     def test_llm_chat(self):
         """Should get response from LLM."""
-        from doclibrary.core.llm import chat
+        from doclibrary.config import config
+        from doclibrary.core.llm import query_llm
 
-        response = chat("Say hello in one word.")
+        messages = [{"role": "user", "content": "Say hello in one word."}]
+        response = query_llm(
+            messages=messages,
+            url=config.llm_url,
+            model=config.llm_model,
+            api_key=config.llm_api_key,
+        )
 
         assert response is not None
         assert len(response) > 0
 
     def test_llm_with_context(self):
         """Should use context in LLM response."""
-        from doclibrary.core.llm import chat
+        from doclibrary.config import config
+        from doclibrary.core.llm import query_llm
 
-        context = "The capital of France is Paris."
-        question = "What is the capital of France according to the context?"
-
-        response = chat(question, context=context)
+        messages = [
+            {"role": "system", "content": "Context: The capital of France is Paris."},
+            {"role": "user", "content": "What is the capital of France according to the context?"},
+        ]
+        response = query_llm(
+            messages=messages,
+            url=config.llm_url,
+            model=config.llm_model,
+            api_key=config.llm_api_key,
+        )
 
         assert "Paris" in response
