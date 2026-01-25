@@ -43,12 +43,12 @@ jobs:
       - name: Rename binary (Unix)
         if: runner.os != 'Windows'
         run: |
-          cp clients/rust/target/${{ matrix.target }}/release/osgeo-library ${{ matrix.name }}
+          cp clients/rust/target/${{ matrix.target }}/release/osgeo-library-cli ${{ matrix.name }}
 
       - name: Rename binary (Windows)
         if: runner.os == 'Windows'
         run: |
-          cp clients/rust/target/${{ matrix.target }}/release/osgeo-library.exe ${{ matrix.name }}
+          cp clients/rust/target/${{ matrix.target }}/release/osgeo-library-cli.exe ${{ matrix.name }}
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
