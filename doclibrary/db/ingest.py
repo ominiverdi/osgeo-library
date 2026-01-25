@@ -46,14 +46,17 @@ from doclibrary.search.embeddings import get_embeddings
 EMBED_BATCH_SIZE = 50
 
 
-def get_embeddings_batched(texts: List[str]) -> List[Optional[List[float]]]:
+def get_embeddings_batched(texts: List[str], verbose: bool = False) -> List[Optional[List[float]]]:
     """Get embeddings in batches to avoid timeouts on large requests."""
     if not texts:
         return []
 
+    total = len(texts)
     all_embeddings = []
-    for i in range(0, len(texts), EMBED_BATCH_SIZE):
+    for i in range(0, total, EMBED_BATCH_SIZE):
         batch = texts[i : i + EMBED_BATCH_SIZE]
+        if verbose and total > EMBED_BATCH_SIZE:
+            print(f"      Embedding {i + 1}-{min(i + len(batch), total)} of {total}...")
         batch_embeddings = get_embeddings(batch)
         if batch_embeddings:
             all_embeddings.extend(batch_embeddings)
@@ -259,7 +262,7 @@ def ingest_document(
             chunk_contents = [c.content for c in chunks]
             embeddings = None
             if embed_content and chunk_contents:
-                embeddings = get_embeddings_batched(chunk_contents)
+                embeddings = get_embeddings_batched(chunk_contents, verbose=verbose)
 
             for i, chunk in enumerate(chunks):
                 emb = embeddings[i] if embeddings and i < len(embeddings) else None
@@ -388,10 +391,16 @@ def ingest_all(
     Returns:
         Number of successfully ingested documents
     """
+    from datetime import datetime
+
     docs = list_available_documents()
+    total_docs = len(docs)
     success_count = 0
 
-    for doc in docs:
+    for idx, doc in enumerate(docs, 1):
+        timestamp = datetime.now().strftime("%H:%M:%S")
+        if verbose:
+            print(f"\n[{idx}/{total_docs}] {timestamp} - {doc['name']}")
         if ingest_document(
             doc["name"],
             dry_run=dry_run,
@@ -403,7 +412,8 @@ def ingest_all(
             success_count += 1
 
     if verbose:
-        print(f"\nIngested {success_count}/{len(docs)} documents")
+        timestamp = datetime.now().strftime("%H:%M:%S")
+        print(f"\n{timestamp} - Ingested {success_count}/{total_docs} documents")
 
     return success_count
 
