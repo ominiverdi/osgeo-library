@@ -42,6 +42,27 @@ from doclibrary.db.connection import (
 from doclibrary.search.embeddings import check_server as check_embed_server
 from doclibrary.search.embeddings import get_embeddings
 
+# Batch size for embedding requests to avoid timeouts on large pages
+EMBED_BATCH_SIZE = 50
+
+
+def get_embeddings_batched(texts: List[str]) -> List[Optional[List[float]]]:
+    """Get embeddings in batches to avoid timeouts on large requests."""
+    if not texts:
+        return []
+
+    all_embeddings = []
+    for i in range(0, len(texts), EMBED_BATCH_SIZE):
+        batch = texts[i : i + EMBED_BATCH_SIZE]
+        batch_embeddings = get_embeddings(batch)
+        if batch_embeddings:
+            all_embeddings.extend(batch_embeddings)
+        else:
+            # Fill with None if batch failed
+            all_embeddings.extend([None] * len(batch))
+
+    return all_embeddings
+
 
 def get_data_dir() -> Path:
     """Get the data directory path."""
@@ -234,11 +255,11 @@ def ingest_document(
         if text:
             chunks = chunk_text(text, DEFAULT_CHUNK_SIZE, DEFAULT_OVERLAP)
 
-            # Batch embed chunks
+            # Batch embed chunks (in smaller batches to avoid timeouts)
             chunk_contents = [c.content for c in chunks]
             embeddings = None
             if embed_content and chunk_contents:
-                embeddings = get_embeddings(chunk_contents)
+                embeddings = get_embeddings_batched(chunk_contents)
 
             for i, chunk in enumerate(chunks):
                 emb = embeddings[i] if embeddings and i < len(embeddings) else None
