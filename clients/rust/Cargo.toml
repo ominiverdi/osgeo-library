@@ -1,5 +1,5 @@
 [package]
-name = "osgeo-library"
+name = "osgeo-library-cli"
 version = "0.2.5"
 edition = "2021"
 description = "CLI client for OSGeo Library - search scientific documents"
