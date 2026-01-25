@@ -125,6 +125,33 @@ def check_llm_health(url: str) -> bool:
         return False
 
 
+def chat(prompt: str, context: Optional[str] = None) -> str:
+    """Simple chat function for quick queries.
+
+    Uses config for LLM settings.
+
+    Args:
+        prompt: User question/prompt
+        context: Optional context to include
+
+    Returns:
+        LLM response string
+    """
+    from doclibrary.config import config
+
+    messages = []
+    if context:
+        messages.append({"role": "system", "content": f"Context:\n{context}"})
+    messages.append({"role": "user", "content": prompt})
+
+    return query_llm(
+        messages=messages,
+        url=config.llm_url,
+        model=config.llm_model,
+        api_key=config.llm_api_key,
+    )
+
+
 def query_llm(
     messages: List[Dict[str, str]],
     url: str,
