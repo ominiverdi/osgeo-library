@@ -262,7 +262,7 @@ def insert_element(
             document_id,
             page_id,
             element_type,
-            label,
+            label[:100] if label else "",
             description,
             search_text or "",
             latex or "",
