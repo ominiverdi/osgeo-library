@@ -145,6 +145,14 @@ def get_document_by_slug(slug: str) -> Optional[Dict[str, Any]]:
     return fetch_one("SELECT * FROM documents WHERE slug = %s", (slug,))
 
 
+def get_document_by_source_file(source_file: str) -> Optional[Dict[str, Any]]:
+    """Get document by source_file (PDF filename).
+
+    Used to prevent duplicate ingestion of the same PDF under different slugs.
+    """
+    return fetch_one("SELECT * FROM documents WHERE source_file = %s", (source_file,))
+
+
 def delete_document(doc_id: Union[int, str]) -> None:
     """Delete document and all related data (cascades).
 

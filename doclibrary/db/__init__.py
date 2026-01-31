@@ -16,6 +16,7 @@ from .connection import (
     get_connection,
     get_connection_string,
     get_document_by_slug,
+    get_document_by_source_file,
     insert_chunk,
     insert_document,
     insert_element,
@@ -40,6 +41,7 @@ __all__ = [
     "insert_returning",
     # Document operations
     "get_document_by_slug",
+    "get_document_by_source_file",
     "delete_document",
     "insert_document",
     "insert_page",

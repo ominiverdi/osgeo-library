@@ -81,6 +81,7 @@ class Config:
 
     # Paths
     data_dir: str = "db/data"
+    cache_dir: str = "/tmp/doclibrary_cache"  # For chat bridge image caching
 
     # Display (chafa terminal preview)
     chafa_size: str = "80x35"
@@ -176,6 +177,9 @@ def load_config() -> Config:
                 if not data_dir_path.is_absolute():
                     data_dir_path = (config_file.parent / data_dir_path).resolve()
                 config.data_dir = str(data_dir_path)
+                # Cache dir for chat bridges
+                if "cache_dir" in paths:
+                    config.cache_dir = paths["cache_dir"]
 
             # Display section
             if "display" in data:
@@ -203,6 +207,7 @@ def load_config() -> Config:
         "DOCLIBRARY_EMBED_URL": "embed_url",
         "DOCLIBRARY_EMBED_DIM": "embed_dimensions",
         "DOCLIBRARY_DATA_DIR": "data_dir",
+        "DOCLIBRARY_CACHE_DIR": "cache_dir",
         "DOCLIBRARY_DB_NAME": "db_name",
         "DOCLIBRARY_DB_HOST": "db_host",
         "DOCLIBRARY_DB_PORT": "db_port",
@@ -270,6 +275,7 @@ if __name__ == "__main__":
 
     print("[Paths]")
     print(f"  data_dir: {config.data_dir}")
+    print(f"  cache_dir: {config.cache_dir}")
     print()
 
     print("[Display]")

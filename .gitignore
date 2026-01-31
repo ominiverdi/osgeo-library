@@ -48,3 +48,6 @@ db_backup/
 # Reports (keep markdown summaries, ignore raw JSON data)
 reports/*.json
 opencode.json
+
+# Agent guidelines (machine-specific)
+AGENTS.md

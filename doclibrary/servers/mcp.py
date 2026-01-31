@@ -449,7 +449,6 @@ async def get_page_image(document_slug: str, page_number: int) -> list:
         List containing TextContent (metadata + cache path) and ImageContent (for direct display)
     """
     import shutil
-    import tempfile
     from doclibrary.db import fetch_one
 
     try:
@@ -491,7 +490,7 @@ async def get_page_image(document_slug: str, page_number: int) -> list:
             ]
 
         # Copy to cache directory (for chat bridges that can't receive base64)
-        cache_dir = Path(tempfile.gettempdir()) / "doclibrary_cache"
+        cache_dir = Path(config.cache_dir)
         cache_dir.mkdir(exist_ok=True)
         cache_file = cache_dir / f"{document_slug}_page{page_number}.png"
         shutil.copy2(image_path, cache_file)
@@ -500,11 +499,11 @@ async def get_page_image(document_slug: str, page_number: int) -> list:
         with open(image_path, "rb") as f:
             image_data = base64.b64encode(f.read()).decode("utf-8")
 
-        # Return metadata (with cache path) + image
+        # Return metadata (with cache path marker) + image
         metadata = f"""Page {page_number} of {total_pages}
 Document: {doc["title"]} ({document_slug})
 Size: {page.get("width", "?")}x{page.get("height", "?")} pixels
-Image file: {cache_file}"""
+[DOCLIBRARY_IMAGE]{cache_file}[/DOCLIBRARY_IMAGE]"""
 
         return [
             TextContent(type="text", text=metadata),
@@ -540,7 +539,6 @@ async def get_element_image(
     """
     import re
     import shutil
-    import tempfile
     from doclibrary.db import fetch_one
 
     try:
@@ -585,7 +583,7 @@ async def get_element_image(
             return [TextContent(type="text", text=f"Error: Image file not found: {image_path}")]
 
         # Copy to cache directory (for chat bridges that can't receive base64)
-        cache_dir = Path(tempfile.gettempdir()) / "doclibrary_cache"
+        cache_dir = Path(config.cache_dir)
         cache_dir.mkdir(exist_ok=True)
         # Sanitize label for filename
         safe_label = re.sub(r"[^\w\-]", "_", element_label)
@@ -607,7 +605,7 @@ async def get_element_image(
 Document: {doc_title} ({document_slug})
 Page: {page_num}
 {description[:200] + "..." if len(description) > 200 else description}
-Image file: {cache_file}"""
+[DOCLIBRARY_IMAGE]{cache_file}[/DOCLIBRARY_IMAGE]"""
 
         return [
             TextContent(type="text", text=metadata),
@@ -637,7 +635,6 @@ async def get_page_path(document_slug: str, page_number: int) -> str:
         Text with metadata and path to the cached image file
     """
     import shutil
-    import tempfile
     from doclibrary.db import fetch_one
 
     try:
@@ -669,21 +666,106 @@ async def get_page_path(document_slug: str, page_number: int) -> str:
         if not image_path.exists():
             return f"Error: Page image file not found: {image_path}"
 
-        # Copy to cache directory
-        cache_dir = Path(tempfile.gettempdir()) / "doclibrary_cache"
+        # Copy to cache directory (configurable)
+        cache_dir = Path(config.cache_dir)
         cache_dir.mkdir(exist_ok=True)
         cache_file = cache_dir / f"{document_slug}_page{page_number}.png"
         shutil.copy2(image_path, cache_file)
 
-        # Return metadata with cache path (no base64 encoding)
+        # Return metadata with cache path using clear marker for chat bridges
         return f"""Page {page_number} of {total_pages}
 Document: {doc["title"]} ({document_slug})
 Size: {page.get("width", "?")}x{page.get("height", "?")} pixels
-Image file: {cache_file}"""
+[DOCLIBRARY_IMAGE]{cache_file}[/DOCLIBRARY_IMAGE]"""
 
     except Exception as e:
         logger.error(f"Get page path error: {e}")
         return f"Error retrieving page: {e}"
+
+
+@mcp.tool()
+async def get_page_metadata(document_slug: str, page_number: int) -> dict:
+    """Get page metadata including OCR text and visual elements (no image).
+
+    Use this to understand page content without transferring images.
+    Returns full text, summary, keywords, and list of visual elements on the page.
+
+    Args:
+        document_slug: Document identifier (e.g., 'usgs_snyder')
+        page_number: Page number (1-indexed)
+
+    Returns:
+        Dictionary with page text content and element summaries
+    """
+    from doclibrary.db import fetch_all, fetch_one
+
+    try:
+        # Get document info
+        doc = fetch_one("SELECT id, title FROM documents WHERE slug = %s", (document_slug,))
+        if not doc:
+            return {"error": f"Document '{document_slug}' not found."}
+
+        # Get total pages
+        total = fetch_one(
+            "SELECT COUNT(*) as count FROM pages WHERE document_id = %s", (doc["id"],)
+        )
+        total_pages = total["count"] if total else 0
+
+        if page_number < 1 or page_number > total_pages:
+            return {"error": f"Page {page_number} not found. Document has {total_pages} pages."}
+
+        # Get page with text content
+        page = fetch_one(
+            """SELECT id, full_text, summary, keywords, width, height 
+               FROM pages WHERE document_id = %s AND page_number = %s""",
+            (doc["id"], page_number),
+        )
+        if not page:
+            return {"error": f"Page {page_number} data not available."}
+
+        # Get visual elements on this page
+        elements = fetch_all(
+            """SELECT element_type, label, description, search_text, latex
+               FROM elements WHERE page_id = %s
+               ORDER BY element_type, label""",
+            (page["id"],),
+        )
+
+        # Format elements list
+        element_list = []
+        for el in elements:
+            el_info = {
+                "type": el.get("element_type", "unknown"),
+                "label": el.get("label", ""),
+            }
+            if el.get("description"):
+                el_info["description"] = el["description"]
+            if el.get("search_text"):
+                # Truncate long text
+                text = el["search_text"]
+                if len(text) > 500:
+                    text = text[:500] + "..."
+                el_info["text"] = text
+            if el.get("latex"):
+                el_info["latex"] = el["latex"]
+            element_list.append(el_info)
+
+        return {
+            "document": doc["title"],
+            "document_slug": document_slug,
+            "page": page_number,
+            "total_pages": total_pages,
+            "size": f"{page.get('width', '?')}x{page.get('height', '?')}",
+            "summary": page.get("summary", ""),
+            "keywords": page.get("keywords", []),
+            "full_text": page.get("full_text", ""),
+            "elements": element_list,
+            "element_count": len(element_list),
+        }
+
+    except Exception as e:
+        logger.error(f"Get page metadata error: {e}")
+        return {"error": f"Error retrieving page metadata: {e}"}
 
 
 @mcp.tool()
@@ -707,7 +789,6 @@ async def get_element_path(
     """
     import re
     import shutil
-    import tempfile
     from doclibrary.db import fetch_one
 
     try:
@@ -749,15 +830,15 @@ async def get_element_path(
         if not image_path.exists():
             return f"Error: Image file not found: {image_path}"
 
-        # Copy to cache directory
-        cache_dir = Path(tempfile.gettempdir()) / "doclibrary_cache"
+        # Copy to cache directory (configurable)
+        cache_dir = Path(config.cache_dir)
         cache_dir.mkdir(exist_ok=True)
         # Sanitize label for filename
         safe_label = re.sub(r"[^\w\-]", "_", element_label)
         cache_file = cache_dir / f"{document_slug}_{safe_label}.png"
         shutil.copy2(image_path, cache_file)
 
-        # Format metadata (no base64 encoding)
+        # Format metadata (no base64 encoding) with marker for chat bridges
         elem_type = (element.get("element_type") or "element").upper()
         label = element.get("label", "N/A")
         doc_title = element.get("document_title", "Unknown")
@@ -768,7 +849,7 @@ async def get_element_path(
 Document: {doc_title} ({document_slug})
 Page: {page_num}
 {description[:200] + "..." if len(description) > 200 else description}
-Image file: {cache_file}"""
+[DOCLIBRARY_IMAGE]{cache_file}[/DOCLIBRARY_IMAGE]"""
 
     except Exception as e:
         logger.error(f"Get element path error: {e}")

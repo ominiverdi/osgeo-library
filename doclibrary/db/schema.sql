@@ -9,7 +9,7 @@ CREATE TABLE documents (
     id SERIAL PRIMARY KEY,
     slug VARCHAR(255) UNIQUE NOT NULL,
     title VARCHAR(500) NOT NULL,
-    source_file VARCHAR(255) NOT NULL,
+    source_file VARCHAR(255) UNIQUE NOT NULL,
     extraction_date TIMESTAMP NOT NULL,
     model VARCHAR(100) NOT NULL,
     metadata JSONB DEFAULT '{}'::jsonb,
@@ -77,6 +77,7 @@ CREATE INDEX idx_elements_page_id ON elements(page_id);
 -- Indexes for common queries
 CREATE INDEX idx_elements_type ON elements(element_type);
 CREATE INDEX idx_documents_slug ON documents(slug);
+CREATE INDEX idx_documents_source_file ON documents(source_file);
 
 -- Full-text search (tsvector) columns and indexes
 -- These enable BM25-style keyword matching alongside semantic search

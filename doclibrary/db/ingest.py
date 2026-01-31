@@ -34,6 +34,7 @@ from doclibrary.db.chunking import (
 from doclibrary.db.connection import (
     delete_document,
     get_document_by_slug,
+    get_document_by_source_file,
     insert_chunk,
     insert_document,
     insert_element,
@@ -187,6 +188,31 @@ def ingest_document(
             print(f"  ERROR loading document: {e}")
         return False
 
+    # Check for duplicate source_file (same PDF ingested under different slug)
+    source_file = doc_data.get("source_file", f"{doc_name}.pdf")
+    existing_by_file = get_document_by_source_file(source_file)
+    if existing_by_file:
+        if skip_existing:
+            if verbose:
+                print(
+                    f"  Skipping (source_file already exists as '{existing_by_file['slug']}', id={existing_by_file['id']})"
+                )
+            return True
+        elif delete_first:
+            if not dry_run:
+                if verbose:
+                    print(
+                        f"  Deleting existing document with same source_file (slug='{existing_by_file['slug']}', id={existing_by_file['id']})..."
+                    )
+                delete_document(existing_by_file["id"])
+        else:
+            if verbose:
+                print(
+                    f"  ERROR: source_file '{source_file}' already exists as slug '{existing_by_file['slug']}' (id={existing_by_file['id']})"
+                )
+                print("  Use --delete-first to replace or --skip-existing to skip")
+            return False
+
     pages = doc_data.get("pages", [])
     title = clean_slug_to_title(doc_name)
 
@@ -221,7 +247,7 @@ def ingest_document(
     doc_id = insert_document(
         slug=doc_name,
         title=title,
-        source_file=doc_data.get("source_file", f"{doc_name}.pdf"),
+        source_file=source_file,
         extraction_date=doc_data.get("extraction_date", ""),
         model=doc_data.get("model", "unknown"),
         metadata=doc_data.get("metadata", {}),
