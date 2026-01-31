@@ -439,14 +439,17 @@ async def get_page_image(document_slug: str, page_number: int) -> list:
     """Get a full page as an image.
 
     Use this to view a specific page of a document.
+    Returns both the image (for Claude Desktop) and a cached file path (for chat bridges).
 
     Args:
         document_slug: Document identifier (e.g., 'usgs_snyder')
         page_number: Page number (1-indexed)
 
     Returns:
-        List containing TextContent (metadata) and ImageContent (page image)
+        List containing TextContent (metadata + cache path) and ImageContent (for direct display)
     """
+    import shutil
+    import tempfile
     from doclibrary.db import fetch_one
 
     try:
@@ -480,20 +483,28 @@ async def get_page_image(document_slug: str, page_number: int) -> list:
                 TextContent(type="text", text=f"Error: Page {page_number} image not available.")
             ]
 
-        # Read and encode image
+        # Source image path
         image_path = Path(config.data_dir) / document_slug / page["image_path"]
         if not image_path.exists():
             return [
                 TextContent(type="text", text=f"Error: Page image file not found: {image_path}")
             ]
 
+        # Copy to cache directory (for chat bridges that can't receive base64)
+        cache_dir = Path(tempfile.gettempdir()) / "doclibrary_cache"
+        cache_dir.mkdir(exist_ok=True)
+        cache_file = cache_dir / f"{document_slug}_page{page_number}.png"
+        shutil.copy2(image_path, cache_file)
+
+        # Read and encode image (for Claude Desktop and other MCP clients)
         with open(image_path, "rb") as f:
             image_data = base64.b64encode(f.read()).decode("utf-8")
 
-        # Return metadata as text + image
+        # Return metadata (with cache path) + image
         metadata = f"""Page {page_number} of {total_pages}
 Document: {doc["title"]} ({document_slug})
-Size: {page.get("width", "?")}x{page.get("height", "?")} pixels"""
+Size: {page.get("width", "?")}x{page.get("height", "?")} pixels
+Image file: {cache_file}"""
 
         return [
             TextContent(type="text", text=metadata),
@@ -517,6 +528,7 @@ async def get_element_image(
     if multiple elements have the same label.
 
     For equations, returns the rendered LaTeX image if available.
+    Returns both the image (for Claude Desktop) and a cached file path (for chat bridges).
 
     Args:
         document_slug: Document identifier (e.g., 'usgs_snyder', 'torchgeo')
@@ -524,8 +536,11 @@ async def get_element_image(
         page_number: Optional page number to disambiguate if multiple matches
 
     Returns:
-        List containing TextContent (metadata) and ImageContent (element image)
+        List containing TextContent (metadata + cache path) and ImageContent (for direct display)
     """
+    import re
+    import shutil
+    import tempfile
     from doclibrary.db import fetch_one
 
     try:
@@ -569,6 +584,15 @@ async def get_element_image(
         if not image_path.exists():
             return [TextContent(type="text", text=f"Error: Image file not found: {image_path}")]
 
+        # Copy to cache directory (for chat bridges that can't receive base64)
+        cache_dir = Path(tempfile.gettempdir()) / "doclibrary_cache"
+        cache_dir.mkdir(exist_ok=True)
+        # Sanitize label for filename
+        safe_label = re.sub(r"[^\w\-]", "_", element_label)
+        cache_file = cache_dir / f"{document_slug}_{safe_label}.png"
+        shutil.copy2(image_path, cache_file)
+
+        # Read and encode image (for Claude Desktop and other MCP clients)
         with open(image_path, "rb") as f:
             image_data = base64.b64encode(f.read()).decode("utf-8")
 
@@ -582,7 +606,8 @@ async def get_element_image(
         metadata = f"""{elem_type}: {label}
 Document: {doc_title} ({document_slug})
 Page: {page_num}
-{description[:200] + "..." if len(description) > 200 else description}"""
+{description[:200] + "..." if len(description) > 200 else description}
+Image file: {cache_file}"""
 
         return [
             TextContent(type="text", text=metadata),
@@ -592,6 +617,162 @@ Page: {page_num}
     except Exception as e:
         logger.error(f"Get element image error: {e}")
         return [TextContent(type="text", text=f"Error retrieving element image: {e}")]
+
+
+# --- Lightweight path-only tools for chat bridges ---
+
+
+@mcp.tool()
+async def get_page_path(document_slug: str, page_number: int) -> str:
+    """Get a page image as a cached file path (lightweight, no base64 encoding).
+
+    Use this for chat bridges that can't receive images via MCP protocol.
+    The image is copied to a cache directory and the path is returned.
+
+    Args:
+        document_slug: Document identifier (e.g., 'usgs_snyder')
+        page_number: Page number (1-indexed)
+
+    Returns:
+        Text with metadata and path to the cached image file
+    """
+    import shutil
+    import tempfile
+    from doclibrary.db import fetch_one
+
+    try:
+        # Get document info
+        doc = fetch_one("SELECT id, title FROM documents WHERE slug = %s", (document_slug,))
+        if not doc:
+            return f"Error: Document '{document_slug}' not found."
+
+        # Get total pages
+        total = fetch_one(
+            "SELECT COUNT(*) as count FROM pages WHERE document_id = %s", (doc["id"],)
+        )
+        total_pages = total["count"] if total else 0
+
+        if page_number < 1 or page_number > total_pages:
+            return f"Error: Page {page_number} not found. Document has {total_pages} pages."
+
+        # Get page image path
+        page = fetch_one(
+            """SELECT image_path, width, height FROM pages 
+               WHERE document_id = %s AND page_number = %s""",
+            (doc["id"], page_number),
+        )
+        if not page or not page.get("image_path"):
+            return f"Error: Page {page_number} image not available."
+
+        # Source image path
+        image_path = Path(config.data_dir) / document_slug / page["image_path"]
+        if not image_path.exists():
+            return f"Error: Page image file not found: {image_path}"
+
+        # Copy to cache directory
+        cache_dir = Path(tempfile.gettempdir()) / "doclibrary_cache"
+        cache_dir.mkdir(exist_ok=True)
+        cache_file = cache_dir / f"{document_slug}_page{page_number}.png"
+        shutil.copy2(image_path, cache_file)
+
+        # Return metadata with cache path (no base64 encoding)
+        return f"""Page {page_number} of {total_pages}
+Document: {doc["title"]} ({document_slug})
+Size: {page.get("width", "?")}x{page.get("height", "?")} pixels
+Image file: {cache_file}"""
+
+    except Exception as e:
+        logger.error(f"Get page path error: {e}")
+        return f"Error retrieving page: {e}"
+
+
+@mcp.tool()
+async def get_element_path(
+    document_slug: str,
+    element_label: str,
+    page_number: int | None = None,
+) -> str:
+    """Get an element image as a cached file path (lightweight, no base64 encoding).
+
+    Use this for chat bridges that can't receive images via MCP protocol.
+    The image is copied to a cache directory and the path is returned.
+
+    Args:
+        document_slug: Document identifier (e.g., 'usgs_snyder', 'torchgeo')
+        element_label: Element label from search results (e.g., 'Table 5', 'Figure 3-1')
+        page_number: Optional page number to disambiguate if multiple matches
+
+    Returns:
+        Text with metadata and path to the cached image file
+    """
+    import re
+    import shutil
+    import tempfile
+    from doclibrary.db import fetch_one
+
+    try:
+        # Build query based on provided parameters
+        if page_number:
+            element = fetch_one(
+                """SELECT e.*, d.slug as document_slug, d.title as document_title, p.page_number
+                   FROM elements e
+                   JOIN documents d ON e.document_id = d.id
+                   JOIN pages p ON e.page_id = p.id
+                   WHERE d.slug = %s AND e.label = %s AND p.page_number = %s
+                   LIMIT 1""",
+                (document_slug, element_label, page_number),
+            )
+        else:
+            element = fetch_one(
+                """SELECT e.*, d.slug as document_slug, d.title as document_title, p.page_number
+                   FROM elements e
+                   JOIN documents d ON e.document_id = d.id
+                   JOIN pages p ON e.page_id = p.id
+                   WHERE d.slug = %s AND e.label = %s
+                   LIMIT 1""",
+                (document_slug, element_label),
+            )
+
+        if not element:
+            msg = f"Element '{element_label}' not found in document '{document_slug}'"
+            if page_number:
+                msg += f" on page {page_number}"
+            return f"Error: {msg}."
+
+        # Prefer rendered path for equations, fall back to crop path
+        image_rel_path = element.get("rendered_path") or element.get("crop_path")
+        if not image_rel_path:
+            return f"Error: No image available for '{element_label}'."
+
+        # Build full path
+        image_path = Path(config.data_dir) / document_slug / image_rel_path
+        if not image_path.exists():
+            return f"Error: Image file not found: {image_path}"
+
+        # Copy to cache directory
+        cache_dir = Path(tempfile.gettempdir()) / "doclibrary_cache"
+        cache_dir.mkdir(exist_ok=True)
+        # Sanitize label for filename
+        safe_label = re.sub(r"[^\w\-]", "_", element_label)
+        cache_file = cache_dir / f"{document_slug}_{safe_label}.png"
+        shutil.copy2(image_path, cache_file)
+
+        # Format metadata (no base64 encoding)
+        elem_type = (element.get("element_type") or "element").upper()
+        label = element.get("label", "N/A")
+        doc_title = element.get("document_title", "Unknown")
+        page_num = element.get("page_number", "?")
+        description = element.get("description", "")
+
+        return f"""{elem_type}: {label}
+Document: {doc_title} ({document_slug})
+Page: {page_num}
+{description[:200] + "..." if len(description) > 200 else description}
+Image file: {cache_file}"""
+
+    except Exception as e:
+        logger.error(f"Get element path error: {e}")
+        return f"Error retrieving element: {e}"
 
 
 @mcp.tool()
