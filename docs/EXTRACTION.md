@@ -8,19 +8,19 @@ How to process PDFs and ingest them into the knowledge base.
 PDF File
     |
     v
-extract_all_pages.py (Vision model - Qwen3-VL-235B)
+doclibrary extract (Vision model - Qwen3-VL-235B)
     |
     +---> Page images + annotated versions
     +---> Element crops (figures, tables, equations)
     +---> Per-page JSON with text and metadata
     |
     v
-enrich_elements.py (Text model - Qwen3-30B)
+doclibrary enrich (Text model - Qwen3-30B)
     |
     +---> Generate search_text for each element
     |
     v
-ingest_to_db.py (Embedding model - BGE-M3)
+doclibrary ingest (Embedding model - BGE-M3)
     |
     +---> Chunk text (~800 chars, 200 overlap)
     +---> Embed chunks + elements
@@ -62,10 +62,10 @@ Convert PDF pages to images, detect elements, crop them.
 
 ```bash
 # Full document
-python extract_all_pages.py pdfs/document.pdf --name doc_name --skip-existing
+python -m doclibrary.cli extract pdfs/document.pdf --pages all --output-dir db/data/doc_name --skip-existing
 
 # Background with logging
-nohup python extract_all_pages.py pdfs/document.pdf --name doc_name --skip-existing \
+nohup python -m doclibrary.cli extract pdfs/document.pdf --pages all --output-dir db/data/doc_name --skip-existing \
   > logs/doc_name_extraction.log 2>&1 &
 
 # Check progress
@@ -80,7 +80,7 @@ ls db/data/doc_name/pages/ | wc -l
 Generate contextual `search_text` for each element.
 
 ```bash
-python enrich_elements.py doc_name
+python -m doclibrary.cli enrich doc_name
 ```
 
 **Time estimate:** ~2.5 seconds/element
@@ -90,7 +90,7 @@ python enrich_elements.py doc_name
 Chunk text, generate embeddings, insert into PostgreSQL.
 
 ```bash
-python ingest_to_db.py doc_name
+python -m doclibrary.cli ingest doc_name
 ```
 
 **Time estimate:** ~2 minutes for most documents
